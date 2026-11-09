@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightwatch — Field Terminal</title>
+<style>
+:root{
+  --case:#d5cfb8;--case-hi:#eee9d5;--case-shadow:#8f8c79;--screen:#102d32;--ink:#24342f;
+  --paper:#eeeede;--paper2:#e3e1cc;--line:#c3c0aa;--forest:#174b43;--moss:#75855e;
+  --rust:#b85137;--gold:#d0a65a;--blue:#417c87;--mono:"Courier New",monospace;
+}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden}
+body{font-family:Tahoma,Verdana,Arial,sans-serif;background:#171b19;color:#1c2825}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+button:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid #c77b48;outline-offset:2px}
+.hidden{display:none!important}
+.room{height:100%;width:100%;display:grid;place-items:center;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#3d443b 0%,#262c28 36%,#171b19 72%,#101311 100%)}
+.room:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0 6%,rgba(255,255,255,.018) 6.1%,transparent 6.3% 92%,rgba(0,0,0,.09) 92.2%,transparent 92.6%),radial-gradient(ellipse at 50% 102%,rgba(0,0,0,.35),transparent 55%);pointer-events:none}
+.room:after{content:"";position:absolute;left:0;right:0;bottom:0;height:12%;border-top:1px solid rgba(189,178,146,.08);background:linear-gradient(180deg,rgba(48,51,44,.08),rgba(0,0,0,.22));pointer-events:none}
+.device{position:relative;z-index:1;width:min(96vw,calc(94vh * 1.58),1540px);height:min(94vh,980px);padding:15px 17px 60px;border-radius:36px 36px 43px 43px;background:linear-gradient(142deg,#ece6cf 0%,#c9c3ad 21%,#d9d3bd 47%,#b4b09e 100%);border:1px solid rgba(248,243,218,.72);box-shadow:0 38px 82px rgba(0,0,0,.58),0 8px 18px rgba(0,0,0,.36),inset 2px 2px 2px rgba(255,255,255,.82),inset -5px -8px 14px rgba(64,65,53,.35)}
+.device:before{content:"";position:absolute;inset:5px;border-radius:31px 31px 38px 38px;border:1px solid rgba(255,255,255,.22);pointer-events:none}
+.screen-shell{height:100%;padding:9px;background:linear-gradient(135deg,#4f5149,#101412 22%,#0b0f0e 80%,#45473f);border-radius:20px;box-shadow:inset 0 0 0 1px #060808,inset 0 2px 5px rgba(255,255,255,.14),0 1px 1px rgba(255,255,255,.6)}
+.screen{height:100%;position:relative;overflow:hidden;isolation:isolate;border-radius:12px;background:#102d32;box-shadow:inset 0 0 0 1px rgba(0,0,0,.9),inset 0 0 48px rgba(0,0,0,.25)}
+.os-menu{position:absolute;z-index:20;left:0;right:0;top:0;height:27px;display:flex;align-items:center;gap:17px;padding:0 12px;background:linear-gradient(#e9e6d9,#c9c6b6);border-bottom:1px solid #83877e;color:#303732;font:11px Tahoma,Verdana,sans-serif;box-shadow:0 1px 2px rgba(0,0,0,.24);white-space:nowrap}
+.os-brand{display:flex;align-items:center;gap:6px;font-weight:bold;letter-spacing:.04em;padding-right:4px}.os-brand-mark{height:16px;width:16px;flex:none;border-radius:4px;display:grid;place-items:center;background:linear-gradient(150deg,#20564a 0%,#163b3f 46%,#0e2733 100%);box-shadow:inset 0 0 0 1px rgba(226,232,198,.42),0 1px 1px rgba(0,0,0,.3)}
+.os-brand-mark svg{width:78%;height:78%;display:block}
+.os-brand-mark-lg{width:28px!important;height:28px!important;border-radius:6px}
+.os-menu-item{color:#303832}.os-menu-item:first-letter{font-weight:bold}
+.os-menu-spacer{flex:1}
+.os-signal{display:flex;align-items:center;gap:7px;color:#5c665e;font:9px var(--mono);letter-spacing:.06em}
+.signal-led{width:6px;height:6px;border-radius:50%;background:#4e9d6b;box-shadow:0 0 5px #63ca84}
+.os-clock{padding:3px 7px;border:1px solid #a6a697;background:#d7d4c5;box-shadow:inset 0 1px 1px rgba(0,0,0,.08);font:10px var(--mono);letter-spacing:.03em}
+.desktop{position:absolute;left:0;right:0;top:27px;bottom:35px;overflow:hidden;background:#173b3d}
+.wallpaper{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.97}
+.desktop-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,20,21,.2),transparent 38%,rgba(8,20,21,.08)),linear-gradient(0deg,rgba(4,15,16,.28),transparent 35%);pointer-events:none}
+.icon-column{position:absolute;left:8px;top:14px;bottom:8px;z-index:2;display:flex;flex-direction:column;gap:6px;width:88px}
+.desktop-icon{border:1px solid transparent;background:transparent;color:#f0eedb;text-shadow:1px 2px 2px rgba(0,0,0,.82);width:78px;min-height:73px;padding:5px 4px 4px;border-radius:4px;display:flex;align-items:center;flex-direction:column;gap:3px;font-size:10px;letter-spacing:.01em}
+.desktop-icon:hover,.desktop-icon:focus-visible{background:rgba(224,232,208,.16);border-color:rgba(226,234,215,.28)}
+.app-glyph{width:35px;height:35px;border-radius:5px;display:grid;place-items:center;box-shadow:0 2px 4px rgba(0,0,0,.38),inset 1px 1px 1px rgba(255,255,255,.72);border:1px solid rgba(35,42,36,.72);overflow:hidden}
+.app-glyph svg{width:100%;height:100%;display:block}
+.icon-caption{max-width:82px;text-align:center;line-height:1.15;padding:2px 3px;border-radius:2px}
+.desktop-icon:hover .icon-caption{background:rgba(13,27,28,.66)}
+.taskbar{position:absolute;z-index:30;left:0;right:0;bottom:0;height:35px;display:flex;align-items:center;gap:5px;padding:3px 7px;background:linear-gradient(#e8e5d9,#c5c2b4);border-top:1px solid rgba(255,255,255,.85);box-shadow:0 -1px 3px rgba(0,0,0,.25);color:#29332e}
+.start-button{height:27px;min-width:83px;padding:0 9px;border:1px solid #70766d;border-radius:3px;background:linear-gradient(#f2efdf,#c6c7b6);box-shadow:inset 1px 1px 0 white,inset -1px -1px 0 #a09e91,1px 1px 1px rgba(0,0,0,.2);display:flex;align-items:center;gap:6px;font-size:10px;font-weight:bold;color:#263a33}
+.start-emblem{width:17px;height:17px;flex:none;border-radius:4px;display:grid;place-items:center;background:linear-gradient(150deg,#20564a 0%,#163b3f 46%,#0e2733 100%);box-shadow:inset 0 0 0 1px rgba(226,232,198,.4)}
+.start-emblem svg{width:80%;height:80%;display:block}
+.task-separator{height:23px;border-left:1px solid #9c9d90;border-right:1px solid white;margin:0 2px}
+.task-app{height:26px;min-width:104px;max-width:155px;padding:0 8px;border:1px solid #aaa99c;border-radius:2px;background:linear-gradient(#e1dfd2,#cac8ba);box-shadow:inset 1px 1px 0 rgba(255,255,255,.78);display:flex;align-items:center;gap:7px;text-align:left;color:#39413b;font-size:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.task-app.active{background:linear-gradient(#c5cabc,#e2dfd0);border-color:#7c847a;box-shadow:inset 1px 1px 3px rgba(40,55,45,.2)}
+.mini-app-icon{width:15px;height:15px;flex:none;display:grid;place-items:center;border-radius:3px;background:#436e70;color:#eff0dc;font-size:10px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.task-app[data-open-app="photos"] .mini-app-icon{background:#9c5941}.task-app[data-open-app="maps"] .mini-app-icon{background:#6e8056}.task-app[data-open-app="notes"] .mini-app-icon{background:#b09250;color:#fff8d1}
+.task-spacer{flex:1}
+.task-case{border-left:1px solid #aaa99c;border-right:1px solid rgba(255,255,255,.8);padding:4px 8px;font:9px var(--mono);color:#526058;white-space:nowrap}
+.task-clock{height:25px;min-width:78px;border:1px solid #aaa99c;background:#d8d5c8;box-shadow:inset 0 1px 2px rgba(0,0,0,.08);display:grid;place-items:center;padding:0 6px;font:10px var(--mono);color:#39423c}
+.start-menu{position:absolute;z-index:36;left:7px;bottom:39px;width:228px;padding:0;background:#e7e4d5;border:1px solid #757a71;box-shadow:4px 6px 18px rgba(0,0,0,.42);color:#24332d}
+.start-menu-head{height:52px;display:flex;align-items:center;gap:10px;padding:8px 12px;background:linear-gradient(110deg,#285149,#172e2d);color:#e7e7d3}
+.start-menu-head strong{font:12px var(--mono);letter-spacing:.12em}.start-menu-head small{display:block;margin-top:3px;color:#bdcbb8;font:9px var(--mono);letter-spacing:.08em}
+.launcher-list{padding:5px}.launcher-app{width:100%;border:0;background:transparent;padding:8px 9px;display:flex;align-items:center;gap:10px;text-align:left;color:#28352f;font-size:11px}.launcher-app:hover{background:#d3d7c7}.launcher-app span:last-child small{display:block;color:#778176;font-size:9px;margin-top:2px}.launcher-glyph{width:25px;height:25px;border-radius:4px;display:grid;place-items:center;background:#397078;color:white;font-size:14px}.launcher-app:nth-child(2) .launcher-glyph{background:#a85e43}.launcher-app:nth-child(3) .launcher-glyph{background:#788852}.launcher-app:nth-child(4) .launcher-glyph{background:#b39a52}.launcher-rule{height:1px;background:#b8b6a8;margin:3px 7px}.launcher-foot{padding:8px 10px;display:flex;align-items:center;justify-content:space-between;color:#68746b;font:9px var(--mono)}.reset-case{border:1px solid #b5b3a6;background:#eeecdf;color:#566157;padding:4px 6px;font-size:9px}.reset-case:hover{background:#e0decf}
+.app-window{position:absolute;z-index:5;display:flex;flex-direction:column;min-width:0;min-height:0;background:#dedbcd;border:1px solid #5c625b;border-radius:5px;overflow:hidden;box-shadow:0 11px 28px rgba(0,0,0,.42),0 2px 4px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.76)}
+.browser-window{left:13.1%;top:4.6%;width:85.5%;height:88.8%;}
+.photos-window{left:11.5%;top:5%;width:86.5%;height:88.8%}
+.maps-window{left:11.5%;top:5%;width:86.5%;height:88.8%}
+.notes-window{left:24%;top:11%;width:73%;height:83%}
+.app-window.maximized{left:5px!important;top:5px!important;width:calc(100% - 10px)!important;height:calc(100% - 10px)!important}
+.titlebar{height:29px;min-height:29px;display:flex;align-items:center;gap:7px;padding:0 5px 0 8px;color:#27332e;background:linear-gradient(100deg,#eee9d9,#d0cdbd 56%,#dcd9cb);border-bottom:1px solid #a3a394;cursor:move;user-select:none}
+.title-icon{width:17px;height:17px;flex:none;display:grid;place-items:center;border-radius:3px;color:#f5f0d9;background:#3c6a6a;font-size:10px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.22)}
+.photos-window .title-icon{background:#a45c41}.maps-window .title-icon{background:#71834f}.notes-window .title-icon{background:#b09144}
+.window-title{min-width:0;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;font-weight:bold;text-shadow:0 1px rgba(255,255,255,.75)}
+.window-controls{display:flex;gap:3px;align-items:center}
+.win-control{height:19px;width:21px;border:1px solid #888b80;border-radius:2px;background:linear-gradient(#f0eddf,#c7c5b6);box-shadow:inset 1px 1px 0 #fff;display:grid;place-items:center;color:#35413a;font:bold 12px Tahoma;padding:0;line-height:1}
+.win-control:hover{background:#e2d8bd}.win-control.close:hover{background:#bd5c46;color:#fff;border-color:#9d4432}
+.browser-toolbar{height:37px;min-height:37px;padding:4px 7px;display:flex;align-items:center;gap:4px;background:linear-gradient(#e4e1d5,#cfccbd);border-bottom:1px solid #a7a697}
+.nav-tool{width:25px;height:25px;border:1px solid #aaa99c;border-radius:3px;background:linear-gradient(#f5f2e6,#d5d3c7);box-shadow:inset 1px 1px 0 white;color:#47534a;font-size:14px;display:grid;place-items:center;padding:0}
+.nav-tool:hover{background:#e3dfcf}.address-bar{height:25px;min-width:0;flex:1;display:flex;align-items:center;gap:5px;padding:0 8px;border:1px solid #a2a497;background:#f2f0e5;box-shadow:inset 0 1px 2px rgba(45,49,42,.15);color:#41574f;font:10px var(--mono);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.address-lock{color:#4f816b;font:11px Tahoma}.address-url{overflow:hidden;text-overflow:ellipsis}
+.go-button{height:25px;padding:0 10px;border:1px solid #879083;background:linear-gradient(#f0eedf,#d0d1bf);color:#3e5046;font-size:9px;font-weight:bold;letter-spacing:.07em}
+.web-page{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--paper);overflow:hidden}
+.site-head{height:56px;min-height:56px;display:flex;align-items:center;gap:10px;padding:0 17px;background:linear-gradient(100deg,#123d39,#1b5149 64%,#234b43);color:#e8e8d7;border-bottom:1px solid #0d302d}
+.site-emblem{width:36px;height:36px;display:grid;place-items:center;border:1px solid rgba(218,222,196,.33);border-radius:50%;background:rgba(5,21,21,.23);flex:none}
+.site-emblem svg{width:24px;height:24px}
+.site-name{font:700 17px var(--mono);letter-spacing:.14em;line-height:1;color:#efedda}.site-tagline{margin-top:3px;color:#b4c5b4;font:9px var(--mono);letter-spacing:.055em}
+.site-name small{font-size:8px;letter-spacing:.09em;color:#c6a96e;vertical-align:top;margin-left:5px}
+.site-head-spacer{flex:1}
+.online-box{text-align:right;color:#cbd6c6;font:9px var(--mono);letter-spacing:.07em;line-height:1.55}.online-box strong{color:#e0c077;font-weight:normal}.online-led{display:inline-block;width:6px;height:6px;background:#92bf70;border-radius:50%;margin-right:4px;box-shadow:0 0 5px #91c77b}
+.site-nav{height:29px;min-height:29px;display:flex;align-items:stretch;gap:0;padding:0 12px;background:#dcdcc9;border-bottom:1px solid #b6b6a4}
+.site-nav button{border:0;border-bottom:2px solid transparent;background:transparent;padding:0 12px;color:#54645a;font:9px var(--mono);letter-spacing:.06em;white-space:nowrap}
+.site-nav button:hover{color:#183d36;background:rgba(255,255,255,.26)}.site-nav button.active{color:#21483d;border-bottom-color:#b65539;font-weight:bold}
+.mobile-report-button{display:none}
+.forum-view{flex:1;min-height:0;overflow:auto;background:#eeeddf;scrollbar-color:#9ea48f #e6e4d6;scrollbar-width:thin}
+.thread-grid{display:grid;grid-template-columns:minmax(0,1fr) 225px;gap:15px;max-width:1240px;margin:0 auto;padding:14px 17px 18px}
+.thread-main{min-width:0}
+.case-kicker{display:flex;align-items:center;gap:7px;color:#718076;font:9px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.case-dot{width:6px;height:6px;border-radius:50%;background:#bc5a3a;box-shadow:0 0 0 3px rgba(188,90,58,.12)}
+.case-title-row{display:flex;align-items:flex-start;gap:8px;margin-top:5px}
+.case-title{margin:0;color:#213a34;font:700 21px Georgia,"Times New Roman",serif;letter-spacing:-.025em;line-height:1.14}
+.unsolved-badge{flex:none;margin-top:2px;padding:4px 6px;border:1px solid #d0a16d;background:#f2e5ce;color:#98613b;font:8px var(--mono);letter-spacing:.08em}
+.case-subtitle{margin-top:5px;color:#7b8071;font:9px var(--mono);letter-spacing:.065em}
+.thread-stats{display:flex;gap:13px;align-items:center;margin-top:9px;padding:6px 0;border-top:1px solid #d2d0bd;border-bottom:1px solid #d2d0bd;color:#798174;font:9px var(--mono)}
+.thread-stats strong{color:#455d51;font-weight:normal}.stat-icon{color:#b36343;margin-right:3px}
+.mission-strip{margin:9px 0 10px;padding:8px 10px;border-left:3px solid #b85c3c;background:#e4e4d3;display:flex;align-items:center;gap:8px;color:#495b50;font-size:10px;line-height:1.35}
+.mission-mark{width:22px;height:22px;flex:none;display:grid;place-items:center;border:1px solid #c5c5ae;border-radius:50%;color:#a6553c;font:12px var(--mono)}
+.mission-strip strong{color:#284d40;font:9px var(--mono);letter-spacing:.07em;display:block;margin-bottom:2px}
+.forum-post{display:grid;grid-template-columns:34px minmax(0,1fr);gap:9px;padding:9px 0;border-top:1px solid #d1d0bd}
+.forum-post:first-of-type{border-top:0}
+.avatar{width:31px;height:31px;border-radius:3px;display:grid;place-items:center;background:#5b7461;color:#eef0dd;font:15px Georgia;border:1px solid rgba(41,61,49,.23);box-shadow:inset 0 0 0 2px rgba(255,255,255,.14)}
+.avatar.rust{background:#9c654a}.avatar.blue{background:#527883}
+.post-top{display:flex;align-items:baseline;gap:7px;min-width:0;flex-wrap:wrap}
+.post-author{font-size:10px;font-weight:bold;color:#31493e}.post-rank{font:8px var(--mono);color:#868a7b}.post-time{margin-left:auto;color:#8c8d7f;font:8px var(--mono);white-space:nowrap}
+.post-text{margin:4px 0 6px;color:#424d43;font:11px/1.42 Georgia,"Times New Roman",serif}
+.post-text em{color:#a75138;font-style:normal;font-weight:bold}
+.post-actions{display:flex;align-items:center;gap:7px;color:#898b7d;font:8px var(--mono)}
+.text-action{border:0;padding:3px 5px;background:#dfe2d2;color:#446052;font:8px var(--mono);letter-spacing:.04em}
+.text-action:hover{background:#ccd6c5;color:#234b3b}.text-action.filed{background:#d7e1d1;color:#426246;cursor:default}
+.case-sidebar{min-width:0;padding-top:3px}
+.side-card{border:1px solid #c5c4b0;background:#e5e4d4;box-shadow:0 1px 0 rgba(255,255,255,.72);margin-bottom:9px}
+.side-card-head{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;border-bottom:1px solid #cdccba;background:#dedecb;color:#4a5b4f;font:9px var(--mono);letter-spacing:.08em}
+.side-card-body{padding:9px}
+.progress-summary{display:flex;align-items:center;gap:9px}
+.progress-number{min-width:43px;color:#a65036;font:17px var(--mono);letter-spacing:-.08em}.progress-caption{color:#687365;font:9px/1.3 var(--mono)}
+.progress-track{height:4px;margin:7px 0 8px;background:#cacbb9;overflow:hidden}.progress-track span{display:block;height:100%;width:0;background:linear-gradient(90deg,#75895d,#c19b58);transition:width .35s ease}
+.clue-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.clue-row{display:flex;align-items:flex-start;gap:6px;color:#858a7b;font:9px/1.25 var(--mono)}.clue-row .check{width:13px;height:13px;flex:none;border:1px solid #b9b9a7;background:#eeeddf;display:grid;place-items:center;color:transparent;font:bold 9px Tahoma}.clue-row.found{color:#46634d}.clue-row.found .check{border-color:#879d76;background:#d6e0cf;color:#436448}
+.report-button{width:100%;margin-top:9px;padding:8px 6px;border:1px solid #7d8a72;background:linear-gradient(#82936f,#596f57);color:#f0eedf;font:bold 9px var(--mono);letter-spacing:.07em;box-shadow:inset 0 1px rgba(255,255,255,.22);text-shadow:0 1px rgba(20,40,28,.45)}
+.report-button:disabled{border-color:#c3c1af;background:#dcdbcd;color:#8b8e80;text-shadow:none;cursor:not-allowed;box-shadow:none}.report-button:not(:disabled):hover{background:linear-gradient(#91a27d,#657c61)}
+.side-note{color:#707b70;font:9px/1.4 Georgia,"Times New Roman",serif}.app-shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:5px}.shortcut{border:1px solid #c1c2ae;background:#efeee0;color:#566456;padding:6px 4px;text-align:center;font:8px var(--mono)}.shortcut:hover{background:#d9e0d1;color:#26483a}
+.archive-wrap{padding:17px;max-width:900px;margin:0 auto}.archive-title{font:700 20px Georgia,serif;color:#253d34;margin:0}.archive-intro{color:#778073;font:10px var(--mono);margin:5px 0 14px}.archive-row{display:grid;grid-template-columns:58px minmax(0,1fr) 70px;align-items:center;gap:10px;padding:11px 8px;border-top:1px solid #cccbba;color:#425246}.archive-id{font:10px var(--mono);color:#a3533b}.archive-row strong{display:block;font:700 12px Georgia,serif}.archive-row small{display:block;margin-top:3px;color:#868a7c;font:9px var(--mono)}.archive-status{padding:4px;text-align:center;border:1px solid #c7c3aa;background:#e5dfcc;color:#8e7547;font:8px var(--mono)}.archive-open{border:1px solid #a4a995;background:#e0e4d6;color:#45604f;padding:6px;font:8px var(--mono)}
+/* Photos app */
+.photo-toolbar{height:31px;min-height:31px;padding:0 11px;display:flex;align-items:center;gap:8px;background:#d7d4c6;border-bottom:1px solid #b4b2a4;color:#667065;font:9px var(--mono);letter-spacing:.06em}
+.photo-toolbar-spacer{flex:1}.photo-led{display:inline-block;width:6px;height:6px;border-radius:50%;background:#86a16b;margin-right:4px}
+.photos-body{flex:1;min-height:0;display:grid;grid-template-columns:150px minmax(0,1fr) 207px;background:#262f2c;color:#e4e5d6;overflow:hidden}
+.photo-albums{padding:12px 9px;background:#343d38;border-right:1px solid #18221f;overflow:auto}
+.album-heading{color:#93a091;font:8px var(--mono);letter-spacing:.12em;margin:0 4px 8px}.album-folder{width:100%;display:flex;align-items:center;gap:7px;border:0;background:transparent;color:#d7dac9;padding:7px 5px;text-align:left;font:9px var(--mono)}.album-folder.active{background:#4a574b;color:#f0ecd8}.folder-glyph{color:#d8b96e;font-size:13px}
+.photo-file-list{margin-top:13px;border-top:1px solid #4c544a;padding-top:9px}
+.roll-empty-line{margin:2px 5px 0;color:#7f8b7f;font:8px var(--mono);letter-spacing:.1em}
+.roll-log{margin-top:14px;border-top:1px solid #4c544a;padding-top:9px}
+.roll-log p{margin:0 4px 5px;color:#9aa596;font:7.5px/1.5 var(--mono);letter-spacing:.02em}
+.roll-log p.alert{color:#d8a276}.photo-file{width:100%;border:1px solid transparent;background:transparent;color:#b9c0b1;padding:6px 4px;display:flex;gap:7px;align-items:center;text-align:left;font:8px var(--mono)}.photo-file:hover,.photo-file.active{background:#475149;border-color:#697267;color:#f0eedf}.tiny-thumb{width:30px;height:23px;flex:none;border:1px solid #7b806d;background:radial-gradient(circle at 68% 36%,#c29f54 0 2px,transparent 3px),linear-gradient(145deg,#253e3c 0 48%,#6b7765 49% 62%,#182a29 63%)}.photo-file:nth-child(2) .tiny-thumb{background:radial-gradient(circle at 34% 35%,#d2b566 0 2px,transparent 3px),linear-gradient(175deg,#142d34 0 60%,#4a625a 61% 100%)}.photo-file:nth-child(3) .tiny-thumb{background:linear-gradient(150deg,#273c36 0 47%,#85816b 48% 53%,#25352e 54%)}
+.photo-stage{min-width:0;min-height:0;padding:12px 15px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:radial-gradient(ellipse at center,#3b4640,#202a27 80%);overflow:hidden}
+.photo-empty{width:min(100%,460px);display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;padding:16px 18px 18px;border:1px dashed #5c685c;background:rgba(20,29,26,.55);box-shadow:inset 0 0 30px rgba(0,0,0,.35)}
+.empty-strip{width:190px;height:auto;opacity:.75}
+.photo-empty-title{margin:2px 0 0;color:#e4e2cc;font:700 19px Georgia,"Times New Roman",serif;letter-spacing:.01em}
+.photo-empty-copy{margin:0;max-width:340px;color:#a7b0a1;font:10px/1.5 Georgia,"Times New Roman",serif}
+.recover-button{margin-top:4px;padding:8px 13px;border:1px solid #8d9a7c;background:linear-gradient(#86956f,#617555);color:#f2f0df;font:bold 9px var(--mono);letter-spacing:.07em;box-shadow:inset 0 1px rgba(255,255,255,.2)}
+.recover-button:hover{background:linear-gradient(#96a37e,#70855f)}
+.recover-button:disabled{cursor:default;opacity:.55}
+.photo-empty-note{margin:0;color:#7d8a7d;font:7px var(--mono);letter-spacing:.09em}
+.photo-viewer{width:100%;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.photo-frame{width:min(100%,820px);min-height:0;flex:1;display:grid;place-items:center;position:relative}
+.photo-art{width:100%;height:100%;max-height:100%;display:block;object-fit:contain;border:7px solid #d0cdbb;background:#0c1d23;box-shadow:0 5px 15px rgba(0,0,0,.52);aspect-ratio:1.88}
+.photo-art[data-shot="1"] #subject{opacity:0}.photo-art[data-shot="1"] #water-marks{opacity:1}.photo-art[data-shot="2"] #subject,.photo-art[data-shot="2"] #water-marks{opacity:0}.photo-art[data-shot="2"] #footprints{opacity:1}
+.photo-caption{width:min(100%,820px);display:flex;align-items:center;gap:8px;color:#c6cbbb;font:9px var(--mono);letter-spacing:.06em}.photo-caption strong{color:#e0c47c;font-weight:normal}.photo-caption span:last-child{margin-left:auto;color:#879287}
+.photo-strip{width:min(100%,820px);height:48px;flex:none;display:flex;justify-content:center;gap:7px}
+.strip-shot{width:94px;height:46px;padding:2px;border:1px solid #5e665b;background:#161e1c;opacity:.72}.strip-shot.active{border-color:#d4b76f;opacity:1;box-shadow:0 0 0 1px rgba(212,183,111,.23)}.strip-preview{width:100%;height:100%;display:block;position:relative;overflow:hidden;background:linear-gradient(180deg,#203d48 0 48%,#334e48 49% 58%,#172b2a 59%)}.strip-preview:before{content:"";position:absolute;left:0;right:0;bottom:0;height:62%;background:linear-gradient(145deg,transparent 0 34%,#263b34 35% 54%,transparent 55%),linear-gradient(40deg,#20352f 0 40%,transparent 41%)}.strip-preview:after{content:"";position:absolute;width:3px;height:3px;border-radius:50%;background:#dbb962;left:62%;top:38%;box-shadow:5px 3px #a77f42}.strip-shot:nth-child(2) .strip-preview{filter:hue-rotate(14deg) brightness(1.14)}.strip-shot:nth-child(3) .strip-preview{filter:sepia(.38) brightness(.8)}
+.photo-inspector{padding:14px 12px;background:#e8e6d7;color:#344139;border-left:1px solid #73786d;overflow:auto}.inspector-kicker{color:#8b8a78;font:8px var(--mono);letter-spacing:.12em}.inspector-title{font:700 15px Georgia,serif;margin:6px 0 4px;color:#273d34}.inspector-sub{font:9px var(--mono);color:#8d6250}.metadata{margin:12px 0;padding:9px 0;border-top:1px solid #c8c6b5;border-bottom:1px solid #c8c6b5;display:grid;grid-template-columns:1fr 1fr;gap:8px 4px}.metadata div{color:#858879;font:8px var(--mono)}.metadata strong{display:block;margin-top:3px;color:#405548;font-size:9px;font-weight:normal}
+.inspector-copy{font:10px/1.48 Georgia,serif;color:#626b5e}.develop-button{width:100%;margin-top:10px;padding:9px 5px;border:1px solid #8e987b;background:linear-gradient(#85956f,#637a5d);color:#f2f0df;font:bold 9px var(--mono);letter-spacing:.045em}.develop-button:hover{background:linear-gradient(#97a47f,#73886c)}.develop-button.filed{background:#e0e5d5;color:#4e6c4e;border-color:#aab69c}.develop-stage-button{display:none;width:min(100%,820px);padding:7px;border:1px solid #8e987b;background:linear-gradient(#85956f,#637a5d);color:#f2f0df;font:bold 9px var(--mono);letter-spacing:.045em}.develop-stage-button.filed{background:#e0e5d5;color:#4e6c4e;border-color:#aab69c}.negative-result{margin-top:9px;padding:8px;border-left:3px solid #bb6544;background:#e4e2d1;color:#45574b;font:9px/1.4 var(--mono)}
+/* Map app */
+.map-toolbar{height:34px;min-height:34px;padding:0 9px;display:flex;align-items:center;gap:6px;background:#dfddcf;border-bottom:1px solid #b6b3a4;color:#617063;font:9px var(--mono)}
+.map-tool{border:1px solid #aaa997;background:#eeecde;color:#59675b;padding:4px 7px;font:8px var(--mono)}.map-tool.active{background:#d3dccb;border-color:#91a187;color:#375542}.map-coord{margin-left:auto;color:#858779;font:8px var(--mono)}
+.maps-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 235px;background:#d9d9c4;overflow:hidden}
+.map-canvas{position:relative;min-width:0;min-height:0;background:#d8d8bd;overflow:hidden;display:grid;place-items:center}
+.topo-map{width:100%;height:100%;display:block;max-height:100%;background:#d7ecdc}
+.topo-map text{pointer-events:none}
+.town-label text{font:700 13px Tahoma,Verdana,sans-serif;fill:#7b9487;letter-spacing:.2em;paint-order:stroke;stroke:#e6f4ea;stroke-width:3px;stroke-linejoin:round}
+.town-label text:nth-child(n+2){font:400 11px Tahoma,Verdana,sans-serif;letter-spacing:.03em;fill:#77897e}
+.water-label text{font:italic 11px Tahoma,Verdana,sans-serif;fill:#78b3c6;paint-order:stroke;stroke:#e8f6ef;stroke-width:2.5px;stroke-linejoin:round}
+.road-label text{font:8px Tahoma,Verdana,sans-serif;fill:#7e8791;letter-spacing:.1em;paint-order:stroke;stroke:#eff4ef;stroke-width:2.5px;stroke-linejoin:round}
+.poi-label{font:11px Tahoma,Verdana,sans-serif;fill:#4c5561;paint-order:stroke;stroke:#eaf5ec;stroke-width:3px;stroke-linejoin:round}
+.poi-label.sub{font:8.5px Tahoma,Verdana,sans-serif;fill:#8b96a2;letter-spacing:.03em}
+.map-note{font:7.5px var(--mono);fill:#8ba394;letter-spacing:.05em}
+.site-pin{filter:drop-shadow(0 2px 2px rgba(40,44,40,.28))}
+.map-pin{cursor:pointer;outline:none}.map-pin:focus-visible circle:first-of-type{stroke:#f1d57a;stroke-width:4}.pin-label{font:9px var(--mono);fill:#53644e;paint-order:stroke;stroke:#e5e2cc;stroke-width:3px;stroke-linejoin:round}.map-pin:hover .pin-core{fill:#e88749}
+.route-overlay{display:none}.route-overlay.visible{display:block}.route-label{font:12px var(--mono);font-weight:bold;fill:#a94e35;paint-order:stroke;stroke:#e3dfc7;stroke-width:4px;stroke-linejoin:round}
+.map-sidebar{padding:12px;background:#eeeddf;border-left:1px solid #aaa996;overflow:auto;color:#36463a}.map-side-kicker{color:#848978;font:8px var(--mono);letter-spacing:.11em}.map-side-title{font:700 15px Georgia,serif;color:#2c4035;margin:5px 0 9px}.map-report{padding:7px 0;border-top:1px solid #d0cebd;display:grid;grid-template-columns:17px 1fr;gap:6px;color:#627061;font:9px/1.25 var(--mono)}.map-report-mark{width:15px;height:15px;border:1px solid #bd5c3d;border-radius:50%;color:#aa573c;display:grid;place-items:center;font-size:8px}.map-report strong{display:block;color:#435748;font-weight:normal}.map-inspector{min-height:47px;margin:7px 0;padding:7px 8px;border:1px solid #cccbb8;background:#e6e5d6;color:#70786a;font:8px/1.4 var(--mono)}.map-inspector strong{display:block;color:#3e5446;font-size:9px;margin-bottom:2px}.plot-button{width:100%;margin:5px 0 7px;padding:9px 5px;border:1px solid #8f957b;background:linear-gradient(#85936d,#667850);color:#f2f0df;font:bold 9px var(--mono);letter-spacing:.04em}.plot-button:hover{background:linear-gradient(#94a07c,#778b5e)}.plot-button.filed{background:#d8e2d0;color:#456147;border-color:#a3b097}.route-result{padding:8px;border-left:3px solid #b8583b;background:#e5e1cc;color:#53604c;font:9px/1.4 var(--mono)}.route-result strong{display:block;color:#9b4d36;font-size:10px}
+/* Notes app */
+.notes-toolbar{height:31px;min-height:31px;display:flex;align-items:center;gap:8px;padding:0 10px;background:#dedbca;border-bottom:1px solid #b4b19f;color:#637065;font:9px var(--mono)}
+.notes-status{margin-left:auto;color:#7a876e}.notes-grid{flex:1;min-height:0;display:grid;grid-template-columns:148px minmax(0,1fr) 204px;background:#e5e3d2;overflow:hidden}
+.notes-list{padding:11px 8px;background:#d4d4c4;border-right:1px solid #b7b6a5}.notes-list-heading{margin:0 4px 9px;color:#85897a;font:8px var(--mono);letter-spacing:.11em}.note-file{padding:8px 6px;border:1px solid #babcaa;background:#e8e7d9;color:#566554;font:9px/1.35 var(--mono)}.note-file.active{border-color:#a8ae98;background:#eff0e2}.note-file span{display:block;margin-top:3px;color:#969888;font-size:8px}.notes-hint{margin:13px 5px;color:#888b7d;font:8px/1.45 var(--mono)}
+.note-paper-wrap{min-width:0;min-height:0;padding:12px 16px;background:#f1efde;overflow:auto}.note-page{min-height:100%;max-width:720px;margin:0 auto;padding:7px 11px 20px;background:repeating-linear-gradient(to bottom,#f6f3df 0,#f6f3df 25px,#d9dfcf 26px);box-shadow:0 1px 4px rgba(69,67,48,.12);border-left:3px solid #c78062}.note-page-head{display:flex;justify-content:space-between;padding:0 0 8px;border-bottom:1px solid #c9cdbb;color:#778071;font:8px var(--mono);letter-spacing:.08em}.note-page-head strong{color:#a6563c;font-weight:normal}.note-textarea{width:100%;height:calc(100% - 25px);min-height:260px;resize:none;border:0;outline:0;background:transparent;color:#3f5147;font:12px/26px var(--mono);padding:8px 4px;white-space:pre-wrap}.note-textarea:focus{outline:none}.notes-ledger{padding:12px 10px;background:#e6e4d4;border-left:1px solid #bbb9a8;overflow:auto}.ledger-heading{color:#828676;font:8px var(--mono);letter-spacing:.11em;margin-bottom:9px}.ledger-item{padding:7px 6px;margin-bottom:6px;border:1px solid #d0cebd;background:#edecdd;color:#929486;font:8px/1.4 var(--mono)}.ledger-item.found{border-color:#b9c5a9;background:#e3e8d9;color:#465c49}.ledger-item strong{display:block;margin-bottom:3px;color:#8b8d7e;font-size:8px;font-weight:normal}.ledger-item.found strong{color:#527050}.ledger-empty{color:#8c8e80;font:9px/1.45 Georgia,serif}
+/* Case report */
+.modal{position:absolute;z-index:80;inset:0;display:grid;place-items:center;padding:18px;background:rgba(4,13,13,.72);backdrop-filter:blur(2px)}
+.report-card{position:relative;width:min(560px,96%);max-height:95%;overflow:auto;border:1px solid #d1ceb9;background:#eeeddf;box-shadow:0 18px 50px rgba(0,0,0,.55),inset 0 0 0 4px rgba(255,255,255,.48);padding:22px 25px 20px;color:#33463b}
+.report-close{position:absolute;right:10px;top:9px;width:24px;height:24px;border:1px solid #bcb9a8;background:#e2e0d2;color:#687164;font-size:15px;line-height:1}.report-kicker{color:#9d563e;font:9px var(--mono);letter-spacing:.14em}.report-title{margin:7px 0 5px;color:#253e34;font:700 23px Georgia,serif}.report-lead{margin:0 0 15px;color:#718071;font:10px/1.45 var(--mono)}
+.report-field{margin:11px 0}.report-field label{display:block;margin-bottom:4px;color:#546452;font:9px var(--mono);letter-spacing:.055em}.report-field select{width:100%;height:33px;padding:0 8px;border:1px solid #b5b5a4;background:#f6f4e7;color:#394b40;font:10px var(--mono)}
+.report-submit{width:100%;margin-top:7px;padding:10px;border:1px solid #85916f;background:linear-gradient(#82926e,#596f55);color:#f1f0df;font:bold 10px var(--mono);letter-spacing:.08em}.report-submit:hover{background:linear-gradient(#95a17d,#6d815f)}.report-feedback{min-height:17px;margin:7px 0 0;color:#a75039;font:9px var(--mono)}
+.success-state{text-align:center;padding:7px 4px 2px}.success-stamp{display:inline-block;padding:7px 14px;border:2px solid #668066;transform:rotate(-3deg);color:#52734e;font:bold 14px var(--mono);letter-spacing:.13em}.success-title{margin:18px 0 6px;font:700 23px Georgia,serif;color:#263f34}.success-copy{max-width:400px;margin:0 auto 15px;color:#637266;font:11px/1.55 Georgia,serif}.success-receipt{margin:15px 0;padding:11px;border:1px solid #c6c5b3;background:#e4e4d4;color:#546253;font:9px/1.55 var(--mono);text-align:left}.success-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.success-actions button{padding:8px 12px;border:1px solid #aab09c;background:#e2e5d6;color:#4e6250;font:9px var(--mono)}.success-actions button:first-child{background:#617858;color:#f3f0df;border-color:#566b4f}
+.toast{position:absolute;z-index:95;left:50%;bottom:48px;transform:translate(-50%,12px);max-width:calc(100% - 24px);padding:9px 13px;border:1px solid rgba(215,207,173,.5);background:rgba(23,44,39,.94);box-shadow:0 6px 18px rgba(0,0,0,.3);color:#f0eedc;font:9px var(--mono);letter-spacing:.06em;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.toast.show{opacity:1;transform:translate(-50%,0)}
+.crt-overlay{position:absolute;z-index:100;inset:0;border-radius:inherit;pointer-events:none;background:repeating-linear-gradient(to bottom,rgba(9,19,17,.05) 0,rgba(9,19,17,.05) 1px,transparent 1px,transparent 4px),linear-gradient(115deg,rgba(255,255,255,.06),transparent 23%,transparent 74%,rgba(5,12,10,.04));box-shadow:inset 0 0 75px rgba(2,12,11,.17),inset 0 0 0 1px rgba(222,229,203,.06);opacity:.64}
+.monitor-lip{position:absolute;left:42px;right:42px;bottom:17px;height:30px;display:flex;align-items:center;gap:10px;color:#6c6e61;font:9px var(--mono);letter-spacing:.12em;text-shadow:0 1px rgba(255,255,255,.55)}
+.lip-brand{font-weight:bold;color:#777667;letter-spacing:.17em}.lip-divider{height:12px;border-left:1px solid #a5a18d;border-right:1px solid rgba(255,255,255,.55)}.lip-note{font-size:8px;color:#878574;letter-spacing:.08em}.lip-spacer{flex:1}.lip-power{display:flex;align-items:center;gap:6px;color:#686c60;font-size:8px;letter-spacing:.1em}.lip-led{width:7px;height:7px;border-radius:50%;background:#6fa36b;box-shadow:0 0 5px rgba(88,150,82,.7),inset 0 0 1px white}.lip-knob{width:21px;height:21px;border:1px solid #8c8878;border-radius:50%;background:linear-gradient(145deg,#e9e4ce,#aaa693);box-shadow:inset 1px 1px 1px white,1px 1px 1px rgba(0,0,0,.16);margin-left:7px;position:relative}.lip-knob:after{content:"";position:absolute;width:2px;height:6px;top:2px;left:9px;background:#7c7a6a;border-radius:1px}
+@media(max-width:900px){
+  .thread-grid{grid-template-columns:minmax(0,1fr)}.case-sidebar{display:none}.browser-window,.photos-window,.maps-window{left:3%;width:94%;height:88%}.notes-window{left:12%;width:85%;height:84%}.mobile-report-button{display:block!important;border-left:1px solid #c3c1b1!important;padding:0 8px!important;color:#979888!important}.mobile-report-button:not(:disabled){color:#9f5036!important;font-weight:bold!important}.develop-stage-button{display:block}
+  .photos-body{grid-template-columns:118px minmax(0,1fr)}.photo-inspector{display:none}.maps-body{grid-template-columns:minmax(0,1fr) 205px}.notes-grid{grid-template-columns:120px minmax(0,1fr)}.notes-ledger{display:none}
+}
+@media(max-width:680px){
+  .device{width:100vw;height:100dvh;max-height:none;padding:0;border:0;border-radius:0;background:#d2ccb5;box-shadow:none}.device:before,.monitor-lip{display:none}.screen-shell{height:100%;padding:0;border-radius:0;background:#101311;box-shadow:none}.screen{border-radius:0}.os-menu{height:25px;padding:0 8px;gap:10px}.os-menu-item,.os-signal{display:none}.os-clock{margin-left:auto}.desktop{top:25px;bottom:31px}.taskbar{height:31px;padding:2px 4px;gap:3px}.start-button{height:25px;min-width:31px;padding:0 6px}.start-label{display:none}.task-app{min-width:34px;width:35px;height:24px;padding:0;justify-content:center}.task-app .task-name{display:none}.mini-app-icon{width:16px;height:16px}.task-case{font-size:8px;padding:3px 5px}.task-clock{min-width:56px;height:23px;font-size:9px}.icon-column{left:0;right:0;top:auto;bottom:40px;width:auto;height:67px;flex-direction:row;justify-content:center;gap:2px}.desktop-icon{width:67px;min-height:63px;padding:3px 2px;font-size:8px}.app-glyph{width:28px;height:28px}.icon-caption{max-width:64px}.browser-window,.photos-window,.maps-window{left:1%;top:2%;width:98%;height:94%}.notes-window{left:2%;top:6%;width:96%;height:90%}.titlebar{height:27px;min-height:27px}.window-title{font-size:10px}.window-controls{gap:2px}.win-control{width:19px;height:18px}.browser-toolbar{height:33px;min-height:33px;padding:3px 4px;gap:3px}.nav-tool{height:23px;width:22px}.address-bar{height:23px;font-size:8px;padding:0 5px}.go-button{height:23px;padding:0 7px}.site-head{height:49px;min-height:49px;padding:0 9px;gap:7px}.site-emblem{width:31px;height:31px}.site-name{font-size:14px}.site-tagline{font-size:8px}.online-box{display:none}.site-nav{height:27px;min-height:27px;padding:0 2px;justify-content:space-around}.site-nav button{padding:0 5px;font-size:8px;letter-spacing:.02em}.thread-grid{padding:11px 11px 16px}.case-title{font-size:18px}.unsolved-badge{font-size:7px;padding:3px 4px}.thread-stats{gap:8px;font-size:8px}.mission-strip{font-size:9px;padding:7px}.forum-post{grid-template-columns:29px minmax(0,1fr);gap:7px;padding:8px 0}.avatar{width:27px;height:27px}.post-text{font-size:10px}.post-time{font-size:7px}.archive-wrap{padding:13px}.archive-row{grid-template-columns:46px minmax(0,1fr) 59px;gap:6px}.photos-body{grid-template-columns:1fr}.photo-albums{display:none}.photo-stage{padding:8px 7px 7px;gap:5px}.photo-frame{flex:none;width:100%;height:min(54vh,340px)}.photo-art{border-width:4px}.photo-caption{font-size:8px}.photo-strip{height:40px;gap:4px}.strip-shot{width:72px;height:38px}.photo-toolbar{height:27px;min-height:27px;font-size:8px;padding:0 7px}.maps-body{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}.map-sidebar{padding:7px 9px;max-height:175px;border-left:0;border-top:1px solid #aaa996;display:grid;grid-template-columns:1fr 1fr;gap:4px 9px}.map-side-kicker,.map-side-title{grid-column:1/-1;margin:0}.map-report{padding:4px 0;font-size:8px}.map-inspector{display:none}.plot-button{margin:3px 0;padding:7px;align-self:center}.route-result{font-size:8px}.map-toolbar{height:30px;min-height:30px;padding:0 5px;gap:4px}.map-tool{padding:4px 5px;font-size:7px}.map-coord{display:none}.notes-grid{grid-template-columns:1fr}.notes-list{display:none}.note-paper-wrap{padding:8px}.note-textarea{font-size:11px}.notes-toolbar{height:27px;min-height:27px}.report-card{padding:20px 16px 16px}.report-title{font-size:20px}.toast{bottom:40px;font-size:8px}.start-menu{bottom:35px;left:4px;width:220px}
+}
+@media(max-height:680px) and (min-width:681px){.device{height:96vh;width:min(96vw,calc(96vh * 1.58),1540px);padding-bottom:49px}.monitor-lip{bottom:9px;height:27px}.screen-shell{padding:7px}.os-menu{height:24px}.desktop{top:24px;bottom:32px}.taskbar{height:32px}.browser-window,.photos-window,.maps-window{height:90%;top:3%}.site-head{height:49px;min-height:49px}.thread-grid{padding-top:10px;padding-bottom:10px}.forum-post{padding:7px 0}.mission-strip{margin:7px 0;padding:6px}.thread-stats{margin-top:6px;padding:5px 0}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="mothGlyph" viewBox="0 0 24 24">
+  <g fill="#f4eec6">
+    <path d="M12 11.4C10.7 8 7.6 5.1 4.6 4.5 3.1 4.2 1.9 5 1.9 6.4c0 2.3 2.1 4.8 4.8 5.6 1.7.5 3.5.4 5.3-.6Z"/>
+    <path d="M12 11.4C13.3 8 16.4 5.1 19.4 4.5c1.5-.3 2.7.5 2.7 1.9 0 2.3-2.1 4.8-4.8 5.6-1.7.5-3.5.4-5.3-.6Z"/>
+    <path d="M11.6 12.5c-1.2-.2-3 .5-4.3 1.9-1.4 1.5-1.8 3.2-.9 4 .9.8 2.7.3 4-1 1-1 1.4-2.2 1.2-4.9Z" opacity=".92"/>
+    <path d="M12.4 12.5c1.2-.2 3 .5 4.3 1.9 1.4 1.5 1.8 3.2.9 4-.9.8-2.7.3-4-1-1-1-1.4-2.2-1.2-4.9Z" opacity=".92"/>
+    <path d="M12 9.1c.6 0 1 .5 1 1.3v3.9c0 .8-.4 1.3-1 1.3s-1-.5-1-1.3v-3.9c0-.8.4-1.3 1-1.3Z"/>
+    <path d="M11.5 9.2 9.8 6.4M12.5 9.2l1.7-2.8" stroke="#f4eec6" stroke-width=".85" fill="none" stroke-linecap="round"/>
+  </g>
+</symbol></svg>
+<div class="room">
+  <main class="device" aria-label="A vintage Moth OS computer">
+    <div class="screen-shell">
+      <div class="screen" id="screen">
+        <header class="os-menu" aria-label="Moth OS menu bar">
+          <div class="os-brand"><span class="os-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#mothGlyph"/></svg></span><span>MOTH OS</span></div>
+          <span class="os-menu-item">File</span><span class="os-menu-item">Edit</span><span class="os-menu-item">View</span><span class="os-menu-item">Special</span>
+          <span class="os-menu-spacer"></span>
+          <span class="os-signal"><i class="signal-led"></i>MODEM LINK / LOCAL NODE 09</span>
+          <span class="os-clock">NOV 03, 1998&nbsp; · &nbsp;11:46 PM</span>
+        </header>
+        <div class="desktop" id="desktop">
+          <svg class="wallpaper" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="wallSky" x2="0" y2="1"><stop stop-color="#102c38"/><stop offset=".46" stop-color="#34605b"/><stop offset=".79" stop-color="#9a8868"/><stop offset="1" stop-color="#3b5147"/></linearGradient>
+              <linearGradient id="wallWater" x2="0" y2="1"><stop stop-color="#496c62"/><stop offset="1" stop-color="#172f31"/></linearGradient>
+              <linearGradient id="wallMoon" x2="0" y2="1"><stop stop-color="#e8dba9"/><stop offset="1" stop-color="#c2bb92"/></linearGradient>
+            </defs>
+            <rect width="1600" height="900" fill="url(#wallSky)"/>
+            <g fill="#d8d7b7" opacity=".7"><circle cx="144" cy="127" r="1.5"/><circle cx="250" cy="74" r="1"/><circle cx="399" cy="169" r="1.2"/><circle cx="572" cy="90" r="1"/><circle cx="733" cy="143" r="1.4"/><circle cx="962" cy="62" r="1"/><circle cx="1130" cy="126" r="1.4"/><circle cx="1350" cy="84" r="1"/><circle cx="1490" cy="174" r="1.4"/><circle cx="865" cy="208" r=".9"/><circle cx="329" cy="227" r="1"/><circle cx="1274" cy="251" r="1"/></g>
+            <circle cx="1190" cy="188" r="60" fill="url(#wallMoon)" opacity=".86"/><circle cx="1212" cy="176" r="58" fill="#21424a" opacity=".35"/>
+            <path d="M0 458 Q170 360 330 431T670 410T1020 430T1330 392T1600 420V900H0Z" fill="#294a48" opacity=".92"/>
+            <path d="M0 545 Q220 474 440 527T850 505T1230 533T1600 489V900H0Z" fill="#1c3a3a"/>
+            <path d="M0 596 Q180 544 390 570 Q628 599 840 577 Q1050 551 1290 582 Q1450 603 1600 566V760 Q1360 741 1180 766 Q890 802 640 770 Q340 732 0 785Z" fill="url(#wallWater)" opacity=".9"/>
+            <g fill="#163331" opacity=".94">
+              <path d="M0 646 72 441 142 646ZM73 675 159 420 245 675ZM198 662 278 475 359 662ZM1290 667 1373 429 1456 667ZM1400 658 1495 390 1590 658ZM1515 690 1575 483 1634 690Z"/>
+              <path d="M-45 744 38 486 122 744ZM292 720 361 527 430 720ZM1150 704 1221 482 1292 704ZM1010 706 1070 527 1131 706Z" fill="#203d38"/>
+            </g>
+            <g fill="#9aac86" opacity=".3"><path d="M0 800 Q250 760 510 802T1040 795T1600 785V900H0Z"/><path d="M90 683q120 7 219 0M533 655q172 10 307 1M1108 670q190 7 328-4" fill="none" stroke="#c3c69d" stroke-width="2"/></g>
+            <path d="M0 830 Q310 772 535 824T1040 837T1600 805V900H0Z" fill="#122c2b" opacity=".72"/>
+          </svg>
+          <div class="desktop-shade"></div>
+          <div class="icon-column" aria-label="Desktop applications">
+            <button class="desktop-icon" data-open-app="browser" title="Open Navigator">
+              <span class="app-glyph"><svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="browserIcon" x2="0" y2="1"><stop stop-color="#5d99a0"/><stop offset="1" stop-color="#28525d"/></linearGradient></defs><rect width="40" height="40" rx="5" fill="url(#browserIcon)"/><rect x="5" y="6" width="30" height="27" rx="2" fill="#e3e6d7"/><path d="M5 11h30" stroke="#476c68" stroke-width="3"/><circle cx="9" cy="8.5" r="1" fill="#d5a267"/><circle cx="13" cy="8.5" r="1" fill="#d5a267"/><circle cx="17" cy="8.5" r="1" fill="#d5a267"/><circle cx="20" cy="22" r="7" fill="#427e82"/><path d="M14 22h12M20 15q-4 7 0 14M20 15q4 7 0 14" fill="none" stroke="#e3e4ce" stroke-width="1"/></svg></span><span class="icon-caption">Navigator</span>
+            </button>
+            <button class="desktop-icon" data-open-app="photos" title="Open Photo Roll">
+              <span class="app-glyph"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="5" fill="#a65f43"/><rect x="4" y="5" width="32" height="30" rx="2" fill="#e7e3cf"/><circle cx="27" cy="13" r="4" fill="#d0a85f"/><path d="M5 29 15 18l6 6 5-4 9 10v4H5Z" fill="#6e8870"/><path d="m5 31 9-7 5 5 7-6 9 7v4H5Z" fill="#466a67"/></svg></span><span class="icon-caption">Photo Roll</span>
+            </button>
+            <button class="desktop-icon" data-open-app="maps" title="Open Field Maps">
+              <span class="app-glyph"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="5" fill="#7e8c5c"/><path d="M5 9 15 6l10 3 10-3v25l-10 3-10-3-10 3Z" fill="#e6e1c9"/><path d="m15 6 0 25M25 9v25" stroke="#a7a58a" stroke-width="1.5"/><path d="M20 12c-4 0-6 3-6 6 0 4 6 10 6 10s6-6 6-10c0-3-2-6-6-6Z" fill="#b6553b"/><circle cx="20" cy="18" r="2" fill="#f0e9cf"/></svg></span><span class="icon-caption">Field Maps</span>
+            </button>
+            <button class="desktop-icon" data-open-app="notes" title="Open Field Notes">
+              <span class="app-glyph"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="5" fill="#b69a50"/><path d="M9 5h25v31H9z" fill="#f0e9c8"/><path d="M9 5h5v31H9z" fill="#c0664c"/><path d="M17 14h13M17 20h13M17 26h10" stroke="#87947d" stroke-width="1.3"/><path d="M11 10h3M11 17h3M11 24h3M11 31h3" stroke="#f2dca0" stroke-width="1.3"/></svg></span><span class="icon-caption">Field Notes</span>
+            </button>
+          </div>
+          <!-- Browser: the live field board -->
+          <section class="app-window browser-window" id="browser-window" aria-label="Navigator browser">
+            <div class="titlebar" data-drag-handle>
+              <span class="title-icon">◉</span><span class="window-title">Navigator — Nightwatch Field Network</span>
+              <div class="window-controls"><button class="win-control" data-window-action="minimize" aria-label="Minimize">_</button><button class="win-control" data-window-action="maximize" aria-label="Maximize">□</button><button class="win-control close" data-window-action="close" aria-label="Close">×</button></div>
+            </div>
+            <div class="browser-toolbar">
+              <button class="nav-tool" id="browser-back" aria-label="Back">‹</button><button class="nav-tool" id="browser-forward" aria-label="Forward">›</button><button class="nav-tool" id="browser-reload" aria-label="Reload">↻</button>
+              <div class="address-bar"><span class="address-lock">▣</span><span class="address-url">http://nightwatch.local/field-board/cases/pfaenderw</span></div><button class="go-button">GO</button>
+            </div>
+            <div class="web-page">
+              <header class="site-head">
+                <div class="site-emblem"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M4 16c4-8 18-8 22 0-4 8-18 8-22 0Z" fill="none" stroke="#d8d9c3" stroke-width="1.4"/><circle cx="15" cy="16" r="4" fill="#c5a864"/><circle cx="15" cy="16" r="1.4" fill="#203f39"/><path d="M8 8 6 5m16 3 2-3M15 7V4" stroke="#d8d9c3" stroke-width="1.2"/></svg></div>
+                <div><div class="site-name">NIGHTWATCH <small>FIELD NETWORK</small></div><div class="site-tagline">A COMMUNITY INDEX OF THE UNEXPLAINED · EST. 1994</div></div>
+                <span class="site-head-spacer"></span>
+                <div class="online-box"><span class="online-led"></span>FIELD LINE: OPEN<br><strong>87</strong> LISTENERS TONIGHT</div>
+              </header>
+              <nav class="site-nav" aria-label="Nightwatch sections">
+                <button class="active" data-forum-view="thread">FIELD BOARD</button><button data-forum-view="archive">ARCHIVE</button><button data-open-app="photos">PHOTO ROLL</button><button data-open-app="maps">MAP INDEX</button><button class="mobile-report-button" id="report-open-mobile" disabled>REPORT · 0/3</button>
+              </nav>
+              <div class="forum-view" id="thread-view">
+                <div class="thread-grid">
+                  <main class="thread-main">
+                    <div class="case-kicker"><i class="case-dot"></i> ACTIVE CASE · NW-019 · PFÄNDER RIDGE / VORARLBERG</div>
+                    <div class="case-title-row"><h1 class="case-title">Something is ringing above Pfränder</h1><span class="unsolved-badge">UNSOLVED</span></div>
+                    <div class="case-subtitle">MOOSEGG / ALPENWILDPARK &nbsp;·&nbsp; 3 WITNESS REPORTS &nbsp;·&nbsp; LAST ACTIVITY 11:32 PM</div>
+                    <div class="thread-stats"><span><b class="stat-icon">◉</b> <strong>1,204</strong> reads</span><span><b class="stat-icon">↳</b> <strong>18</strong> replies</span><span><b class="stat-icon">⌁</b> listening since Oct 29</span></div>
+                    <div class="mission-strip"><span class="mission-mark">✳</span><div><strong>TONIGHT'S FIELD TASK</strong>Compare the witness pattern, the recovered exposure, and the survey bearings. File only what the evidence supports.</div></div>
+                    <article class="forum-post">
+                      <div class="avatar">M</div><div><div class="post-top"><span class="post-author">MorrowMoss</span><span class="post-rank">FIELD MEMBER · MOOSEGG</span><span class="post-time">11:08 PM</span></div><p class="post-text">Third night in a row. At <em>02:17</em> the sheep on the Moosegg pasture went quiet — all at once — then <em>two low chimes</em> rolled down from the upper meadow. My compass swung toward the wildlife park and stayed there. No herder. No wind.</p><div class="post-actions"><span>18 liked this</span><span>·</span><button class="text-action file-evidence" data-clue="witness">FILE WITNESS LOG</button></div></div>
+                    </article>
+                    <article class="forum-post">
+                      <div class="avatar rust">R</div><div><div class="post-top"><span class="post-author">RivetCounty</span><span class="post-rank">MAP ROOM · MEMBER SINCE '96</span><span class="post-time">11:19 PM</span></div><p class="post-text">Checked the 1978 forestry sheet. The upper meadow belongs to the <em>Alpenwildpark Pfränder</em> feeding ground, fenced and empty since the avalanche winter. The old survey columns cross right on it — above the Moosegg car park, below the Maldonahang.</p><div class="post-actions"><span>attached: PFAENDER_78.TIF</span><span>·</span><button class="text-action" data-open-app="maps">OPEN MAP INDEX</button></div></div>
+                    </article>
+                    <article class="forum-post">
+                      <div class="avatar blue">A</div><div><div class="post-top"><span class="post-author">AshesAtDawn</span><span class="post-rank">NIGHT MODERATOR</span><span class="post-time">11:32 PM</span></div><p class="post-text">Stop calling the lights a reflection — there is no water up there to reflect anything. Someone wiped the shared roll at 23:52. I pulled the last exposure out before it went. Recover it on your machine, develop what survived, and stay on the marked side of the fence.</p><div class="post-actions"><span>moderator note</span><span>·</span><button class="text-action" data-open-app="photos">OPEN PHOTO ROLL</button></div></div>
+                    </article>
+                  </main>
+                  <aside class="case-sidebar">
+                    <section class="side-card"><div class="side-card-head"><span>CASE EVIDENCE</span><span>NW-019</span></div><div class="side-card-body">
+                      <div class="progress-summary"><strong class="progress-number" id="progress-count">00/03</strong><span class="progress-caption">pieces of evidence<br>filed to your notebook</span></div><div class="progress-track"><span id="progress-fill"></span></div>
+                      <ul class="clue-list"><li class="clue-row" data-clue-row="witness"><span class="check">✓</span><span>Witness pattern</span></li><li class="clue-row" data-clue-row="photo"><span class="check">✓</span><span>Negative analysis</span></li><li class="clue-row" data-clue-row="route"><span class="check">✓</span><span>Survey intersection</span></li></ul>
+                      <button class="report-button" id="report-open" disabled>FILE FINAL REPORT</button>
+                    </div></section>
+                    <section class="side-card"><div class="side-card-head"><span>OPEN FIELD TOOLS</span></div><div class="side-card-body"><div class="app-shortcuts"><button class="shortcut" data-open-app="photos">▧ &nbsp;PHOTO ROLL</button><button class="shortcut" data-open-app="maps">⌖ &nbsp;MAP INDEX</button><button class="shortcut" data-open-app="notes" style="grid-column:1/-1">▤ &nbsp;FIELD NOTES</button></div></div></section>
+                    <section class="side-card"><div class="side-card-head"><span>MODERATOR'S NOTE</span></div><div class="side-card-body"><div class="side-note">“No one has ever heard a third chime. If you do, do not answer it.”</div></div></section>
+                  </aside>
+                </div>
+              </div>
+              <div class="forum-view hidden" id="archive-view">
+                <div class="archive-wrap"><div class="case-kicker"><i class="case-dot"></i> NIGHTWATCH DATABASE · LOCAL MIRROR</div><h2 class="archive-title">The field archive</h2><p class="archive-intro">Old reports, marginal notes, and threads that never quite went quiet.</p>
+                  <div class="archive-row"><span class="archive-id">NW-019</span><div><strong>Something is ringing above Pfränder</strong><small>PFÄNDER RIDGE · ACTIVE TONIGHT · 18 REPLIES</small></div><button class="archive-open" data-forum-view="thread">OPEN THREAD</button></div>
+                  <div class="archive-row"><span class="archive-id">NW-014</span><div><strong>The pale lanterns of Wren Cut</strong><small>BREGENZERWALD · 1996 · “LIGHTS WALK UPHILL”</small></div><span class="archive-status">UNRESOLVED</span></div>
+                  <div class="archive-row"><span class="archive-id">NW-006</span><div><strong>Three knocks under the Moosegg footbridge</strong><small>PFÄNDER RIDGE · 1978 · SCANNED FIELD SHEET</small></div><span class="archive-status">PARTIAL</span></div>
+                  <div class="archive-row"><span class="archive-id">NW-002</span><div><strong>Do not tune past 104.6 after rain</strong><small>REGIONAL RADIO LOG · 1994 · MODERATOR COPY</small></div><span class="archive-status">SEALED</span></div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <!-- Photo roll -->
+          <section class="app-window photos-window hidden" id="photos-window" aria-label="Photo Roll application">
+            <div class="titlebar" data-drag-handle><span class="title-icon">▧</span><span class="window-title">Photo Roll — PfaenderW / Empty Roll</span><div class="window-controls"><button class="win-control" data-window-action="minimize" aria-label="Minimize">_</button><button class="win-control" data-window-action="maximize" aria-label="Maximize">□</button><button class="win-control close" data-window-action="close" aria-label="Close">×</button></div></div>
+            <div class="photo-toolbar"><span>▣ &nbsp;ROLL 04</span><span>/</span><span>PFÄNDER NIGHT SURVEY</span><span class="photo-toolbar-spacer"></span><span id="roll-count"><i class="photo-led"></i>NO FRAMES IN ROLL</span></div>
+            <div class="photos-body">
+              <aside class="photo-albums">
+                <p class="album-heading">ALBUMS</p>
+                <button class="album-folder active"><span class="folder-glyph">▰</span>PfaenderW <span style="margin-left:auto;color:#a8b29d" id="album-count">0</span></button>
+                <button class="album-folder"><span class="folder-glyph">▱</span>Unsorted <span style="margin-left:auto;color:#8c9790">0</span></button>
+                <div class="photo-file-list" id="photo-file-list"><p class="album-heading">FRAMES</p><p class="roll-empty-line">— none —</p></div>
+                <div class="roll-log"><p class="album-heading">ROLL LOG</p>
+                  <p>21:40 &nbsp;ROLL 04 LOADED</p>
+                  <p>23:12 &nbsp;EXPOSURE · UPPER MEADOW</p>
+                  <p class="alert">23:52 &nbsp;1 FRAME REMOVED FROM ROLL</p>
+                </div>
+              </aside>
+              <main class="photo-stage">
+                <div class="photo-empty" id="photo-empty">
+                  <svg class="empty-strip" viewBox="0 0 240 64" aria-hidden="true"><rect x="1" y="12" width="238" height="40" rx="3" fill="none" stroke="#7d8a7c" stroke-width="1.4"/><g fill="#7d8a7c"><rect x="6" y="17" width="6" height="5" rx="1"/><rect x="6" y="26" width="6" height="5" rx="1"/><rect x="6" y="35" width="6" height="5" rx="1"/><rect x="6" y="44" width="6" height="5" rx="1"/><rect x="228" y="17" width="6" height="5" rx="1"/><rect x="228" y="26" width="6" height="5" rx="1"/><rect x="228" y="35" width="6" height="5" rx="1"/><rect x="228" y="44" width="6" height="5" rx="1"/></g><rect x="22" y="18" width="196" height="28" fill="#2c3733"/><path d="M104 36h16m-8-8v16" stroke="#67756a" stroke-width="1.6"/></svg>
+                  <h2 class="photo-empty-title">The roll is empty</h2>
+                  <p class="photo-empty-copy">Roll 04 held a single exposure from the meadow above Moosegg. At 23:52 it was pulled out of the roll — one hour after the chimes.</p>
+                  <button class="recover-button" id="recover-plate">⇩ &nbsp;RECOVER EXPOSURE</button>
+                  <p class="photo-empty-note">RECOVERY READS THE LAST WRITE ON THE FILM CACHE</p>
+                </div>
+                <div class="photo-viewer hidden" id="photo-viewer">
+                  <div class="photo-frame">
+                    <svg class="photo-art" id="photo-art" data-shot="0" viewBox="0 0 780 420" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Recovered, grainy night exposure of a fenced meadow above Moosegg with two amber lights hovering over the grass">
+                      <defs>
+                        <linearGradient id="plateSky" x2="0" y2="1"><stop stop-color="#08141a"/><stop offset=".55" stop-color="#122c2d"/><stop offset="1" stop-color="#2d3a31"/></linearGradient>
+                        <linearGradient id="plateField" x2="0" y2="1"><stop stop-color="#3b4835"/><stop offset=".55" stop-color="#273322"/><stop offset="1" stop-color="#131c17"/></linearGradient>
+                        <linearGradient id="plateFade" x2="0" y2="1"><stop stop-color="#0a1418" stop-opacity="0"/><stop offset=".7" stop-color="#0a1418" stop-opacity=".45"/><stop offset="1" stop-color="#050d10" stop-opacity=".9"/></linearGradient>
+                        <filter id="plateGrain"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="3" seed="7"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 .22"/></feComponentTransfer><feBlend in="SourceGraphic" mode="screen"/></filter>
+                        <filter id="plateGlow"><feGaussianBlur stdDeviation="6"/></filter>
+                        <filter id="plateBlur"><feGaussianBlur stdDeviation="1.6"/></filter>
+                        <radialGradient id="plateVignette" cx=".5" cy=".45" r=".78"><stop stop-color="#000" stop-opacity="0"/><stop offset=".7" stop-color="#000" stop-opacity=".28"/><stop offset="1" stop-color="#000" stop-opacity=".82"/></radialGradient>
+                      </defs>
+                      <rect width="780" height="420" fill="url(#plateSky)"/>
+                      <g fill="#c8d2b2" opacity=".38"><circle cx="88" cy="46" r="1.2"/><circle cx="196" cy="77" r=".9"/><circle cx="341" cy="39" r="1.1"/><circle cx="498" cy="66" r=".9"/><circle cx="622" cy="38" r="1.2"/><circle cx="712" cy="92" r=".8"/></g>
+                      <circle cx="646" cy="82" r="22" fill="#cfc9a4" opacity=".1" filter="url(#plateGlow)"/><circle cx="646" cy="82" r="6" fill="#cfc9a4" opacity=".28"/>
+                      <path d="M0 188 46 150 92 176 138 132 190 170 236 140 288 178 338 148 392 182 444 152 496 180 552 144 606 176 660 146 712 178 780 152V244H0Z" fill="#0e2023" opacity=".92" filter="url(#plateBlur)"/>
+                      <path d="M0 206 60 178 118 198 182 170 250 196 312 172 372 198 436 174 500 198 566 172 630 196 700 174 780 196V260H0Z" fill="#0a191c"/>
+                      <path d="M0 232 Q200 214 400 228T780 220V420H0Z" fill="url(#plateField)"/>
+                      <g stroke="#121c14" stroke-width="2" opacity=".85">
+                        <path d="M0 246q210-12 400-2t380 2"/>
+                        <path d="M120 232v46M300 228v50M470 228v50M650 226v52" stroke-width="2.4"/>
+                        <path d="M120 240h180M300 238h170M470 236h180" stroke-width="1.2" opacity=".6"/>
+                      </g>
+                      <g fill="#26301f" opacity=".9"><path d="M0 258 34 176 68 258ZM60 262 96 186 130 262ZM690 258 726 172 762 258ZM760 262 792 190 824 262Z"/></g>
+                      <g id="plate-orbs">
+                        <circle cx="356" cy="243" r="26" fill="#e0b364" opacity=".13" filter="url(#plateGlow)"/>
+                        <circle cx="356" cy="243" r="5.4" fill="#f2d489"/><circle cx="356" cy="243" r="11" fill="#e5c079" opacity=".18"/>
+                        <circle cx="398" cy="247" r="17" fill="#d9a95c" opacity=".11" filter="url(#plateGlow)"/>
+                        <circle cx="398" cy="247" r="3.4" fill="#e7c47e"/>
+                        <ellipse cx="376" cy="284" rx="66" ry="17" fill="#c8b071" opacity=".1"/>
+                      </g>
+                      <path d="M352 244q22 14 44 3" fill="none" stroke="#d6bd7e" stroke-width="1" opacity=".35"/>
+                      <path d="M556 250q10-30 22-38 10-7 20 2 12 11 16 36 2 22-32 24-28-2-26-24Z" fill="#0c1512" opacity=".55"/>
+                      <rect width="780" height="420" fill="url(#plateFade)"/>
+                      <rect width="780" height="420" fill="url(#plateVignette)"/>
+                      <rect width="780" height="420" fill="#d6d6b4" opacity=".14" filter="url(#plateGrain)"/>
+                      <g stroke="#e6e1c0" stroke-opacity=".09" stroke-width="1"><path d="M0 22h780M0 58h780M0 94h780M0 130h780M0 166h780M0 202h780M0 238h780M0 274h780M0 310h780M0 346h780M0 382h780"/></g>
+                      <rect x="13" y="13" width="754" height="394" fill="none" stroke="#e2dcbb" stroke-opacity=".16"/>
+                      <text x="27" y="388" fill="#c9c19a" font-family="Courier New" font-size="12" letter-spacing="1.6">PFAENDERW / PLATE 04</text>
+                      <text x="662" y="388" fill="#c3bb92" font-family="Courier New" font-size="13" letter-spacing="1.2">02:17:04</text>
+                      <text x="27" y="34" fill="#b9a978" font-family="Courier New" font-size="9" letter-spacing="2.2">RECOVERED · PARTIAL</text>
+                    </svg>
+                  </div>
+                  <div class="photo-caption"><strong id="photo-name">PLATE_04.NEG</strong><span id="photo-caption-text">UPPER MEADOW / 02:17</span><span>35MM · ISO 400</span></div>
+                  <button class="develop-stage-button file-evidence" data-clue="photo">✦ &nbsp;DEVELOP PLATE</button>
+                  <div class="photo-strip"><button class="strip-shot active" data-shot="0" aria-label="Recovered plate"><span class="strip-preview"></span></button></div>
+                </div>
+              </main>
+              <aside class="photo-inspector">
+                <div class="inspector-kicker">NEGATIVE DETAILS</div>
+                <h2 class="inspector-title" id="inspector-title">No plate</h2>
+                <div class="inspector-sub" id="inspector-sub">ROLL 04 / 0 FRAMES</div>
+                <div class="metadata"><div>EXPOSURE<strong id="inspector-exposure">—</strong></div><div>TIME<strong id="inspector-time">—</strong></div><div>LOCATION<strong id="inspector-location">—</strong></div><div>WEATHER<strong id="inspector-weather">—</strong></div></div>
+                <p class="inspector-copy" id="inspector-copy">Nothing to develop. The roll was emptied at 23:52.</p>
+                <button class="develop-button file-evidence" data-clue="photo" id="develop-button" disabled>✦ &nbsp;DEVELOP PLATE</button>
+                <div class="negative-result hidden" id="negative-result">Two lights, one exposure, no lamp post, no reflection. They hang over the fenced pasture — inside the wildlife park.</div>
+              </aside>
+            </div>
+          </section>
+          <!-- Field map -->
+          <section class="app-window maps-window hidden" id="maps-window" aria-label="Field Maps application">
+            <div class="titlebar" data-drag-handle><span class="title-icon">⌖</span><span class="window-title">Field Maps — PfaenderW / Bregenz Forest</span><div class="window-controls"><button class="win-control" data-window-action="minimize" aria-label="Minimize">_</button><button class="win-control" data-window-action="maximize" aria-label="Maximize">□</button><button class="win-control close" data-window-action="close" aria-label="Close">×</button></div></div>
+            <div class="map-toolbar"><button class="map-tool active" data-layer="reports">☷ WITNESS REPORTS</button><button class="map-tool active" data-layer="tracks">⌁ FOREST TRACKS</button><span class="map-coord">PFÄNDER / BREGENZ ↑ &nbsp; · &nbsp; 1:24,000</span></div>
+            <div class="maps-body">
+              <div class="map-canvas">
+                <svg class="topo-map" viewBox="0 0 1000 625" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map of the Pfänder above Bregenz with the Alpenwildpark, the Moosegg car park, Gasthaus Pfränderdohle and three witness pins"><defs><clipPath id="mapClip"><rect width="1000" height="625"/></clipPath><pattern id="mapGrid" width="62.5" height="62.5" patternUnits="userSpaceOnUse"><path d="M62.5 0H0V62.5" fill="none" stroke="#b9d6c2" stroke-width=".8" opacity=".4"/></pattern><pattern id="canopy" width="30" height="26" patternUnits="userSpaceOnUse"><path d="M8 6 11.4 13 4.6 13Z" fill="#c4dfcd" opacity=".55"/><path d="M21 16 24.4 23 17.6 23Z" fill="#cfe7d7" opacity=".5"/></pattern></defs><g clip-path="url(#mapClip)"><rect width="1000" height="625" fill="#d7ecdc"/><rect width="1000" height="625" fill="url(#canopy)" opacity=".85"/><path d="M560.0 -30.0C582.3 -36.7 666.7 -3.3 720.0 0.0C773.3 3.3 830.0 -16.7 880.0 -10.0C930.0 -3.3 996.7 3.3 1020.0 40.0C1043.3 76.7 1040.0 182.3 1020.0 210.0C1000.0 237.7 936.7 210.3 900.0 206.0C863.3 201.7 832.3 190.0 800.0 184.0C767.7 178.0 734.3 182.3 706.0 170.0C677.7 157.7 650.0 131.7 630.0 110.0C610.0 88.3 597.7 63.3 586.0 40.0C574.3 16.7 537.7 -23.3 560.0 -30.0Z" fill="#c8e2d1"/><path d="M-30.0 120.0C-12.0 82.3 43.7 99.3 78.0 104.0C112.3 108.7 150.3 126.7 176.0 148.0C201.7 169.3 227.0 203.7 232.0 232.0C237.0 260.3 227.3 299.0 206.0 318.0C184.7 337.0 143.3 344.0 104.0 346.0C64.7 348.0 -7.7 367.7 -30.0 330.0C-52.3 292.3 -48.0 157.7 -30.0 120.0Z" fill="#c8e2d1"/><path d="M320.0 470.0C346.0 454.3 403.0 442.0 444.0 442.0C485.0 442.0 531.7 457.0 566.0 470.0C600.3 483.0 629.3 494.2 650.0 520.0C670.7 545.8 748.3 607.5 690.0 625.0C631.7 642.5 367.0 639.8 300.0 625.0C233.0 610.2 284.7 561.8 288.0 536.0C291.3 510.2 294.0 485.7 320.0 470.0Z" fill="#c8e2d1"/><path d="M830.0 340.0C849.7 331.0 904.3 349.3 936.0 356.0C967.7 362.7 1006.0 346.0 1020.0 380.0C1034.0 414.0 1036.7 530.0 1020.0 560.0C1003.3 590.0 949.0 570.7 920.0 560.0C891.0 549.3 863.0 521.0 846.0 496.0C829.0 471.0 820.7 436.0 818.0 410.0C815.3 384.0 810.3 349.0 830.0 340.0Z" fill="#c8e2d1"/><path d="M300.0 -30.0C318.0 -41.0 375.7 -12.3 404.0 -4.0C432.3 4.3 463.3 7.0 470.0 20.0C476.7 33.0 462.3 62.0 444.0 74.0C425.7 86.0 384.7 94.0 360.0 92.0C335.3 90.0 306.0 82.3 296.0 62.0C286.0 41.7 282.0 -19.0 300.0 -30.0Z" fill="#c8e2d1"/><path d="M-30.0 380.0C-9.0 343.2 59.3 392.0 96.0 404.0C132.7 416.0 164.3 428.0 190.0 452.0C215.7 476.0 250.0 519.2 250.0 548.0C250.0 576.8 236.7 612.2 190.0 625.0C143.3 637.8 6.7 665.8 -30.0 625.0C-66.7 584.2 -51.0 416.8 -30.0 380.0Z" fill="#c8e2d1"/><path d="M560.0 -30.0C582.3 -36.7 666.7 -3.3 720.0 0.0C773.3 3.3 830.0 -16.7 880.0 -10.0C930.0 -3.3 996.7 3.3 1020.0 40.0C1043.3 76.7 1040.0 182.3 1020.0 210.0C1000.0 237.7 936.7 210.3 900.0 206.0C863.3 201.7 832.3 190.0 800.0 184.0C767.7 178.0 734.3 182.3 706.0 170.0C677.7 157.7 650.0 131.7 630.0 110.0C610.0 88.3 597.7 63.3 586.0 40.0C574.3 16.7 537.7 -23.3 560.0 -30.0Z" fill="none" stroke="#bfdccb" stroke-width="1" opacity=".8"/><path d="M-30.0 120.0C-12.0 82.3 43.7 99.3 78.0 104.0C112.3 108.7 150.3 126.7 176.0 148.0C201.7 169.3 227.0 203.7 232.0 232.0C237.0 260.3 227.3 299.0 206.0 318.0C184.7 337.0 143.3 344.0 104.0 346.0C64.7 348.0 -7.7 367.7 -30.0 330.0C-52.3 292.3 -48.0 157.7 -30.0 120.0Z" fill="none" stroke="#bfdccb" stroke-width="1" opacity=".8"/><path d="M320.0 470.0C346.0 454.3 403.0 442.0 444.0 442.0C485.0 442.0 531.7 457.0 566.0 470.0C600.3 483.0 629.3 494.2 650.0 520.0C670.7 545.8 748.3 607.5 690.0 625.0C631.7 642.5 367.0 639.8 300.0 625.0C233.0 610.2 284.7 561.8 288.0 536.0C291.3 510.2 294.0 485.7 320.0 470.0Z" fill="none" stroke="#bfdccb" stroke-width="1" opacity=".8"/><path d="M830.0 340.0C849.7 331.0 904.3 349.3 936.0 356.0C967.7 362.7 1006.0 346.0 1020.0 380.0C1034.0 414.0 1036.7 530.0 1020.0 560.0C1003.3 590.0 949.0 570.7 920.0 560.0C891.0 549.3 863.0 521.0 846.0 496.0C829.0 471.0 820.7 436.0 818.0 410.0C815.3 384.0 810.3 349.0 830.0 340.0Z" fill="none" stroke="#bfdccb" stroke-width="1" opacity=".8"/><path d="M300.0 -30.0C318.0 -41.0 375.7 -12.3 404.0 -4.0C432.3 4.3 463.3 7.0 470.0 20.0C476.7 33.0 462.3 62.0 444.0 74.0C425.7 86.0 384.7 94.0 360.0 92.0C335.3 90.0 306.0 82.3 296.0 62.0C286.0 41.7 282.0 -19.0 300.0 -30.0Z" fill="none" stroke="#bfdccb" stroke-width="1" opacity=".8"/><path d="M-30.0 380.0C-9.0 343.2 59.3 392.0 96.0 404.0C132.7 416.0 164.3 428.0 190.0 452.0C215.7 476.0 250.0 519.2 250.0 548.0C250.0 576.8 236.7 612.2 190.0 625.0C143.3 637.8 6.7 665.8 -30.0 625.0C-66.7 584.2 -51.0 416.8 -30.0 380.0Z" fill="none" stroke="#bfdccb" stroke-width="1" opacity=".8"/><path d="M232.0 318.0C250.3 308.7 298.3 296.7 330.0 296.0C361.7 295.3 398.0 305.0 422.0 314.0C446.0 323.0 468.3 335.7 474.0 350.0C479.7 364.3 475.7 389.3 456.0 400.0C436.3 410.7 387.7 415.0 356.0 414.0C324.3 413.0 288.7 404.3 266.0 394.0C243.3 383.7 225.7 364.7 220.0 352.0C214.3 339.3 213.7 327.3 232.0 318.0Z" fill="#eef8ef" stroke="#c6e0ce" stroke-width="1.1"/><path d="M498.0 352.0C514.3 343.0 564.3 346.3 592.0 350.0C619.7 353.7 645.3 363.3 664.0 374.0C682.7 384.7 704.7 402.3 704.0 414.0C703.3 425.7 684.3 440.0 660.0 444.0C635.7 448.0 585.7 444.7 558.0 438.0C530.3 431.3 504.0 418.3 494.0 404.0C484.0 389.7 481.7 361.0 498.0 352.0Z" fill="#eef8ef" stroke="#c6e0ce" stroke-width="1.1"/><path d="M236.0 536.0C252.3 524.0 291.7 513.0 318.0 516.0C344.3 519.0 376.0 537.7 394.0 554.0C412.0 570.3 433.0 601.3 426.0 614.0C419.0 626.7 380.0 627.3 352.0 630.0C324.0 632.7 280.0 637.0 258.0 630.0C236.0 623.0 223.7 603.7 220.0 588.0C216.3 572.3 219.7 548.0 236.0 536.0Z" fill="#eef8ef" stroke="#c6e0ce" stroke-width="1.1"/><path d="M792.0 300.0C809.3 291.0 865.3 309.3 890.0 324.0C914.7 338.7 937.7 367.3 940.0 388.0C942.3 408.7 922.3 440.3 904.0 448.0C885.7 455.7 849.7 445.7 830.0 434.0C810.3 422.3 792.3 400.3 786.0 378.0C779.7 355.7 774.7 309.0 792.0 300.0Z" fill="#eef8ef" stroke="#c6e0ce" stroke-width="1.1"/><path d="M492.0 104.0C506.7 95.3 543.0 104.0 562.0 114.0C581.0 124.0 603.0 147.7 606.0 164.0C609.0 180.3 596.7 204.0 580.0 212.0C563.3 220.0 523.7 219.7 506.0 212.0C488.3 204.3 476.3 184.0 474.0 166.0C471.7 148.0 477.3 112.7 492.0 104.0Z" fill="#eef8ef" stroke="#c6e0ce" stroke-width="1.1"/><path d="M56.0 348.0C75.0 336.7 125.0 333.0 152.0 336.0C179.0 339.0 208.7 353.0 218.0 366.0C227.3 379.0 225.0 403.7 208.0 414.0C191.0 424.3 144.3 429.7 116.0 428.0C87.7 426.3 48.0 417.3 38.0 404.0C28.0 390.7 37.0 359.3 56.0 348.0Z" fill="#eef8ef" stroke="#c6e0ce" stroke-width="1.1"/><path d="M496.0 190.0C507.0 179.7 539.3 179.0 556.0 182.0C572.7 185.0 590.3 196.3 596.0 208.0C601.7 219.7 600.0 242.0 590.0 252.0C580.0 262.0 552.7 269.3 536.0 268.0C519.3 266.7 496.7 257.0 490.0 244.0C483.3 231.0 485.0 200.3 496.0 190.0Z" fill="#eef8ef" stroke="#c6e0ce" stroke-width="1.1"/><path d="M640.0 452.0C656.7 444.7 692.3 450.0 714.0 458.0C735.7 466.0 761.3 482.0 770.0 500.0C778.7 518.0 777.7 551.0 766.0 566.0C754.3 581.0 721.7 591.7 700.0 590.0C678.3 588.3 650.3 570.7 636.0 556.0C621.7 541.3 613.3 519.3 614.0 502.0C614.7 484.7 623.3 459.3 640.0 452.0Z" fill="#eef8ef" stroke="#c6e0ce" stroke-width="1.1"/><path d="M300.0 120.0C311.3 111.7 342.7 108.7 360.0 112.0C377.3 115.3 398.0 128.3 404.0 140.0C410.0 151.7 407.3 173.3 396.0 182.0C384.7 190.7 353.3 195.3 336.0 192.0C318.7 188.7 298.0 174.0 292.0 162.0C286.0 150.0 288.7 128.3 300.0 120.0Z" fill="#eef8ef" stroke="#c6e0ce" stroke-width="1.1"/><path d="M700.0 40.0C715.7 28.0 771.3 27.7 800.0 32.0C828.7 36.3 861.3 51.7 872.0 66.0C882.7 80.3 878.7 107.0 864.0 118.0C849.3 129.0 810.3 134.3 784.0 132.0C757.7 129.7 720.0 119.3 706.0 104.0C692.0 88.7 684.3 52.0 700.0 40.0Z" fill="#eef8ef" stroke="#c6e0ce" stroke-width="1.1"/><path d="M258.0 332.0C271.3 326.7 308.3 321.3 330.0 322.0C351.7 322.7 374.7 328.3 388.0 336.0C401.3 343.7 416.0 359.7 410.0 368.0C404.0 376.3 373.7 384.7 352.0 386.0C330.3 387.3 297.0 381.3 280.0 376.0C263.0 370.7 253.7 361.3 250.0 354.0C246.3 346.7 244.7 337.3 258.0 332.0Z" fill="#f6fcf4" stroke="#d3e8d8" stroke-width=".9"/><path d="M516.0 368.0C527.3 362.7 562.7 364.7 582.0 368.0C601.3 371.3 623.0 380.3 632.0 388.0C641.0 395.7 646.3 408.7 636.0 414.0C625.7 419.3 590.3 422.3 570.0 420.0C549.7 417.7 523.0 408.7 514.0 400.0C505.0 391.3 504.7 373.3 516.0 368.0Z" fill="#f6fcf4" stroke="#d3e8d8" stroke-width=".9"/><path d="M268.0 556.0C278.7 548.3 312.3 542.0 330.0 544.0C347.7 546.0 365.7 558.3 374.0 568.0C382.3 577.7 389.3 595.0 380.0 602.0C370.7 609.0 337.0 612.0 318.0 610.0C299.0 608.0 274.3 599.0 266.0 590.0C257.7 581.0 257.3 563.7 268.0 556.0Z" fill="#f6fcf4" stroke="#d3e8d8" stroke-width=".9"/><path d="M510.0 200.0C518.0 195.0 536.0 194.0 546.0 196.0C556.0 198.0 567.0 204.7 570.0 212.0C573.0 219.3 571.7 234.3 564.0 240.0C556.3 245.7 535.0 248.3 524.0 246.0C513.0 243.7 500.3 233.7 498.0 226.0C495.7 218.3 502.0 205.0 510.0 200.0Z" fill="#f6fcf4" stroke="#d3e8d8" stroke-width=".9"/><g stroke="#cfe4d3" stroke-width="1" opacity=".9"><path d="M268 340q60 -4 120 2" fill="none"/><path d="M268 349q60 -4 120 2" fill="none"/><path d="M268 358q60 -4 120 2" fill="none"/><path d="M268 367q60 -4 120 2" fill="none"/><path d="M268 376q60 -4 120 2" fill="none"/></g><path d="M424.0 -10.0C428.7 2.7 443.7 41.3 452.0 66.0C460.3 90.7 473.3 114.3 474.0 138.0C474.7 161.7 456.3 184.7 456.0 208.0C455.7 231.3 464.3 256.0 472.0 278.0C479.7 300.0 490.3 319.7 502.0 340.0C513.7 360.3 528.0 381.0 542.0 400.0C556.0 419.0 573.0 434.0 586.0 454.0C599.0 474.0 607.3 500.7 620.0 520.0C632.7 539.3 648.7 550.7 662.0 570.0C675.3 589.3 693.7 625.0 700.0 636.0" fill="none" stroke="#c6e8f2" stroke-width="7.3999999999999995" stroke-linecap="round" stroke-linejoin="round"/><path d="M424.0 -10.0C428.7 2.7 443.7 41.3 452.0 66.0C460.3 90.7 473.3 114.3 474.0 138.0C474.7 161.7 456.3 184.7 456.0 208.0C455.7 231.3 464.3 256.0 472.0 278.0C479.7 300.0 490.3 319.7 502.0 340.0C513.7 360.3 528.0 381.0 542.0 400.0C556.0 419.0 573.0 434.0 586.0 454.0C599.0 474.0 607.3 500.7 620.0 520.0C632.7 539.3 648.7 550.7 662.0 570.0C675.3 589.3 693.7 625.0 700.0 636.0" fill="none" stroke="#93d2e9" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M424.0 -10.0C428.7 2.7 443.7 41.3 452.0 66.0C460.3 90.7 473.3 114.3 474.0 138.0C474.7 161.7 456.3 184.7 456.0 208.0C455.7 231.3 464.3 256.0 472.0 278.0C479.7 300.0 490.3 319.7 502.0 340.0C513.7 360.3 528.0 381.0 542.0 400.0C556.0 419.0 573.0 434.0 586.0 454.0C599.0 474.0 607.3 500.7 620.0 520.0C632.7 539.3 648.7 550.7 662.0 570.0C675.3 589.3 693.7 625.0 700.0 636.0" fill="none" stroke="#ace0f1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M556.0 -12.0C563.0 1.0 584.0 41.3 598.0 66.0C612.0 90.7 626.0 114.0 640.0 136.0C654.0 158.0 668.3 179.0 682.0 198.0C695.7 217.0 708.7 232.7 722.0 250.0C735.3 267.3 749.0 283.7 762.0 302.0C775.0 320.3 788.3 338.7 800.0 360.0C811.7 381.3 821.7 406.7 832.0 430.0C842.3 453.3 852.0 476.7 862.0 500.0C872.0 523.3 882.7 547.3 892.0 570.0C901.3 592.7 913.7 625.0 918.0 636.0" fill="none" stroke="#c6e8f2" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M556.0 -12.0C563.0 1.0 584.0 41.3 598.0 66.0C612.0 90.7 626.0 114.0 640.0 136.0C654.0 158.0 668.3 179.0 682.0 198.0C695.7 217.0 708.7 232.7 722.0 250.0C735.3 267.3 749.0 283.7 762.0 302.0C775.0 320.3 788.3 338.7 800.0 360.0C811.7 381.3 821.7 406.7 832.0 430.0C842.3 453.3 852.0 476.7 862.0 500.0C872.0 523.3 882.7 547.3 892.0 570.0C901.3 592.7 913.7 625.0 918.0 636.0" fill="none" stroke="#93d2e9" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M556.0 -12.0C563.0 1.0 584.0 41.3 598.0 66.0C612.0 90.7 626.0 114.0 640.0 136.0C654.0 158.0 668.3 179.0 682.0 198.0C695.7 217.0 708.7 232.7 722.0 250.0C735.3 267.3 749.0 283.7 762.0 302.0C775.0 320.3 788.3 338.7 800.0 360.0C811.7 381.3 821.7 406.7 832.0 430.0C842.3 453.3 852.0 476.7 862.0 500.0C872.0 523.3 882.7 547.3 892.0 570.0C901.3 592.7 913.7 625.0 918.0 636.0" fill="none" stroke="#ace0f1" stroke-width="3.0" stroke-linecap="round" stroke-linejoin="round"/><path d="M-12.0 462.0C-0.3 468.0 37.7 485.0 58.0 498.0C78.3 511.0 94.7 524.7 110.0 540.0C125.3 555.3 138.7 574.0 150.0 590.0C161.3 606.0 173.3 628.3 178.0 636.0" fill="none" stroke="#c6e8f2" stroke-width="6.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M-12.0 462.0C-0.3 468.0 37.7 485.0 58.0 498.0C78.3 511.0 94.7 524.7 110.0 540.0C125.3 555.3 138.7 574.0 150.0 590.0C161.3 606.0 173.3 628.3 178.0 636.0" fill="none" stroke="#93d2e9" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-12.0 462.0C-0.3 468.0 37.7 485.0 58.0 498.0C78.3 511.0 94.7 524.7 110.0 540.0C125.3 555.3 138.7 574.0 150.0 590.0C161.3 606.0 173.3 628.3 178.0 636.0" fill="none" stroke="#ace0f1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M700.0 176.0C704.7 184.7 718.7 215.3 728.0 228.0C737.3 240.7 746.0 245.3 756.0 252.0C766.0 258.7 782.7 265.3 788.0 268.0" fill="none" stroke="#c6e8f2" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M700.0 176.0C704.7 184.7 718.7 215.3 728.0 228.0C737.3 240.7 746.0 245.3 756.0 252.0C766.0 258.7 782.7 265.3 788.0 268.0" fill="none" stroke="#93d2e9" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M700.0 176.0C704.7 184.7 718.7 215.3 728.0 228.0C737.3 240.7 746.0 245.3 756.0 252.0C766.0 258.7 782.7 265.3 788.0 268.0" fill="none" stroke="#ace0f1" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M330.0 148.0C333.3 160.0 340.3 198.3 350.0 220.0C359.7 241.7 376.7 259.7 388.0 278.0C399.3 296.3 408.0 312.7 418.0 330.0C428.0 347.3 438.7 365.3 448.0 382.0C457.3 398.7 469.7 422.0 474.0 430.0" fill="none" stroke="#c6e8f2" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M330.0 148.0C333.3 160.0 340.3 198.3 350.0 220.0C359.7 241.7 376.7 259.7 388.0 278.0C399.3 296.3 408.0 312.7 418.0 330.0C428.0 347.3 438.7 365.3 448.0 382.0C457.3 398.7 469.7 422.0 474.0 430.0" fill="none" stroke="#93d2e9" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M330.0 148.0C333.3 160.0 340.3 198.3 350.0 220.0C359.7 241.7 376.7 259.7 388.0 278.0C399.3 296.3 408.0 312.7 418.0 330.0C428.0 347.3 438.7 365.3 448.0 382.0C457.3 398.7 469.7 422.0 474.0 430.0" fill="none" stroke="#ace0f1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M760.0 300.0C757.0 306.3 747.0 324.3 742.0 338.0C737.0 351.7 732.0 374.7 730.0 382.0" fill="none" stroke="#c6e8f2" stroke-width="5.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M760.0 300.0C757.0 306.3 747.0 324.3 742.0 338.0C737.0 351.7 732.0 374.7 730.0 382.0" fill="none" stroke="#93d2e9" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M760.0 300.0C757.0 306.3 747.0 324.3 742.0 338.0C737.0 351.7 732.0 374.7 730.0 382.0" fill="none" stroke="#ace0f1" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M504.0 340.0C501.0 347.3 492.0 370.7 486.0 384.0C480.0 397.3 471.0 414.0 468.0 420.0" fill="none" stroke="#c6e8f2" stroke-width="4.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M504.0 340.0C501.0 347.3 492.0 370.7 486.0 384.0C480.0 397.3 471.0 414.0 468.0 420.0" fill="none" stroke="#93d2e9" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M504.0 340.0C501.0 347.3 492.0 370.7 486.0 384.0C480.0 397.3 471.0 414.0 468.0 420.0" fill="none" stroke="#ace0f1" stroke-width="1.0" stroke-linecap="round" stroke-linejoin="round"/><path d="M240.0 420.0C237.7 428.3 227.3 453.3 226.0 470.0C224.7 486.7 231.0 511.7 232.0 520.0" fill="none" stroke="#c6e8f2" stroke-width="4.699999999999999" stroke-linecap="round" stroke-linejoin="round"/><path d="M240.0 420.0C237.7 428.3 227.3 453.3 226.0 470.0C224.7 486.7 231.0 511.7 232.0 520.0" fill="none" stroke="#93d2e9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M240.0 420.0C237.7 428.3 227.3 453.3 226.0 470.0C224.7 486.7 231.0 511.7 232.0 520.0" fill="none" stroke="#ace0f1" stroke-width="1.0" stroke-linecap="round" stroke-linejoin="round"/><path d="M88.0 636.0C95.3 621.3 116.0 575.7 132.0 548.0C148.0 520.3 167.7 496.0 184.0 470.0C200.3 444.0 217.3 417.3 230.0 392.0C242.7 366.7 251.7 343.0 260.0 318.0C268.3 293.0 274.7 269.7 280.0 242.0C285.3 214.3 289.0 180.7 292.0 152.0C295.0 123.3 297.3 97.3 298.0 70.0C298.7 42.7 296.3 1.7 296.0 -12.0" fill="none" stroke="#bec7d1" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M88.0 636.0C95.3 621.3 116.0 575.7 132.0 548.0C148.0 520.3 167.7 496.0 184.0 470.0C200.3 444.0 217.3 417.3 230.0 392.0C242.7 366.7 251.7 343.0 260.0 318.0C268.3 293.0 274.7 269.7 280.0 242.0C285.3 214.3 289.0 180.7 292.0 152.0C295.0 123.3 297.3 97.3 298.0 70.0C298.7 42.7 296.3 1.7 296.0 -12.0" fill="none" stroke="#e8ecf0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/><path d="M88.0 636.0C95.3 621.3 116.0 575.7 132.0 548.0C148.0 520.3 167.7 496.0 184.0 470.0C200.3 444.0 217.3 417.3 230.0 392.0C242.7 366.7 251.7 343.0 260.0 318.0C268.3 293.0 274.7 269.7 280.0 242.0C285.3 214.3 289.0 180.7 292.0 152.0C295.0 123.3 297.3 97.3 298.0 70.0C298.7 42.7 296.3 1.7 296.0 -12.0" fill="none" stroke="#f3f6f8" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M88.0 636.0C95.3 621.3 116.0 575.7 132.0 548.0C148.0 520.3 167.7 496.0 184.0 470.0C200.3 444.0 217.3 417.3 230.0 392.0C242.7 366.7 251.7 343.0 260.0 318.0C268.3 293.0 274.7 269.7 280.0 242.0C285.3 214.3 289.0 180.7 292.0 152.0C295.0 123.3 297.3 97.3 298.0 70.0C298.7 42.7 296.3 1.7 296.0 -12.0" fill="none" stroke="#b6c0cb" stroke-width="1.5" stroke-dasharray="9 9"/><path d="M238.0 388.0C248.3 388.7 279.7 392.0 300.0 392.0C320.3 392.0 338.3 388.0 360.0 388.0C381.7 388.0 403.3 389.3 430.0 392.0C456.7 394.7 491.7 401.0 520.0 404.0C548.3 407.0 570.0 406.7 600.0 410.0C630.0 413.3 663.3 417.0 700.0 424.0C736.7 431.0 780.7 443.0 820.0 452.0C859.3 461.0 904.3 471.3 936.0 478.0C967.7 484.7 997.7 489.7 1010.0 492.0" fill="none" stroke="#d0d4ce" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M238.0 388.0C248.3 388.7 279.7 392.0 300.0 392.0C320.3 392.0 338.3 388.0 360.0 388.0C381.7 388.0 403.3 389.3 430.0 392.0C456.7 394.7 491.7 401.0 520.0 404.0C548.3 407.0 570.0 406.7 600.0 410.0C630.0 413.3 663.3 417.0 700.0 424.0C736.7 431.0 780.7 443.0 820.0 452.0C859.3 461.0 904.3 471.3 936.0 478.0C967.7 484.7 997.7 489.7 1010.0 492.0" fill="none" stroke="#ffffff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M336.0 390.0C338.7 380.3 344.7 351.7 352.0 332.0C359.3 312.3 368.7 291.3 380.0 272.0C391.3 252.7 405.0 230.3 420.0 216.0C435.0 201.7 451.7 194.0 470.0 186.0C488.3 178.0 508.3 172.7 530.0 168.0C551.7 163.3 575.0 160.2 600.0 158.0C625.0 155.8 653.3 156.3 680.0 155.0C706.7 153.7 730.0 152.2 760.0 150.0C790.0 147.8 818.3 147.0 860.0 142.0C901.7 137.0 985.0 123.7 1010.0 120.0" fill="none" stroke="#d0d4ce" stroke-width="6.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M336.0 390.0C338.7 380.3 344.7 351.7 352.0 332.0C359.3 312.3 368.7 291.3 380.0 272.0C391.3 252.7 405.0 230.3 420.0 216.0C435.0 201.7 451.7 194.0 470.0 186.0C488.3 178.0 508.3 172.7 530.0 168.0C551.7 163.3 575.0 160.2 600.0 158.0C625.0 155.8 653.3 156.3 680.0 155.0C706.7 153.7 730.0 152.2 760.0 150.0C790.0 147.8 818.3 147.0 860.0 142.0C901.7 137.0 985.0 123.7 1010.0 120.0" fill="none" stroke="#ffffff" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M430.0 398.0C433.3 410.0 443.7 448.0 450.0 470.0C456.3 492.0 462.3 515.7 468.0 530.0C473.7 544.3 478.7 545.0 484.0 556.0C489.3 567.0 487.3 585.0 500.0 596.0C512.7 607.0 540.0 615.3 560.0 622.0C580.0 628.7 610.0 633.7 620.0 636.0" fill="none" stroke="#d0d4ce" stroke-width="6.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M430.0 398.0C433.3 410.0 443.7 448.0 450.0 470.0C456.3 492.0 462.3 515.7 468.0 530.0C473.7 544.3 478.7 545.0 484.0 556.0C489.3 567.0 487.3 585.0 500.0 596.0C512.7 607.0 540.0 615.3 560.0 622.0C580.0 628.7 610.0 633.7 620.0 636.0" fill="none" stroke="#ffffff" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M520.0 404.0C523.3 395.3 533.3 367.3 540.0 352.0C546.7 336.7 554.0 324.3 560.0 312.0C566.0 299.7 574.7 290.7 576.0 278.0C577.3 265.3 569.3 243.0 568.0 236.0" fill="none" stroke="#d2d5cf" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M520.0 404.0C523.3 395.3 533.3 367.3 540.0 352.0C546.7 336.7 554.0 324.3 560.0 312.0C566.0 299.7 574.7 290.7 576.0 278.0C577.3 265.3 569.3 243.0 568.0 236.0" fill="none" stroke="#ffffff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M184.0 470.0C178.3 463.0 159.0 442.7 150.0 428.0C141.0 413.3 135.0 398.3 130.0 382.0C125.0 365.7 125.7 346.0 120.0 330.0C114.3 314.0 100.0 293.3 96.0 286.0" fill="none" stroke="#d6d8d2" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M184.0 470.0C178.3 463.0 159.0 442.7 150.0 428.0C141.0 413.3 135.0 398.3 130.0 382.0C125.0 365.7 125.7 346.0 120.0 330.0C114.3 314.0 100.0 293.3 96.0 286.0" fill="none" stroke="#fdfdfb" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M600.0 410.0C610.0 408.0 639.3 399.0 660.0 398.0C680.7 397.0 700.7 405.7 724.0 404.0C747.3 402.3 787.3 390.7 800.0 388.0" fill="none" stroke="#d6d8d2" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M600.0 410.0C610.0 408.0 639.3 399.0 660.0 398.0C680.7 397.0 700.7 405.7 724.0 404.0C747.3 402.3 787.3 390.7 800.0 388.0" fill="none" stroke="#fdfdfb" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M468.0 530.0C476.7 527.3 503.7 520.0 520.0 514.0C536.3 508.0 550.7 501.0 566.0 494.0C581.3 487.0 604.3 475.7 612.0 472.0" fill="none" stroke="#d6d8d2" stroke-width="4.0" stroke-linecap="round" stroke-linejoin="round"/><path d="M468.0 530.0C476.7 527.3 503.7 520.0 520.0 514.0C536.3 508.0 550.7 501.0 566.0 494.0C581.3 487.0 604.3 475.7 612.0 472.0" fill="none" stroke="#fdfdfb" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><g stroke="#e2e4df" stroke-width="2.4" fill="none"><path d="M300.0 392.0C301.7 396.7 304.7 413.3 310.0 420.0C315.3 426.7 328.3 430.0 332.0 432.0"/><path d="M560.0 600.0C564.3 597.3 577.3 585.7 586.0 584.0C594.7 582.3 607.7 589.0 612.0 590.0"/><path d="M292.0 152.0C287.7 154.7 273.0 160.7 266.0 168.0C259.0 175.3 252.7 191.3 250.0 196.0"/><path d="M700.0 424.0C701.0 428.7 702.7 444.3 706.0 452.0C709.3 459.7 717.7 467.0 720.0 470.0"/></g><g class="trail-line"><path d="M600.0 410.0C607.7 402.3 632.3 381.3 646.0 364.0C659.7 346.7 673.0 325.7 682.0 306.0C691.0 286.3 697.0 256.0 700.0 246.0" fill="none" stroke="#cbb595" stroke-width="2.3" stroke-dasharray="7 5"/><path d="M300.0 388.0C297.7 378.7 286.0 349.0 286.0 332.0C286.0 315.0 292.7 299.7 300.0 286.0C307.3 272.3 325.0 256.0 330.0 250.0" fill="none" stroke="#cbb595" stroke-width="2.3" stroke-dasharray="7 5"/><path d="M486.0 556.0C491.7 549.3 506.7 527.7 520.0 516.0C533.3 504.3 551.0 493.7 566.0 486.0C581.0 478.3 602.7 472.7 610.0 470.0" fill="none" stroke="#cbb595" stroke-width="2.3" stroke-dasharray="7 5"/><path d="M756.0 450.0C763.3 442.7 786.3 421.7 800.0 406.0C813.7 390.3 831.7 364.3 838.0 356.0" fill="none" stroke="#cbb595" stroke-width="2.3" stroke-dasharray="7 5"/><path d="M238.0 540.0C232.7 533.0 213.0 512.7 206.0 498.0C199.0 483.3 197.7 459.7 196.0 452.0" fill="none" stroke="#cbb595" stroke-width="2.3" stroke-dasharray="7 5"/><path d="M568.0 236.0C573.3 231.3 586.3 214.7 600.0 208.0C613.7 201.3 633.3 198.0 650.0 196.0C666.7 194.0 691.7 196.0 700.0 196.0" fill="none" stroke="#cbb595" stroke-width="2.3" stroke-dasharray="7 5"/><path d="M404.0 140.0C410.0 148.3 429.0 173.3 440.0 190.0C451.0 206.7 465.0 231.7 470.0 240.0" fill="none" stroke="#cbb595" stroke-width="2.3" stroke-dasharray="7 5"/></g><g class="town-label"><text x="402" y="21">PFÄNDER</text><text x="288" y="424">Pfänder</text><text x="600" y="602">Fluh</text><text x="994" y="486" text-anchor="end">Wirtatobel</text></g><g class="water-label"><text x="628" y="500" transform="rotate(38 628 500)">Fluh</text><text x="882" y="566" transform="rotate(62 882 566)">Fluh</text><text x="86" y="572" transform="rotate(26 86 572)">Thalbach</text></g><g class="road-label"><text x="184" y="476" transform="rotate(-64 184 476)">Rheintal Autobahn</text><text x="92" y="614" transform="rotate(-56 92 614)">Tunnel Pfänder</text></g><g><rect x="302" y="104" width="28" height="18" rx="3" fill="#4d78bd"/><text x="316" y="117" text-anchor="middle" font-family="Tahoma,Verdana,sans-serif" font-size="9" font-weight="bold" fill="#f2f6fb">A14</text></g><g><rect x="290" y="306" width="28" height="18" rx="3" fill="#8fbe4c"/><text x="304" y="319" text-anchor="middle" font-family="Tahoma,Verdana,sans-serif" font-size="9" font-weight="bold" fill="#f7fbef">L43</text></g><g class="junction"><circle cx="240" cy="372" r="8.5" fill="#2f9a5c" stroke="#f1f8ec" stroke-width="2"/><path d="M236 376v-5l4-3 4 3v5z" fill="none" stroke="#f1f8ec" stroke-width="1.3"/></g><g class="tunnel-mark"><circle cx="150" cy="540" r="8" fill="#8f98a2" stroke="#f2f5f2" stroke-width="2"/><path d="M146 543v-3a4 4 0 0 1 8 0v3" fill="none" stroke="#f4f7f4" stroke-width="1.4"/></g><text class="poi-label sub" x="142" y="486" text-anchor="end">Tunnellüftungsanlage</text><text class="poi-label sub" x="142" y="498" text-anchor="end">Pfrändertunnel</text><path d="M516 196C538 178 588 176 620 186 652 196 672 216 670 238 668 266 646 292 610 304 576 316 534 306 518 284 500 262 498 214 516 196Z" fill="#e3f1da" opacity=".8" stroke="#89a98b" stroke-width="1.6" stroke-dasharray="7 5"/><g class="poi" transform="translate(150 34)"><circle r="9.6" fill="#ffffff" opacity=".92"/><circle r="8" fill="#4f79c4"/><path d="M-4.6-1.4h9.2v5.4h-9.2z" fill="none" stroke="#f4f7fd" stroke-width="1.3"/><path d="M-4.6-3.6v4.6M-2.6-1.4v1.4" stroke="#f4f7fd" stroke-width="1.2" fill="none"/></g><text class="poi-label" x="164" y="30" text-anchor="start" fill="#4c5561">Boutique Spa Hotel</text><text class="poi-label sub" x="164" y="43" text-anchor="start">Fritsch am Berg</text><g class="poi" transform="translate(74 84)"><circle r="9.6" fill="#ffffff" opacity=".92"/><circle r="8" fill="#f0902d"/><path d="M-2.4-4.2v8.4M-2.4-4.2c-1.6 0-1.6 3 0 3M2.4-4.2c1.8 0 1.8 3.4 0 3.4v4.8" stroke="#fff8ee" stroke-width="1.3" fill="none"/></g><text class="poi-label" x="88" y="80" text-anchor="start" fill="#4c5561">Gasthaus Seibl</text><text class="poi-label sub" x="88" y="93" text-anchor="start">Farm. Bayer</text><g class="poi" transform="translate(44 220)"><circle r="9.6" fill="#ffffff" opacity=".92"/><circle r="8" fill="#e26a9b"/><path d="M-4.4-1.2h8.8v5.2h-8.8z" fill="none" stroke="#fdf2f6" stroke-width="1.2"/><path d="M-4.4-3.4v4.4M-2.6-1.2v1.2" stroke="#fdf2f6" stroke-width="1.1" fill="none"/></g><text class="poi-label" x="58" y="216" text-anchor="start" fill="#4c5561">Haus4Zimmer</text><text class="poi-label sub" x="58" y="229" text-anchor="start">mit Seeblick, einfacher…</text><g class="poi" transform="translate(740 150)"><circle r="9.6" fill="#ffffff" opacity=".92"/><circle r="8" fill="#4f79c4"/><text x="0" y="3.6" text-anchor="middle" font-family="Tahoma,Verdana,sans-serif" font-size="10" font-weight="bold" fill="#f4f8fd">P</text></g><text class="poi-label" x="754" y="146" text-anchor="start" fill="#4c5561">Parkplatz Pfränder</text><text class="poi-label sub" x="754" y="159" text-anchor="start">Moosegg</text><g class="poi" transform="translate(676 268)"><circle r="9.6" fill="#ffffff" opacity=".92"/><circle r="8" fill="#a06cc8"/><path d="M-4 2.6c0-3 1.8-5.4 4-5.4s4 2.4 4 5.4c0 1.4-1.8 2.4-4 2.4s-4-1-4-2.4Z" fill="none" stroke="#f8f1fb" stroke-width="1.2"/><circle cx="-1.4" cy="0.2" r="1" fill="#f8f1fb"/><circle cx="1.8" cy="-0.6" r="1" fill="#f8f1fb"/></g><text class="poi-label" x="662" y="264" text-anchor="end" fill="#7b68b6">Alpenwildpark Pfränder</text><text class="poi-label sub" x="662" y="277" text-anchor="end">RECENTLY VIEWED</text><g class="poi" transform="translate(628 412)"><circle r="9.6" fill="#ffffff" opacity=".92"/><circle r="8" fill="#f0902d"/><path d="M-2.4-4.2v8.4M-2.4-4.2c-1.6 0-1.6 3 0 3M2.4-4.2c1.8 0 1.8 3.4 0 3.4v4.8" stroke="#fff8ee" stroke-width="1.3" fill="none"/></g><text class="poi-label" x="642" y="408" text-anchor="start" fill="#4c5561">Gasthaus Pfränderdohle</text><g class="poi" transform="translate(392 458)"><circle r="9.6" fill="#ffffff" opacity=".92"/><circle r="8" fill="#a06cc8"/><path d="M-4.2 2.2 0-3.8 4.2 2.2-4.2 2.2Z" fill="none" stroke="#f8f1fb" stroke-width="1.2"/><path d="M1.2 2.2 3-1.8" stroke="#f8f1fb" stroke-width="1.1"/></g><text class="poi-label" x="378" y="462" text-anchor="end" fill="#7b68b6">Maldonahang</text><g class="poi" transform="translate(486 556)"><circle r="9.6" fill="#ffffff" opacity=".92"/><circle r="8" fill="#8b939c"/><path d="M0-5.6v8.4M-3.4-2.6h6.8" stroke="#f6f8f6" stroke-width="1.6" stroke-linecap="round"/></g><text class="poi-label" x="486" y="580" text-anchor="middle">Pfarrkirche Bregenz</text><text class="poi-label sub" x="486" y="593" text-anchor="middle">– St. Wendelin / Fluh</text><g fill="#e6ded6" stroke="#d3cbc2" stroke-width=".7"><rect x="296" y="398" width="9" height="7"/><rect x="308" y="404" width="7" height="6"/><rect x="346" y="398" width="10" height="7"/><rect x="332" y="406" width="6" height="5"/><rect x="560" y="568" width="8" height="6"/><rect x="572" y="574" width="7" height="6"/><rect x="610" y="582" width="9" height="7"/><rect x="704" y="196" width="7" height="6"/><rect x="690" y="204" width="6" height="5"/><rect x="716" y="420" width="8" height="6"/></g><g class="site-pin"><path d="M560 166c-7.6 0-13.8 6.2-13.8 13.8 0 9.7 13.8 22.2 13.8 22.2s13.8-12.5 13.8-22.2c0-7.6-6.2-13.8-13.8-13.8Z" fill="#ea4335" stroke="#ffffff" stroke-width="1.7"/><circle cx="560" cy="180" r="4.8" fill="#ffffff" opacity=".93"/></g><g class="reports-layer" id="reports-layer"><g class="map-pin" data-pin="moosegg" tabindex="0" role="button" aria-label="Sighting pin A / MOOSEGG" transform="translate(740 172)"><circle r="16" fill="#bd5b3c" opacity=".16"/><circle class="pin-core" r="6.4" fill="#ad5037" stroke="#f7eed6" stroke-width="2"/><text class="pin-label" x="-12" y="24" text-anchor="end">A / MOOSEGG</text></g><g class="map-pin" data-pin="maldonahang" tabindex="0" role="button" aria-label="Sighting pin B / MALDONAHANG" transform="translate(392 458)"><circle r="16" fill="#bd5b3c" opacity=".16"/><circle class="pin-core" r="6.4" fill="#ad5037" stroke="#f7eed6" stroke-width="2"/><text class="pin-label" x="-12" y="-10" text-anchor="end">B / MALDONAHANG</text></g><g class="map-pin" data-pin="fluh" tabindex="0" role="button" aria-label="Sighting pin C / ST. WENDELIN" transform="translate(486 556)"><circle r="16" fill="#bd5b3c" opacity=".16"/><circle class="pin-core" r="6.4" fill="#ad5037" stroke="#f7eed6" stroke-width="2"/><text class="pin-label" x="14" y="6" text-anchor="start">C / ST. WENDELIN</text></g></g><g class="route-overlay" id="route-overlay"><path d="M740 172 560 202M392 458 560 202M486 556 560 202" fill="none" stroke="#b55237" stroke-width="2" stroke-dasharray="6 5" opacity=".85"/><circle cx="560" cy="202" r="27" fill="#c15a3b" opacity=".13"/><circle cx="560" cy="202" r="11" fill="none" stroke="#c25c3b" stroke-width="2.4" stroke-dasharray="4 3"/><text class="route-label" x="604" y="338">UPPER MEADOW</text><text x="604" y="352" fill="#8c583f" font-family="Courier New" font-size="9">PARK FEEDING GROUND</text></g><g transform="translate(938 42)" fill="none" stroke="#6c8272"><path d="M0 30V0m0 0-6 12m6-12 6 12" stroke-width="1.8"/><circle r="1.8" cy="0" fill="#6c8272" stroke="none"/><text x="-4" y="44" fill="#63776a" stroke="none" font-family="Tahoma,sans-serif" font-size="9">N</text></g><g><path d="M28 604h72" stroke="#68796c" stroke-width="1.6"/><path d="M28 600v8M64 601.5v5M100 600v8" stroke="#68796c" stroke-width="1.4"/><text x="28" y="596" fill="#6d8076" font-family="Tahoma,sans-serif" font-size="8">500 m</text></g><text class="map-note" x="972" y="616" text-anchor="end">© MOTH MAPS · OFFLINE TILE 09 / BREGENZ FOREST</text><rect width="1000" height="625" fill="url(#mapGrid)"/></g></svg>
+              </div>
+              <aside class="map-sidebar"><div class="map-side-kicker">BEARING TABLE / TONIGHT</div><h2 class="map-side-title">Three reports.<br>One quiet pasture.</h2>
+                <div class="map-report"><span class="map-report-mark">A</span><span><strong>Morrow Moss</strong>Moosegg car park · 02:17</span></div><div class="map-report"><span class="map-report-mark">B</span><span><strong>Etta Vale</strong>Maldonahang · 02:19</span></div><div class="map-report"><span class="map-report-mark">C</span><span><strong>Unit 8 recorder</strong>St. Wendelin, Fluh · 02:16</span></div>
+                <div class="map-inspector" id="map-inspector"><strong id="map-inspector-title">SELECT A MARKER</strong><span id="map-inspector-copy">Pick a witness pin to read its field note.</span></div><button class="plot-button" id="plot-button">⌖ &nbsp;PLOT BEARINGS</button><div class="route-result hidden" id="route-result"><strong>COMMON POINT / UPPER MEADOW</strong>All three bearings cross on the Alpenwildpark feeding ground, 240 m above the Moosegg car park.</div>
+              </aside>
+            </div>
+          </section>
+          <!-- Notebook -->
+          <section class="app-window notes-window hidden" id="notes-window" aria-label="Field Notes application">
+            <div class="titlebar" data-drag-handle><span class="title-icon">▤</span><span class="window-title">Field Notes — PfaenderW.txt</span><div class="window-controls"><button class="win-control" data-window-action="minimize" aria-label="Minimize">_</button><button class="win-control" data-window-action="maximize" aria-label="Maximize">□</button><button class="win-control close" data-window-action="close" aria-label="Close">×</button></div></div>
+            <div class="notes-toolbar"><span>FILE &nbsp; EDIT &nbsp; FORMAT</span><span>·</span><span>PLAIN TEXT / LOCAL</span><span class="notes-status" id="notes-status">ALL CHANGES SAVED</span></div>
+            <div class="notes-grid">
+              <aside class="notes-list"><p class="notes-list-heading">NOTEBOOK</p><div class="note-file active">PfaenderW.txt<span>edited tonight · 11:32 PM</span></div><p class="notes-hint">Notes stay on this machine. Evidence filed to the case ledger appears at right.</p></aside>
+              <main class="note-paper-wrap"><div class="note-page"><div class="note-page-head"><span>PFÄNDER / FIELD LOG</span><strong>NW—019</strong></div><textarea class="note-textarea" id="notes-textarea" aria-label="Editable field notes" spellcheck="false">PFAENDERW — UPPER MEADOW
+
+The relay woke up again at 23:17.
+The ridge is closer than the map says.
+
+WITNESS PATTERN
+(write what repeats)
+
+PLATE / MAP
+(add anything worth following)
+
+— keep the porch light on —</textarea></div></main>
+              <aside class="notes-ledger"><div class="ledger-heading">CASE EVIDENCE</div><div class="ledger-empty" id="ledger-empty">No evidence filed yet.<br><br>Good notes begin with what you can verify.</div>
+                <div class="ledger-item" data-ledger="witness"><strong>01 / WITNESS LOG</strong>Two low chimes, after the pasture falls silent.</div><div class="ledger-item" data-ledger="photo"><strong>02 / RECOVERED PLATE</strong>Two lights over the fenced pasture. Nothing beneath them.</div><div class="ledger-item" data-ledger="route"><strong>03 / SURVEY MAP</strong>Bearings converge on the Alpenwildpark feeding ground.</div>
+              </aside>
+            </div>
+          </section>
+          <div class="start-menu hidden" id="start-menu">
+            <div class="start-menu-head"><span class="os-brand-mark os-brand-mark-lg" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#mothGlyph"/></svg></span><div><strong>MOTH OS</strong><small>FIELD TERMINAL / BUILD 98.11</small></div></div>
+            <div class="launcher-list"><button class="launcher-app" data-open-app="browser"><span class="launcher-glyph">◉</span><span>Navigator<small>Nightwatch field network</small></span></button><button class="launcher-app" data-open-app="photos"><span class="launcher-glyph">▧</span><span>Photo Roll<small>PfaenderW / roll empty</small></span></button><button class="launcher-app" data-open-app="maps"><span class="launcher-glyph">⌖</span><span>Field Maps<small>Pfänder / Bregenz forest</small></span></button><button class="launcher-app" data-open-app="notes"><span class="launcher-glyph">▤</span><span>Field Notes<small>Local case notebook</small></span></button></div>
+            <div class="launcher-rule"></div><div class="launcher-foot"><span>CASE <b id="launcher-progress">0 / 3</b></span><button class="reset-case" id="reset-case">RESET CASE</button></div>
+          </div>
+          <footer class="taskbar" aria-label="Application taskbar">
+            <button class="start-button" id="start-button"><span class="start-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#mothGlyph"/></svg></span><span class="start-label">MOTH</span></button><span class="task-separator"></span>
+            <button class="task-app active" data-open-app="browser"><span class="mini-app-icon">◉</span><span class="task-name">Navigator</span></button><button class="task-app" data-open-app="photos"><span class="mini-app-icon">▧</span><span class="task-name">Photo Roll</span></button><button class="task-app" data-open-app="maps"><span class="mini-app-icon">⌖</span><span class="task-name">Field Maps</span></button><button class="task-app" data-open-app="notes"><span class="mini-app-icon">▤</span><span class="task-name">Field Notes</span></button>
+            <span class="task-spacer"></span><span class="task-case">CASE <b id="task-progress">0/3</b></span><span class="task-clock">11:46 PM</span>
+          </footer>
+        </div>
+        <div class="modal hidden" id="report-modal" role="dialog" aria-modal="true" aria-labelledby="report-title">
+          <section class="report-card">
+            <button class="report-close" id="report-close" aria-label="Close report">×</button>
+            <div id="report-form-state"><div class="report-kicker">NIGHTWATCH / OUTGOING FIELD REPORT</div><h2 class="report-title" id="report-title">Close the loop.</h2><p class="report-lead">Three sources. One report. Match the pattern you can actually prove.</p>
+              <form id="report-form">
+                <div class="report-field"><label for="answer-place">LAST RELIABLE LOCATION</label><select id="answer-place" required><option value="">Choose a location…</option><option value="moosegg">Moosegg car park</option><option value="meadow">Upper meadow · Alpenwildpark feeding ground</option><option value="lake">The middle of Lake Constance</option></select></div>
+                <div class="report-field"><label for="answer-time">REPEATABLE TIME</label><select id="answer-time" required><option value="">Choose a time…</option><option value="dusk">At dusk</option><option value="0217">02:17 AM</option><option value="noon">12:00 PM</option></select></div>
+                <div class="report-field"><label for="answer-signal">WHAT PRECEDES THE APPEARANCE?</label><select id="answer-signal" required><option value="">Choose a signal…</option><option value="birds">A burst of birdsong</option><option value="chimes">Two low chimes</option><option value="horn">A boat horn from the lake below</option></select></div>
+                <button type="submit" class="report-submit">TRANSMIT FIELD REPORT &nbsp;↗</button><p class="report-feedback" id="report-feedback" aria-live="polite"></p>
+              </form>
+            </div>
+            <div class="success-state hidden" id="success-state"><div class="success-stamp">CASE NW-019 / VERIFIED</div><h2 class="success-title">You listened carefully.</h2><p class="success-copy">The three traces agree: something is keeping time on the upper meadow of the Alpenwildpark, above the Moosegg car park. Nothing up there answers to a bell.</p><div class="success-receipt">FIELD OFFICE RECEIPT · 02:17:09<br>LOCATION &nbsp; UPPER MEADOW / ALPENWILDPARK<br>REPEAT &nbsp;&nbsp;&nbsp; TWO LOW CHIMES<br>STATUS &nbsp;&nbsp;&nbsp; ARCHIVED FOR NIGHT WATCH</div><div class="success-actions"><button id="return-terminal">RETURN TO TERMINAL</button><button id="play-again">RESET CASE</button></div></div>
+          </section>
+        </div>
+        <div class="toast" id="toast" role="status" aria-live="polite">EVIDENCE FILED</div>
+        <div class="crt-overlay" aria-hidden="true"></div>
+      </div>
+    </div>
+    <div class="monitor-lip"><span class="lip-brand">MOTH ELECTRONICS</span><span class="lip-divider"></span><span class="lip-note">MONOCHROME DISPLAY / MODEL 14—C</span><span class="lip-spacer"></span><span class="lip-power"><i class="lip-led"></i> POWER</span><span class="lip-knob"></span></div>
+  </main>
+</div>
+<script>
+(() => {
+  const APP_IDS = ["browser", "photos", "maps", "notes"];
+  const appWindows = Object.fromEntries(APP_IDS.map(id => [id, document.getElementById(`${id}-window`)]));
+  const clueCopy = {
+    witness: "WITNESS LOG: the pasture falls silent at 02:17; two low chimes come down from the upper meadow.",
+    photo: "RECOVERED PLATE: two lights hang over the fenced pasture. No post, no fire, nothing beneath them.",
+    route: "SURVEY MAP: all three bearings meet on the Alpenwildpark feeding ground."
+  };
+  const clueNames = { witness: "Witness pattern", photo: "Recovered plate", route: "Survey intersection" };
+  const defaultNotes = document.getElementById("notes-textarea").value;
+  let state = { clues: { witness:false, photo:false, route:false }, solved:false };
+  let topZ = 10;
+  let toastTimer;
+  let saveTimer;
+
+  try {
+    const saved = JSON.parse(localStorage.getItem("moth-pfaenderw") || "null");
+    if (saved && saved.clues) {
+      state.clues = { witness:!!saved.clues.witness, photo:!!saved.clues.photo, route:!!saved.clues.route };
+      state.solved = !!saved.solved;
+      if (typeof saved.notes === "string") document.getElementById("notes-textarea").value = saved.notes;
+    }
+  } catch (_) {}
+
+  function saveState(){
+    try { localStorage.setItem("moth-pfaenderw", JSON.stringify({clues:state.clues, solved:state.solved, notes:document.getElementById("notes-textarea").value})); } catch (_) {}
+  }
+  function countClues(){ return Object.values(state.clues).filter(Boolean).length; }
+  function updateProgress(){
+    const count = countClues();
+    const countText = String(count).padStart(2,"0") + "/03";
+    const progress = document.getElementById("progress-count");
+    if (progress) progress.textContent = countText;
+    document.getElementById("task-progress").textContent = `${count}/3`;
+    document.getElementById("launcher-progress").textContent = `${count} / 3`;
+    document.getElementById("progress-fill").style.width = `${count/3*100}%`;
+    document.querySelectorAll("[data-clue-row]").forEach(row => row.classList.toggle("found", !!state.clues[row.dataset.clueRow]));
+    const report = document.getElementById("report-open");
+    report.disabled = count < 3;
+    report.textContent = count === 3 ? "FILE FINAL REPORT ↗" : `FILE FINAL REPORT · ${count}/3`;
+    const mobileReport = document.getElementById("report-open-mobile");
+    mobileReport.disabled = count < 3;
+    mobileReport.textContent = count === 3 ? "REPORT ↗" : `REPORT · ${count}/3`;
+    document.querySelectorAll(".file-evidence").forEach(button => {
+      const clue = button.dataset.clue;
+      if (state.clues[clue]) {
+        button.classList.add("filed");
+        if (clue === "witness") button.textContent = "✓ WITNESS LOG FILED";
+        if (clue === "photo") button.textContent = "✓ PLATE FILED";
+        if (clue === "route") button.textContent = "✓ MAP EVIDENCE FILED";
+      }
+    });
+    document.querySelectorAll("[data-ledger]").forEach(item => item.classList.toggle("found", !!state.clues[item.dataset.ledger]));
+    const any = count > 0;
+    document.getElementById("ledger-empty").classList.toggle("hidden", any);
+    document.querySelectorAll("[data-ledger]").forEach(item => item.classList.toggle("hidden", !state.clues[item.dataset.ledger]));
+    if (state.clues.photo) document.getElementById("negative-result").classList.remove("hidden");
+    if (state.clues.route) {
+      document.getElementById("route-overlay").classList.add("visible");
+      document.getElementById("route-result").classList.remove("hidden");
+      document.getElementById("plot-button").classList.add("filed");
+      document.getElementById("plot-button").textContent = "✓ BEARINGS PLOTTED";
+    }
+    saveState();
+  }
+  function showToast(message){
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 2400);
+  }
+  function collectClue(key){
+    if (!clueCopy[key]) return;
+    if (state.clues[key]) { showToast(`${clueNames[key].toUpperCase()} ALREADY IN THE NOTEBOOK`); return; }
+    state.clues[key] = true;
+    updateProgress();
+    showToast(`EVIDENCE FILED · ${clueNames[key].toUpperCase()}`);
+  }
+  function focusApp(id){
+    const win = appWindows[id];
+    if (!win) return;
+    win.classList.remove("hidden");
+    win.style.zIndex = ++topZ;
+    document.querySelectorAll(".task-app").forEach(button => button.classList.toggle("active", button.dataset.openApp === id));
+  }
+  function openApp(id){
+    if (!appWindows[id]) return;
+    focusApp(id);
+    document.getElementById("start-menu").classList.add("hidden");
+  }
+  function hideApp(id){
+    const win = appWindows[id];
+    if (!win) return;
+    win.classList.add("hidden");
+    document.querySelectorAll(`.task-app[data-open-app="${id}"]`).forEach(button => button.classList.remove("active"));
+  }
+  function toggleMax(win){ win.classList.toggle("maximized"); win.style.zIndex = ++topZ; }
+
+  document.addEventListener("click", event => {
+    const launch = event.target.closest("[data-open-app]");
+    if (launch) {
+      event.preventDefault();
+      const id = launch.dataset.openApp;
+      const win = appWindows[id];
+      if (launch.classList.contains("task-app") && win && !win.classList.contains("hidden") && launch.classList.contains("active")) hideApp(id);
+      else openApp(id);
+      return;
+    }
+    const action = event.target.closest("[data-window-action]");
+    if (action) {
+      event.stopPropagation();
+      const win = action.closest(".app-window");
+      const id = APP_IDS.find(app => appWindows[app] === win);
+      if (action.dataset.windowAction === "close") hideApp(id);
+      if (action.dataset.windowAction === "minimize") hideApp(id);
+      if (action.dataset.windowAction === "maximize") toggleMax(win);
+      return;
+    }
+    const evidence = event.target.closest(".file-evidence");
+    if (evidence) { collectClue(evidence.dataset.clue); return; }
+    const viewButton = event.target.closest("[data-forum-view]");
+    if (viewButton) { setForumView(viewButton.dataset.forumView); return; }
+    const shotButton = event.target.closest("[data-shot]");
+    if (shotButton) { selectShot(Number(shotButton.dataset.shot)); return; }
+    const layerButton = event.target.closest("[data-layer]");
+    if (layerButton) { toggleMapLayer(layerButton.dataset.layer, layerButton); return; }
+    const pin = event.target.closest("[data-pin]");
+    if (pin) { selectMapPin(pin.dataset.pin); return; }
+  });
+
+  // Bring an application to the front by clicking anywhere in its window.
+  Object.entries(appWindows).forEach(([id, win]) => {
+    win.addEventListener("pointerdown", () => { focusApp(id); });
+    const handle = win.querySelector("[data-drag-handle]");
+    handle.addEventListener("dblclick", event => { if (!event.target.closest(".window-controls")) toggleMax(win); });
+    handle.addEventListener("pointerdown", event => {
+      if (event.button !== 0 || event.target.closest(".window-controls") || win.classList.contains("maximized")) return;
+      const desktop = document.getElementById("desktop");
+      const bounds = desktop.getBoundingClientRect();
+      const winRect = win.getBoundingClientRect();
+      const startX = event.clientX, startY = event.clientY;
+      const originX = winRect.left - bounds.left, originY = winRect.top - bounds.top;
+      let moved = false;
+      const move = e => {
+        const dx = e.clientX - startX, dy = e.clientY - startY;
+        if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+        const maxX = Math.max(0, desktop.clientWidth - win.offsetWidth);
+        const maxY = Math.max(0, desktop.clientHeight - win.offsetHeight);
+        win.style.left = `${Math.max(0, Math.min(maxX, originX + dx))}px`;
+        win.style.top = `${Math.max(0, Math.min(maxY, originY + dy))}px`;
+      };
+      const up = () => {
+        document.removeEventListener("pointermove", move);
+        document.removeEventListener("pointerup", up);
+        if (moved) handle.dataset.dragged = "true";
+      };
+      document.addEventListener("pointermove", move);
+      document.addEventListener("pointerup", up, {once:true});
+    });
+  });
+
+  // Taskbar buttons focus a running app; a second click tucks it away (handled by the global launcher action).
+  document.getElementById("start-button").addEventListener("click", event => {
+    event.stopPropagation();
+    document.getElementById("start-menu").classList.toggle("hidden");
+  });
+  document.addEventListener("click", event => {
+    if (!event.target.closest("#start-menu") && !event.target.closest("#start-button")) document.getElementById("start-menu").classList.add("hidden");
+  });
+
+  function setForumView(which){
+    document.getElementById("thread-view").classList.toggle("hidden", which !== "thread");
+    document.getElementById("archive-view").classList.toggle("hidden", which !== "archive");
+    document.querySelectorAll("[data-forum-view]").forEach(button => button.classList.toggle("active", button.dataset.forumView === which));
+  }
+  document.getElementById("browser-back").addEventListener("click", () => setForumView("archive"));
+  document.getElementById("browser-forward").addEventListener("click", () => setForumView("thread"));
+  document.getElementById("browser-reload").addEventListener("click", () => showToast("NIGHTWATCH NODE 09 · PFÄNDER THREAD UP TO DATE"));
+
+  const shots = [
+    {name:"PLATE_04.NEG", caption:"UPPER MEADOW / 02:17", title:"Upper meadow", sub:"RECOVERED PLATE / 35MM", time:"02:17:04", exposure:"1 / 8 SEC", location:"ALPENWILDPARK", weather:"NO WIND", copy:"One frame survived the wipe: two warm lights hanging over the fenced pasture. No lamp post, no path, nothing burning beneath them."}
+  ];
+  let plateRecovered = false;
+  function recoverPlate(silent){
+    if (plateRecovered) return;
+    plateRecovered = true;
+    document.getElementById("photo-empty").classList.add("hidden");
+    document.getElementById("photo-viewer").classList.remove("hidden");
+    document.getElementById("roll-count").innerHTML = '<i class="photo-led"></i>1 FRAME / RECOVERED';
+    document.getElementById("album-count").textContent = "1";
+    document.getElementById("photo-file-list").innerHTML = '<p class="album-heading">FRAMES</p><button class="photo-file active" data-shot="0"><span class="tiny-thumb"></span><span>PLATE_04.NEG<br><span style="color:#899586">RECOVERED</span></span></button>';
+    document.getElementById("inspector-title").textContent = shots[0].title;
+    document.getElementById("inspector-sub").textContent = shots[0].sub;
+    document.getElementById("inspector-exposure").textContent = shots[0].exposure;
+    document.getElementById("inspector-time").textContent = shots[0].time;
+    document.getElementById("inspector-location").textContent = shots[0].location;
+    document.getElementById("inspector-weather").textContent = shots[0].weather;
+    document.getElementById("inspector-copy").textContent = shots[0].copy;
+    document.getElementById("develop-button").disabled = !!state.clues.photo;
+    selectShot(0);
+    if (!silent) showToast("FILM CACHE READ · PLATE_04 RECOVERED");
+  }
+  function emptyRoll(){
+    plateRecovered = false;
+    document.getElementById("photo-empty").classList.remove("hidden");
+    document.getElementById("photo-viewer").classList.add("hidden");
+    document.getElementById("roll-count").innerHTML = '<i class="photo-led"></i>NO FRAMES IN ROLL';
+    document.getElementById("album-count").textContent = "0";
+    document.getElementById("photo-file-list").innerHTML = '<p class="album-heading">FRAMES</p><p class="roll-empty-line">— none —</p>';
+    document.getElementById("inspector-title").textContent = "No plate";
+    document.getElementById("inspector-sub").textContent = "ROLL 04 / 0 FRAMES";
+    document.getElementById("inspector-exposure").textContent = "—";
+    document.getElementById("inspector-time").textContent = "—";
+    document.getElementById("inspector-location").textContent = "—";
+    document.getElementById("inspector-weather").textContent = "—";
+    document.getElementById("inspector-copy").textContent = "Nothing to develop. The roll was emptied at 23:52.";
+    document.getElementById("develop-button").disabled = true;
+  }
+  document.getElementById("recover-plate").addEventListener("click", () => recoverPlate(false));
+  function selectShot(index){
+    const shot = shots[index] || shots[0];
+    document.getElementById("photo-name").textContent = shot.name;
+    document.getElementById("photo-caption-text").textContent = shot.caption;
+    document.querySelectorAll("[data-shot]").forEach(button => button.classList.toggle("active", Number(button.dataset.shot) === index));
+  }
+  function toggleMapLayer(layer, button){
+    button.classList.toggle("active");
+    if (layer === "reports") document.getElementById("reports-layer").style.opacity = button.classList.contains("active") ? "1" : ".08";
+    if (layer === "tracks") document.querySelectorAll(".trail-line").forEach(el => el.style.opacity = button.classList.contains("active") ? "" : ".08");
+  }
+  const pinInfo = {
+    moosegg:["A / MOOSEGG CAR PARK","Morrow Moss · 02:17. Bearing 041° from the barrier; the pasture went silent first."],
+    maldonahang:["B / MALDONAHANG","Etta Vale · 02:19. Sound carries down the slope, never across the ridge."],
+    fluh:["C / ST. WENDELIN","Unit 8 recorder · 02:16. Compass needle held north for 11 seconds."]
+  };
+  function selectMapPin(name){
+    const info = pinInfo[name]; if (!info) return;
+    document.getElementById("map-inspector-title").textContent = info[0];
+    document.getElementById("map-inspector-copy").textContent = info[1];
+  }
+  document.querySelectorAll(".map-pin").forEach(pin => pin.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectMapPin(pin.dataset.pin); }
+  }));
+  document.getElementById("plot-button").addEventListener("click", () => {
+    document.getElementById("route-overlay").classList.add("visible");
+    document.getElementById("route-result").classList.remove("hidden");
+    const btn = document.getElementById("plot-button");
+    btn.classList.add("filed"); btn.textContent = "✓ BEARINGS PLOTTED";
+    collectClue("route");
+  });
+
+  function openReport(){
+    if (countClues() < 3) { showToast("THE REPORT NEEDS ALL THREE PIECES OF EVIDENCE"); return; }
+    document.getElementById("report-modal").classList.remove("hidden");
+    document.getElementById("report-feedback").textContent = "";
+    setTimeout(() => document.getElementById("answer-place").focus(), 30);
+  }
+  document.getElementById("report-open").addEventListener("click", openReport);
+  document.getElementById("report-open-mobile").addEventListener("click", openReport);
+  function closeReport(){ document.getElementById("report-modal").classList.add("hidden"); }
+  document.getElementById("report-close").addEventListener("click", closeReport);
+  document.getElementById("return-terminal").addEventListener("click", closeReport);
+  document.getElementById("report-modal").addEventListener("click", event => { if (event.target.id === "report-modal") closeReport(); });
+  document.addEventListener("keydown", event => { if (event.key === "Escape") { closeReport(); document.getElementById("start-menu").classList.add("hidden"); } });
+  document.getElementById("report-form").addEventListener("submit", event => {
+    event.preventDefault();
+    const correct = document.getElementById("answer-place").value === "meadow" && document.getElementById("answer-time").value === "0217" && document.getElementById("answer-signal").value === "chimes";
+    if (!correct) {
+      document.getElementById("report-feedback").textContent = "That pattern doesn't line up. Check the witness log, the negative, and the bearings.";
+      return;
+    }
+    state.solved = true; saveState();
+    document.getElementById("report-form-state").classList.add("hidden");
+    document.getElementById("success-state").classList.remove("hidden");
+    showToast("FIELD REPORT ACCEPTED · CASE NW-019 VERIFIED");
+  });
+
+  function resetCase(){
+    state.clues = {witness:false,photo:false,route:false}; state.solved = false;
+    document.getElementById("route-overlay").classList.remove("visible");
+    document.getElementById("route-result").classList.add("hidden");
+    document.getElementById("plot-button").classList.remove("filed");
+    document.getElementById("plot-button").textContent = "⌖  PLOT BEARINGS";
+    document.getElementById("negative-result").classList.add("hidden");
+    document.querySelectorAll(".file-evidence").forEach(button => {button.classList.remove("filed"); if(button.dataset.clue === "witness") button.textContent="FILE WITNESS LOG"; if(button.dataset.clue === "photo") button.textContent="✦  DEVELOP PLATE";});
+    if (document.getElementById("develop-button")) document.getElementById("develop-button").disabled = true;
+    emptyRoll();
+    document.getElementById("report-form-state").classList.remove("hidden");
+    document.getElementById("success-state").classList.add("hidden");
+    document.getElementById("report-form").reset();
+    document.getElementById("report-feedback").textContent = "";
+    closeReport(); updateProgress(); showToast("CASE NW-019 RESET · THE NIGHT IS YOURS");
+  }
+  document.getElementById("reset-case").addEventListener("click", resetCase);
+  document.getElementById("play-again").addEventListener("click", resetCase);
+
+  const noteArea = document.getElementById("notes-textarea");
+  noteArea.addEventListener("input", () => {
+    document.getElementById("notes-status").textContent = "WRITING…";
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { saveState(); document.getElementById("notes-status").textContent = "ALL CHANGES SAVED"; }, 450);
+  });
+
+  // Initial state and app focus.
+  updateProgress();
+  if (state.clues.photo) recoverPlate(true);
+  appWindows.browser.style.zIndex = ++topZ;
+  if (state.solved) {
+    document.getElementById("report-open").textContent = "CASE REPORT VERIFIED ✓";
+    document.getElementById("report-open-mobile").textContent = "VERIFIED ✓";
+    document.getElementById("report-form-state").classList.add("hidden");
+    document.getElementById("success-state").classList.remove("hidden");
+  }
+})();
+</script>
+</body>
+</html>
