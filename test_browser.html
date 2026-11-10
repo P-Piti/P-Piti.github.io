@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini Browser</title>
+
+<style>
+body {
+    margin: 0;
+    background: #20252b;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.browser {
+    width: 90%;
+    max-width: 1000px;
+    margin: 40px auto;
+    background: #303840;
+    padding: 15px;
+    border-radius: 12px;
+}
+
+.toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+input {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    background: #171c21;
+    color: white;
+    outline: none;
+}
+
+button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #4c806b;
+    color: white;
+}
+
+button:hover {
+    background: #60977f;
+}
+
+iframe {
+    width: 100%;
+    height: 600px;
+    border: none;
+    border-radius: 6px;
+    background: white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="browser">
+    <h2>🌐 test Browser</h2>
+
+    <div class="toolbar">
+        <input id="address" value="https://example.com"
+               placeholder="Enter URL...">
+
+        <button onclick="go()">GO</button>
+        <button onclick="reload()">↻</button>
+    </div>
+
+    <iframe id="page" src="https://example.com"></iframe>
+</div>
+
+<script>
+function go() {
+    let url = document.getElementById("address").value.trim();
+
+    if (!url) return;
+
+    if (!/^https?:\/\//i.test(url)) {
+        url = "https://" + url;
+    }
+
+    document.getElementById("page").src = url;
+    document.getElementById("address").value = url;
+}
+
+function reload() {
+    const frame = document.getElementById("page");
+    frame.src = frame.src;
+}
+</script>
+
+</body>
+</html>
