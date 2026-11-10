@@ -1,63 +1,181 @@
-
+```html
 <!DOCTYPE html>
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini Browser</title>
+<title>VANTA Browser v0.1</title>
 
 <style>
+* { box-sizing: border-box; }
+
 body {
     margin: 0;
     background: #20252b;
-    color: white;
+    color: #eee;
     font-family: Arial, sans-serif;
 }
 
 .browser {
-    width: 90%;
-    max-width: 1000px;
-    margin: 40px auto;
+    width: 94%;
+    max-width: 1250px;
+    margin: 25px auto;
     background: #303840;
-    padding: 15px;
+    padding: 18px;
     border-radius: 12px;
+    box-shadow: 0 10px 35px #0006;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 21px;
+}
+
+.version {
+    color: #91b9a5;
+    font-size: 12px;
 }
 
 .toolbar {
     display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 7px;
+    margin-bottom: 10px;
 }
 
 input {
     flex: 1;
+    min-width: 0;
     padding: 12px;
-    border: none;
-    border-radius: 6px;
+    border: 1px solid #414b54;
+    border-radius: 7px;
     background: #171c21;
     color: white;
     outline: none;
 }
 
+input:focus {
+    border-color: #60977f;
+}
+
 button {
-    padding: 10px 16px;
+    padding: 10px 14px;
     border: none;
-    border-radius: 6px;
+    border-radius: 7px;
     cursor: pointer;
     background: #4c806b;
     color: white;
+    transition: .15s;
 }
 
 button:hover {
     background: #60977f;
 }
 
+button:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+.navigation {
+    display: flex;
+    gap: 6px;
+}
+
+.quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 12px 0;
+}
+
+.quick-links button {
+    background: #414c55;
+    font-size: 12px;
+}
+
+.quick-links button:hover {
+    background: #52645d;
+}
+
+.status {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 3px;
+    color: #aeb9b2;
+    font-size: 12px;
+}
+
+.viewer {
+    position: relative;
+}
+
 iframe {
+    display: block;
     width: 100%;
-    height: 600px;
+    height: 650px;
     border: none;
-    border-radius: 6px;
+    border-radius: 7px;
     background: white;
+}
+
+.info {
+    color: #aeb9b2;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-top: 12px;
+}
+
+.history-panel {
+    display: none;
+    background: #20272d;
+    padding: 12px;
+    border-radius: 7px;
+    margin-bottom: 10px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.history-panel.show {
+    display: block;
+}
+
+.history-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    color: #cbd8d0;
+    margin: 3px 0;
+    overflow-wrap: anywhere;
+}
+
+@media(max-width: 650px) {
+    .browser {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        padding: 12px;
+    }
+
+    .toolbar {
+        flex-wrap: wrap;
+    }
+
+    .toolbar input {
+        flex-basis: 100%;
+    }
+
+    iframe {
+        height: 70vh;
+    }
 }
 </style>
 </head>
@@ -65,38 +183,263 @@ iframe {
 <body>
 
 <div class="browser">
-    <h2>🌐 test Browser</h2>
 
-    <div class="toolbar">
-        <input id="address" value="https://example.com"
-               placeholder="Enter URL...">
-
-        <button onclick="go()">GO</button>
-        <button onclick="reload()">↻</button>
+    <div class="header">
+        <h2>🌐 VANTA Browser</h2>
+        <span class="version">VERSION 0.1</span>
     </div>
 
-    <iframe id="page" src="https://example.com"></iframe>
+    <div class="toolbar">
+
+        <div class="navigation">
+            <button id="back" onclick="goBack()" title="Back">←</button>
+            <button id="forward" onclick="goForward()" title="Forward">→</button>
+            <button onclick="reload()" title="Reload">↻</button>
+        </div>
+
+        <input
+            id="address"
+            type="text"
+            placeholder="Search or enter website address..."
+            autocomplete="off"
+        >
+
+        <button onclick="go()">GO</button>
+    </div>
+
+    <div class="quick-links">
+        <button onclick="navigate('https://example.com')">Example</button>
+        <button onclick="navigate('https://wikipedia.org')">Wikipedia</button>
+        <button onclick="navigate('https://github.com')">GitHub</button>
+        <button onclick="navigate('https://reddit.com')">Reddit</button>
+        <button onclick="navigate('https://youtube.com')">YouTube</button>
+        <button onclick="navigate('https://google.com')">Google</button>
+        <button onclick="toggleHistory()">History</button>
+    </div>
+
+    <div class="history-panel" id="historyPanel">
+        <strong>Browsing history</strong>
+        <div id="historyList"></div>
+        <button onclick="clearHistory()">Clear history</button>
+    </div>
+
+    <div class="status">
+        <span id="status">Ready</span>
+        <span id="counter">0 pages visited</span>
+    </div>
+
+    <div class="viewer">
+        <iframe
+            id="page"
+            src="https://example.com"
+            title="VANTA Browser"
+            allow="fullscreen"
+            referrerpolicy="strict-origin-when-cross-origin">
+        </iframe>
+    </div>
+
+    <div class="info">
+        VANTA Browser v0.1 · Experimental browser interface.<br>
+        Some websites prevent loading inside embedded frames.
+    </div>
+
 </div>
 
 <script>
-function go() {
-    let url = document.getElementById("address").value.trim();
+const address = document.getElementById("address");
+const page = document.getElementById("page");
+const statusText = document.getElementById("status");
+const counter = document.getElementById("counter");
 
-    if (!url) return;
+let history = JSON.parse(
+    localStorage.getItem("vanta_history") || "[]"
+);
 
-    if (!/^https?:\/\//i.test(url)) {
-        url = "https://" + url;
+let historyIndex = -1;
+
+function saveHistory() {
+    localStorage.setItem(
+        "vanta_history",
+        JSON.stringify(history)
+    );
+}
+
+function normalizeAddress(value) {
+    value = value.trim();
+
+    if (!value) return null;
+
+    // Search query instead of a URL
+    if (!value.includes(".") || value.includes(" ")) {
+        return "https://www.google.com/search?q=" +
+            encodeURIComponent(value);
     }
 
-    document.getElementById("page").src = url;
-    document.getElementById("address").value = url;
+    if (!/^https?:\/\//i.test(value)) {
+        value = "https://" + value;
+    }
+
+    try {
+        const parsed = new URL(value);
+
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+            return null;
+        }
+
+        return parsed.href;
+    } catch {
+        return null;
+    }
+}
+
+function navigate(value, addToHistory = true) {
+    const url = normalizeAddress(value);
+
+    if (!url) {
+        statusText.textContent = "Invalid address";
+        return;
+    }
+
+    address.value = url;
+    statusText.textContent = "Loading...";
+
+    page.src = url;
+
+    if (addToHistory) {
+        history = history.slice(0, historyIndex + 1);
+
+        history.push(url);
+        historyIndex = history.length - 1;
+
+        // Keep the most recent 200 entries
+        if (history.length > 200) {
+            history.shift();
+            historyIndex--;
+        }
+
+        saveHistory();
+    }
+
+    updateNavigation();
+    updateCounter();
+    localStorage.setItem("vanta_last_url", url);
+}
+
+function go() {
+    navigate(address.value);
 }
 
 function reload() {
-    const frame = document.getElementById("page");
-    frame.src = frame.src;
+    statusText.textContent = "Reloading...";
+    page.src = page.src;
 }
+
+function goBack() {
+    if (historyIndex > 0) {
+        historyIndex--;
+        navigate(history[historyIndex], false);
+    }
+
+    updateNavigation();
+}
+
+function goForward() {
+    if (historyIndex < history.length - 1) {
+        historyIndex++;
+        navigate(history[historyIndex], false);
+    }
+
+    updateNavigation();
+}
+
+function updateNavigation() {
+    document.getElementById("back").disabled =
+        historyIndex <= 0;
+
+    document.getElementById("forward").disabled =
+        historyIndex >= history.length - 1;
+}
+
+function updateCounter() {
+    counter.textContent =
+        history.length + " pages visited";
+}
+
+function toggleHistory() {
+    const panel = document.getElementById("historyPanel");
+
+    panel.classList.toggle("show");
+
+    renderHistory();
+}
+
+function renderHistory() {
+    const list = document.getElementById("historyList");
+    list.innerHTML = "";
+
+    history.slice().reverse().forEach(url => {
+        const button = document.createElement("button");
+
+        button.className = "history-item";
+        button.textContent = url;
+
+        button.onclick = () => {
+            navigate(url);
+            document.getElementById("historyPanel")
+                .classList.remove("show");
+        };
+
+        list.appendChild(button);
+    });
+}
+
+function clearHistory() {
+    if (!confirm("Clear browsing history?")) return;
+
+    history = [];
+    historyIndex = -1;
+
+    saveHistory();
+    renderHistory();
+    updateNavigation();
+    updateCounter();
+}
+
+address.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+        go();
+    }
+
+    if (event.ctrlKey && event.key.toLowerCase() === "a") {
+        address.select();
+    }
+});
+
+// Detect iframe load, but cannot reliably detect frame blocking.
+page.addEventListener("load", () => {
+    statusText.textContent =
+        "Loaded · If blank, the website may block embedding";
+});
+
+// Restore last visited address
+const lastUrl = localStorage.getItem("vanta_last_url");
+
+if (history.length > 0) {
+    historyIndex = history.length - 1;
+}
+
+if (lastUrl) {
+    address.value = lastUrl;
+    page.src = lastUrl;
+} else {
+    address.value = "https://example.com";
+}
+
+updateNavigation();
+updateCounter();
+
 </script>
 
 </body>
 </html>
+```
