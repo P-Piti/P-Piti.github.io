@@ -75,7 +75,25 @@
   .scan{position:absolute;inset:0;pointer-events:none;opacity:.16;
     background:repeating-linear-gradient(#0000 0 2px,#000 2px 3px)}
   #loading{position:absolute;inset:0;display:grid;place-items:center;background:#000;color:#a5704f;
-    font-size:clamp(8px,1.5vw,13px);letter-spacing:.3em;z-index:50}
+    font-size:clamp(7px,1.3vw,12px);letter-spacing:.28em;z-index:50;padding:6%}
+  .boot-wrap{width:min(78%,420px);text-align:center}
+  .boot-caps{color:#c2502a;font-size:clamp(7px,1.2vw,11px);letter-spacing:.4em;margin-bottom:1.4em}
+  .boot-track{height:8px;border:1px solid #5d3b2a;background:#150b08;box-shadow:0 0 0 1px #1d0f0a inset}
+  #boot-bar{height:100%;width:0%;background:linear-gradient(90deg,#7a2410,#ff7a33);
+    box-shadow:0 0 12px #b33d12;transition:width .12s linear}
+  #loading-text{margin-top:1em;line-height:1.6;word-break:break-word}
+  #boot-err{margin-top:1.1em;color:#ff8a6a;font-size:clamp(7px,1.15vw,11px);letter-spacing:.06em;
+    line-height:1.45;max-height:8em;overflow:auto;word-break:break-word}
+
+  /* --- touch / small screens --- */
+  @media (max-width: 760px), (max-height: 520px) {
+    .title{font-size:clamp(22px,9vw,46px)}
+    .keys{grid-template-columns:1fr;gap:.35vh;font-size:clamp(6px,2.1vw,10px)}
+    #hud .lbl{letter-spacing:.06em}
+    .cell{padding:1px 3px}
+  }
+  .btn{min-height:44px}
+  #hint{max-width:92%}
 </style>
 </head>
 <body>
@@ -139,10 +157,40 @@
       <div class="scan"></div>
     </div>
 
-    <div id="loading">BOOTING RENDERER…</div>
+    <div id="loading">
+      <div class="boot-wrap">
+        <div class="boot-caps">DEAD SECTOR // BOOT</div>
+        <div class="boot-track"><div id="boot-bar"></div></div>
+        <div id="loading-text">BOOTING RENDERER…</div>
+        <div id="boot-err"></div>
+      </div>
+    </div>
+    <script>
+    /* live error reporter — visible even if the game script dies */
+    (function () {
+      var shown = 0;
+      function report(msg) {
+        if (shown++ > 3) return;
+        var box = document.getElementById('boot-err');
+        var load = document.getElementById('loading');
+        if (load) { load.style.display = 'grid'; load.style.background = '#120604'; }
+        if (box) box.textContent = 'ERROR: ' + msg;
+        try {
+          if (window.parent && window.parent !== window)
+            window.parent.postMessage({ __ds: 'boot-error', message: msg }, '*');
+        } catch (e) {}
+      }
+      window.addEventListener('error', function (e) { report((e && e.message) || 'unknown error'); });
+      window.addEventListener('unhandledrejection', function (e) {
+        report('promise: ' + ((e && e.reason && (e.reason.message || e.reason)) || 'rejected'));
+      });
+      window.__dsReport = report;
+    })();
+    </script>
   </div>
 </div>
 <script>
+
 "use strict";
 (function(){
 /* =========================================================
@@ -214,6 +262,8 @@ const level = {
 const idx = (x, y) => y * MAP_W + x;
 
 function buildLevel() {
+  level.doors.length = 0; level.items.length = 0; level.spawns.length = 0;
+  level.wall.fill(0); level.floor.fill(0); level.ceilLight.fill(0);
   for (let y = 0; y < MAP_H; y++) {
     for (let x = 0; x < MAP_W; x++) {
       const c = MAP_SRC[y][x];
@@ -1219,39 +1269,58 @@ function toSprite(ras, anchorBottom) {
 }
 
 const ART = {};
-function buildArt() {
-  ART.walls = {
-    [W_CONCRETE]: texConcrete(), [W_BLOOD]: texBloodstone(), [W_PILLAR]: texPillar(),
-    [W_DOOR]: texDoor(), [W_EXIT]: texExit(), [W_GRATE]: texGrate()
-  };
-  ART.flats = [flatStone(), flatSlime(), flatBlood(), flatTech()];
-  ART.ceils = [flatCeil(), flatCeil(), flatCeil(), flatTech()];
-  ART.ceilGlow = flatLight();
-  ART.enemies = {};
-  for (const kind of ['walker', 'spitter', 'brute']) {
-    const cfg = ZOMBIE_CFG[kind];
-    ART.enemies[kind] = {
-      walk: [0, 1, 2, 3].map(f => toSprite(drawZombie(cfg, f, 'walk'))),
-      attack: [0, 1].map(f => toSprite(drawZombie(cfg, f, f === 0 ? 'walk' : 'attack'))),
-      pain: [toSprite(drawZombie(cfg, 1, 'attack'))],
-      dead: toSprite(drawZombie(cfg, 0, 'dead')),
-      corpse: toSprite(drawZombie(cfg, 0, 'dead'))
+const ART_STEPS = {
+  walls: () => {
+    ART.walls = {
+      [W_CONCRETE]: texConcrete(), [W_BLOOD]: texBloodstone(), [W_PILLAR]: texPillar(),
+      [W_DOOR]: texDoor(), [W_EXIT]: texExit(), [W_GRATE]: texGrate()
+    };
+    ART.flats = [flatStone(), flatSlime(), flatBlood(), flatTech()];
+    ART.ceils = [flatCeil(), flatCeil(), flatCeil(), flatTech()];
+    ART.ceilGlow = flatLight();
+    ART.enemies = {}; ART.items = {}; ART.weapons = {};
+  },
+  pickups: () => {
+    ART.items = {
+      health: toSprite(drawPickup('health')), armor: toSprite(drawPickup('armor')),
+      ammo: toSprite(drawPickup('ammo')), shells: toSprite(drawPickup('shells')),
+      card: toSprite(drawPickup('card'))
+    };
+    ART.fireball = toSprite(drawFireball());
+  },
+  sprites: () => {
+    ART.enemies = {};
+    for (const kind of ['walker', 'spitter', 'brute']) {
+      const cfg = ZOMBIE_CFG[kind];
+      ART.enemies[kind] = {
+        walk: [0, 1, 2, 3].map(f => toSprite(drawZombie(cfg, f, 'walk'))),
+        attack: [0, 1].map(f => toSprite(drawZombie(cfg, f, f === 0 ? 'walk' : 'attack'))),
+        pain: [toSprite(drawZombie(cfg, 1, 'attack'))],
+        dead: toSprite(drawZombie(cfg, 0, 'dead')),
+        corpse: toSprite(drawZombie(cfg, 0, 'dead'))
+      };
+    }
+  },
+  weapons: () => {
+    ART.muzzle = [0, 1, 2, 3].map(() => toSprite(drawMuzzle(1)));
+    ART.weapons = {
+      pistol: [0, 1, 2].map(drawPistol).map(r => toSprite(r)),
+      shotgun: [0, 1, 2].map(drawShotgun).map(r => toSprite(r))
     };
   }
-  ART.items = {
-    health: toSprite(drawPickup('health')), armor: toSprite(drawPickup('armor')),
-    ammo: toSprite(drawPickup('ammo')), shells: toSprite(drawPickup('shells')),
-    card: toSprite(drawPickup('card'))
-  };
-  ART.fireball = toSprite(drawFireball());
-  ART.muzzle = [0, 1, 2, 3].map(() => toSprite(drawMuzzle(1)));
-  ART.weapons = {
-    pistol: [0, 1, 2].map(drawPistol).map(r => toSprite(r)),
-    shotgun: [0, 1, 2].map(drawShotgun).map(r => toSprite(r))
-  };
+};
+/* one slice at a time, driven by the boot loader */
+function buildArtStep(name) {
+  const step = ART_STEPS[name];
+  if (!step) throw new Error('unknown art step "' + name + '"');
+  step();
+}
+/* one-shot build (offline harness) */
+function buildArt() {
+  for (const name in ART_STEPS) ART_STEPS[name]();
 }
 
-root.DS_ART = { buildArt, ART, Ras, toSprite, mulberry32, ZOMBIE_CFG, drawZombie, drawPickup, drawPistol, drawShotgun, drawFireball, drawMuzzle, texConcrete, texBloodstone, texPillar, texDoor, texExit, texGrate, flatStone, flatSlime, flatBlood, flatTech, flatCeil, flatLight };
+root.DS_ART = { buildArt, buildArtStep, ART, Ras, toSprite, mulberry32, ZOMBIE_CFG, drawZombie, drawPickup, drawPistol, drawShotgun, drawFireball, drawMuzzle, texConcrete, texBloodstone, texPillar, texDoor, texExit, texGrate, flatStone, flatSlime, flatBlood, flatTech, flatCeil, flatLight };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 /* =========================================================
@@ -1269,13 +1338,59 @@ const planeLen = Math.tan(FOV / 2);
 
 let ART;
 let TEXW, FLATW, CEILW, GLOWW, SPR, MUZZLE_CANVAS;
-art_boot();
-function art_boot() {
-  buildLevel();
-  const t0 = performance.now();
-  DS_ART.buildArt();
-  ART = DS_ART.ART;
-  // walls / flats -> Uint32 pixel buffers for the software renderer
+let artReady = false, bootError = null;
+const BOOT_STEPS = ['world', 'textures', 'pickups', 'sprites', 'weapons', 'palette', 'done'];
+
+/* Build everything in small async slices so the browser can paint the
+   loading bar (and so one heavy step can never freeze the tab). */
+function boot() {
+  const bar = document.getElementById('boot-bar');
+  const label = document.getElementById('loading-text');
+  let step = 0;
+  const setProgress = (i) => {
+    if (bar) bar.style.width = Math.round(i / BOOT_STEPS.length * 100) + '%';
+    if (label) label.textContent = 'BOOTING RENDERER…  ' + (BOOT_STEPS[i] || '').toUpperCase();
+  };
+  function next() {
+    try {
+      const A = window.DS_ART || DS_ART;
+      switch (BOOT_STEPS[step]) {
+        case 'world': buildLevel(); break;
+        case 'textures': A.buildArtStep('walls'); break;
+        case 'pickups': A.buildArtStep('pickups'); break;
+        case 'sprites': A.buildArtStep('sprites'); break;
+        case 'weapons': A.buildArtStep('weapons'); break;
+        case 'palette': ART = A.ART; installArt(ART); break;
+      }
+    } catch (err) {
+      bootError = err;
+      console.error('boot step "' + BOOT_STEPS[step] + '" failed:', err);
+      if (label) {
+        label.textContent = 'BOOT FAILED ON "' + String(BOOT_STEPS[step]).toUpperCase() + '": ' + err.message;
+        label.style.color = '#ff8a6a';
+      }
+      return;
+    }
+    setProgress(step + 1);
+    step++;
+    if (step < BOOT_STEPS.length) { setTimeout(next, 0); return; }
+    finishBoot();
+  }
+  function finishBoot() {
+    artReady = true;
+    const l = $('loading');
+    if (l) l.remove();
+    resetGame();
+    state.mode = 'title';
+    bindUI();
+    requestAnimationFrame(frame);
+  }
+  setProgress(0);
+  setTimeout(next, 30);
+}
+
+/* convert rasters into the fast Uint32 tables the software renderer uses */
+function installArt(A) {
   const pack = (ras) => {
     const px = new Uint32Array(ras.w * ras.h);
     for (let i = 0; i < px.length; i++) {
@@ -1283,22 +1398,19 @@ function art_boot() {
     }
     return px;
   };
-  TEXW = {}; for (const k in ART.walls) TEXW[k] = pack(ART.walls[k]);
-  FLATW = ART.flats.map(pack);
-  CEILW = ART.ceils.map(pack);
-  GLOWW = pack(ART.ceilGlow);
-  // sprites used by the renderer: keep px + mask (already packed in toSprite)
+  TEXW = {}; for (const k in A.walls) TEXW[k] = pack(A.walls[k]);
+  FLATW = A.flats.map(pack);
+  CEILW = A.ceils.map(pack);
+  GLOWW = pack(A.ceilGlow);
   SPR = {
-    enemies: ART.enemies, items: ART.items,
-    fireball: ART.fireball, muzzle: ART.muzzle,
+    enemies: A.enemies, items: A.items,
+    fireball: A.fireball, muzzle: A.muzzle,
     weapons: {
-      pistol: ART.weapons.pistol.map(s => spriteToCanvas(s)),
-      shotgun: ART.weapons.shotgun.map(s => spriteToCanvas(s))
+      pistol: A.weapons.pistol.map(s => spriteToCanvas(s)),
+      shotgun: A.weapons.shotgun.map(s => spriteToCanvas(s))
     }
   };
-  MUZZLE_CANVAS = ART.muzzle.map(s => spriteToCanvas(s));
-  console.log('art built in', Math.round(performance.now() - t0), 'ms');
-  $('loading').remove();
+  MUZZLE_CANVAS = A.muzzle.map(s => spriteToCanvas(s));
 }
 function spriteToCanvas(sp) {
   const c = document.createElement('canvas');
@@ -1323,6 +1435,19 @@ const Audio_ = (() => {
     master.gain.value = 0.55;
     master.connect(ac.destination);
     return ac;
+  }
+  /* ambient industrial drone (a real closure function: unlock() calls it) */
+  function startDrone() {
+    if (droneStarted || !ensure() || muted) return;
+    droneStarted = true;
+    const src = ac.createBufferSource(); src.buffer = noise(); src.loop = true;
+    const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 180;
+    const g = ac.createGain(); g.gain.value = 0.05;
+    const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = 44;
+    const og = ac.createGain(); og.gain.value = 0.045;
+    src.connect(f).connect(g).connect(master);
+    o.connect(og).connect(master);
+    src.start(); o.start();
   }
   let noiseBuf = null;
   function noise() {
@@ -1381,18 +1506,7 @@ const Audio_ = (() => {
     die() { noiseHit({ dur: 1.1, freq: 900, q: 0.8, peak: 0.5, sweep: -780 }); tone({ freq: 220, to: 40, dur: 1.0, type: 'sawtooth', peak: 0.25 }); },
     win() { [523, 659, 784, 1046].forEach((f, i) => tone({ freq: f, dur: 0.3, type: 'square', peak: 0.16, delay: i * 0.16 })); },
     step() { noiseHit({ dur: 0.05, freq: 320, q: 1.5, peak: 0.12 }); },
-    startDrone() {
-      if (droneStarted || !ensure() || muted) return;
-      droneStarted = true;
-      const src = ac.createBufferSource(); src.buffer = noise(); src.loop = true;
-      const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 180;
-      const g = ac.createGain(); g.gain.value = 0.05;
-      const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = 44;
-      const og = ac.createGain(); og.gain.value = 0.045;
-      src.connect(f).connect(g).connect(master);
-      o.connect(og).connect(master);
-      src.start(); o.start();
-    }
+    startDrone,
   };
 })();
 
@@ -1514,7 +1628,7 @@ function makeEnemy(kind, x, y) {
     kind, x, y, hp: d.hp, def: d,
     state: 'idle', alert: false, anim: rand(0, 3), attackTimer: 0, cool: rand(0.2, 1.2),
     vx: 0, vy: 0, hurt: 0, deadT: 0, dying: false, corpse: false,
-    wanderA: rand(0, TAU), wanderT: 0, growlT: rand(2, 8), stepT: 0,
+    wanderA: rand(0, TAU), wanderT: 0, growlT: rand(2, 8), stepT: 0, strike: 0,
     seeTimer: 0, lastSeen: { x, y }
   };
 }
@@ -1756,8 +1870,22 @@ function updateEnemies(dt) {
     e.growlT -= dt;
     if (e.growlT <= 0) { e.growlT = rand(4, 11); if (dist < 11) Audio_.growl(e.def.pitch * rand(0.9, 1.15)); }
 
-    // ---- attack / chase ----
+    // ---- attack / chase (deterministic wind-up, no timers) ----
     e.cool = Math.max(0, e.cool - dt);
+
+    if (e.strike > 0) {
+      e.strike -= dt;
+      e.anim = 1;
+      if (e.strike <= 0) {
+        if (e.def.ranged) { if (state.mode === 'play' && e.state !== 'dead') spitFireball(e); }
+        else if (Math.hypot(player.x - e.x, player.y - e.y) < e.def.atkRange + 0.4) {
+          damagePlayer(e.def.dmg);
+          Audio_.hit();
+        }
+        e.attackTimer = 0;
+      }
+      continue;
+    }
     if (e.attackTimer > 0) {
       e.attackTimer -= dt;
       e.anim = 1;
@@ -1765,34 +1893,22 @@ function updateEnemies(dt) {
       continue; // busy attacking -> no movement
     }
 
-    const canRanged = e.def.ranged && los && dist < e.def.atkRange;
     if (los && dist <= e.def.atkRange && e.cool <= 0) {
-      // melee lunge / ranged spit
-      e.attackTimer = e.def.ranged ? 0.45 : 0.42;
+      e.attackTimer = e.def.ranged ? 0.5 : 0.46;
+      e.strike = e.def.ranged ? 0.5 : 0.46;
       e.cool = e.def.atkCool;
-      if (e.def.ranged) {
-        setTimeout(() => { if (e.state !== 'dead' && state.mode === 'play') spitFireball(e); }, 220);
-      } else {
-        setTimeout(() => {
-          if (e.state === 'dead' || state.mode !== 'play') return;
-          if (Math.hypot(player.x - e.x, player.y - e.y) < e.def.atkRange + 0.35) damagePlayer(e.def.dmg);
-          Audio_.hit();
-        }, 200);
-      }
     } else {
       // move
       const target = los ? 1 : (e.seeTimer > 0 ? 0.6 : 0.34);
       const speed = e.def.speed * (e.alert ? target : 0.32);
       let ang = e.wanderA;
       if (los) {
-        // slight strafing so they don't clump into a conga line
         const wobble = Math.sin(state.t * 1.4 + e.x * 3.1 + e.y) * 0.22;
         ang = Math.atan2(dy, dx) + wobble;
       }
       const sp = e.def.ranged && dist < 3 ? -speed * 0.6 : speed; // spitters back off a bit
       const nx = e.x + Math.cos(ang) * sp * dt;
       const ny = e.y + Math.sin(ang) * sp * dt;
-      // separation from other enemies
       let sx = 0, sy = 0;
       for (const o of enemies) {
         if (o === e || o.state === 'dead') continue;
@@ -1984,7 +2100,21 @@ function updateHud() {
 const CAM_H = 0.5;          // eye height in world units (walls are 1 tall)
 
 let horizonRef = 0, overshoot = 0;
+
+/* cheap animated backdrop drawn while the art is still being generated */
+function renderPlaceholder() {
+  const t = state.t;
+  const g = ctx.createLinearGradient(0, 0, 0, VH);
+  g.addColorStop(0, '#1a0906');
+  g.addColorStop(0.55, '#0a0605');
+  g.addColorStop(1, '#050403');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, VW, VH);
+  ctx.fillStyle = 'rgba(120,20,8,0.35)';
+  for (let i = 0; i < 40; i++) ctx.fillRect(0, (i * 37 + t * 24) % VH, VW, 1);
+}
 function render() {
+  if (!TEXW || !FLATW || !CEILW || !GLOWW || !SPR) { renderPlaceholder(); return; }
   overshoot = 0;
   const px = player.x, py = player.y;
   const ang = player.a;
@@ -2512,9 +2642,21 @@ function frame(now) {
 }
 
 /* =========================================================
-   UI WIRING
+   UI WIRING  (called once the boot loader finishes; idempotent)
    ========================================================= */
-$('start-btn').addEventListener('click', () => { state.started = true; startGame(); });
+let uiBound = false;
+function reportBootError() {
+  try {
+    if (window.parent && window.parent !== window && bootError) {
+      window.parent.postMessage({ __ds: 'boot-error', message: String(bootError.message || bootError) }, '*');
+    }
+  } catch (_) {}
+}
+function bindUI() {
+  if (uiBound) return;
+  uiBound = true;
+  reportBootError();
+  $('start-btn').addEventListener('click', () => { state.started = true; startGame(); });
 $('resume-btn').addEventListener('click', resumeGame);
 $('retry-btn').addEventListener('click', () => { $('blood').style.opacity = 0; startGame(); });
 $('again-btn').addEventListener('click', () => { $('blood').style.opacity = 0; startGame(); });
@@ -2529,13 +2671,45 @@ document.addEventListener('visibilitychange', () => {
 document.addEventListener('keydown', e => {
   if (state.mode === 'pause' && (e.code === 'Enter' || e.code === 'Space')) resumeGame();
 });
+/* overlay shortcuts */
+document.addEventListener('keydown', e => {
+  if (state.mode === 'dead' || state.mode === 'win') {
+    if (e.code === 'KeyR' || e.code === 'Enter' || e.code === 'Space') { $('blood').style.opacity = 0; startGame(); }
+  }
+  if (state.mode === 'title' && (e.code === 'Enter' || e.code === 'Space')) { state.started = true; startGame(); }
+});
 
-/* title-screen attract mode: put the camera at the player start */
-resetGame();
-state.mode = 'title';
-requestAnimationFrame(frame);
+}
+
+/* debug/test hook (also used by the automated harness) */
+window.__DS = {
+  state, player, level, ART, VW, VH, img, buf32, keys, canvas,
+  get enemies() { return enemies; }, set enemies(v) { enemies = v; },
+  get particles() { return particles; },
+  get projectiles() { return projectiles; },
+  get pickups() { return pickups; },
+  get zbuf() { return zbuf; },
+  resetGame, startGame, tryFire, render, drawParticles, damagePlayer, useAction,
+  selectWeapon, makeEnemy, updatePlayer, updateEnemies, updateProjectiles, updateParticles, updatePickups,
+  bootNow() {
+    const A = window.DS_ART || DS_ART;
+    A.buildArt(); ART = A.ART; installArt(ART); artReady = true;
+    const l = $('loading'); if (l) l.remove();
+    resetGame(); state.mode = 'title'; bindUI();
+  },
+  step(dt) {
+    state.t += dt; state.time += dt;
+    updatePlayer(dt); updateEnemies(dt); updateProjectiles(dt); updateParticles(dt); updatePickups(dt);
+    updateToast();
+  },
+  play() { resetGame(); state.mode = 'play'; hide('title'); hide('pause'); hide('dead'); hide('win'); document.body.style.cursor = 'none'; },
+};
+
+/* boot */
+if (window.__dsAutoBoot !== false) boot();
 
 })();
+
 </script>
 </body>
 </html>
