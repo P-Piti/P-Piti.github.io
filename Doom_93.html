@@ -1,1 +1,2542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DEAD SECTOR — E1M1: Containment Breach</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#050403;overflow:hidden;
+    font-family:"Courier New",Courier,monospace;color:#d9cfc0;-webkit-user-select:none;user-select:none}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 42%,#1a0d07 0%,#070504 62%,#030202 100%)}
+  #frame{position:relative;width:min(100vw,calc(100vh * 1.8519));height:min(100vh,calc(100vw / 1.8519));
+    background:#000;overflow:hidden;box-shadow:0 0 0 2px #170f0b,0 0 70px #000 inset,0 24px 70px #000}
+  canvas#view{position:absolute;inset:0;width:100%;height:100%;display:block;
+    image-rendering:pixelated;image-rendering:crisp-edges}
+  /* ---------- damage / pick-up tinting ---------- */
+  #blood{position:absolute;z-index:7;inset:0;pointer-events:none;opacity:0;transition:opacity .18s linear;
+    background:radial-gradient(circle at 50% 50%,rgba(120,0,0,0) 34%,rgba(140,6,4,.62) 100%)}
+  #flash{position:absolute;z-index:7;inset:0;pointer-events:none;opacity:0;background:#ffe6a8;mix-blend-mode:screen}
+  /* ---------- HUD ---------- */
+  #hud{position:absolute;z-index:5;left:0;right:0;bottom:0;height:13.5%;display:flex;align-items:stretch;
+    background:linear-gradient(#5c574f,#38352f 30%,#211f1c 72%,#141312);
+    border-top:2px solid #7d7568;box-shadow:0 -3px 0 #0a0908 inset,0 -1px 0 #a99f8d}
+  .cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:2px;padding:2px 6px;flex:0 0 auto;border-right:1px solid #100f0d;
+    border-left:1px solid #7a7365;box-shadow:1px 0 0 #4a453d inset}
+  .cell:first-child{border-left:0}
+  .cell.grow{flex:1 1 auto}
+  .lbl{font-size:clamp(5px,1.02vw,9px);letter-spacing:.14em;color:#b7ac97;text-shadow:0 1px 0 #000}
+  .val{font-size:clamp(10px,2.5vw,22px);font-weight:700;letter-spacing:.04em;line-height:1;
+    color:#ff7a4a;text-shadow:0 0 8px #ff3c14,0 1px 0 #300}
+  .val.cool{color:#8ec8ff;text-shadow:0 0 8px #2a7fd4,0 1px 0 #001}
+  .val.green{color:#a8ff8e;text-shadow:0 0 8px #2f9c1c,0 1px 0 #020}
+  .val.small{font-size:clamp(7px,1.5vw,13px);color:#e8dfc9;text-shadow:0 1px 0 #000;letter-spacing:.1em}
+  #hud.hurt .val{animation:hurt .35s steps(2) 1}
+  @keyframes hurt{50%{color:#ff2410;text-shadow:0 0 16px #f00}}
+  /* ---------- crosshair + prompts ---------- */
+  #cross{position:absolute;z-index:6;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;pointer-events:none;
+    opacity:.55}
+  #cross:before,#cross:after{content:"";position:absolute;background:#e6f2ff;box-shadow:0 0 4px #9cf}
+  #cross:before{left:8px;top:0;width:2px;height:18px}
+  #cross:after{top:8px;left:0;height:2px;width:18px}
+  #hint{position:absolute;z-index:6;left:50%;top:calc(50% + 26px);transform:translateX(-50%);
+    font-size:clamp(7px,1.4vw,12px);letter-spacing:.18em;color:#ffd9a0;text-shadow:0 0 8px #000,0 1px 0 #000;
+    background:#00000088;padding:3px 8px;border:1px solid #ff9d5333;white-space:nowrap}
+  #toast{position:absolute;z-index:6;left:50%;top:14%;transform:translateX(-50%);text-align:center;
+    font-size:clamp(8px,1.7vw,14px);letter-spacing:.22em;color:#ffb98a;text-shadow:0 0 10px #7a1c08,0 2px 0 #000;
+    opacity:0;transition:opacity .4s}
+  /* ---------- overlays ---------- */
+  .screen{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:5%;gap:2.2vh;
+    background:radial-gradient(circle at 50% 35%,#1b0e08 0%,#080605 58%,#000 100%)}
+  .screen.hidden{display:none}
+  .eyebrow{font-size:clamp(6px,1.25vw,11px);letter-spacing:.42em;color:#a8896f}
+  .title{font-family:Georgia,"Times New Roman",serif;font-size:clamp(26px,7.5vw,74px);line-height:.92;
+    font-weight:700;letter-spacing:.02em;color:#e8d8c0;
+    text-shadow:0 0 26px #b4230c,0 0 6px #ff5a2a,0 4px 0 #310a04}
+  .title em{font-style:normal;color:#c53a1c;text-shadow:0 0 26px #ff3b12,0 4px 0 #2a0803}
+  .sub{font-size:clamp(7px,1.5vw,13px);letter-spacing:.28em;color:#c9b28f}
+  .keys{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6vh 2.4vw;
+    font-size:clamp(6px,1.2vw,11px);letter-spacing:.08em;color:#9c9282;max-width:min(560px,88%)}
+  .keys b{color:#f0e4ce}
+  .btn{cursor:pointer;font:inherit;font-weight:700;letter-spacing:.2em;
+    font-size:clamp(8px,1.6vw,14px);padding:1.1em 2em;color:#ffe9d2;
+    background:linear-gradient(#7a2715,#4a150a);border:2px solid #c0552c;
+    box-shadow:0 0 18px #8b1f0a66,0 4px 0 #250803,inset 0 1px 0 #ff9b6a55;text-shadow:0 1px 0 #2a0803}
+  .btn:hover{background:linear-gradient(#a03318,#5d1a0c);box-shadow:0 0 26px #d0330e88,0 4px 0 #250803}
+  .btn:active{transform:translateY(2px);box-shadow:0 0 18px #8b1f0a66,0 2px 0 #250803}
+  .small{font-size:clamp(6px,1.15vw,10px);letter-spacing:.16em;color:#7d7364}
+  .stats{display:flex;gap:3vw;font-size:clamp(7px,1.4vw,12px);letter-spacing:.16em;color:#c8b69c}
+  .stats span b{display:block;margin-top:.5em;font-size:clamp(12px,3vw,26px);color:#ff8352;
+    text-shadow:0 0 12px #a52c0a}
+  .dead .title{color:#c0a898;text-shadow:0 0 26px #7a0c04,0 4px 0 #1c0503}
+  .scan{position:absolute;inset:0;pointer-events:none;opacity:.16;
+    background:repeating-linear-gradient(#0000 0 2px,#000 2px 3px)}
+  #loading{position:absolute;inset:0;display:grid;place-items:center;background:#000;color:#a5704f;
+    font-size:clamp(8px,1.5vw,13px);letter-spacing:.3em;z-index:50}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="frame">
+    <canvas id="view" width="400" height="250"></canvas>
+    <div id="blood"></div>
+    <div id="flash"></div>
+    <div id="cross"></div>
+    <div id="hint" style="display:none"></div>
+    <div id="toast"></div>
+    <div id="hud">
+      <div class="cell"><span class="lbl">HEALTH</span><span class="val" id="h-health">100</span></div>
+      <div class="cell"><span class="lbl">ARMOR</span><span class="val cool" id="h-armor">0</span></div>
+      <div class="cell" id="card-cell" style="display:none"><span class="lbl">KEY</span><span class="val" id="h-card" style="color:#ff5a3c;text-shadow:0 0 10px #c01f08,0 1px 0 #300">■</span></div>
+      <div class="cell"><span class="lbl">BULLETS</span><span class="val" id="h-ammo">40</span></div>
+      <div class="cell"><span class="lbl">SHELLS</span><span class="val" id="h-shells">0</span></div>
+      <div class="cell grow"><span class="lbl">BODY COUNT</span><span class="val green" id="h-kills">0 / 0</span></div>
+      <div class="cell"><span class="lbl">WEAPON</span><span class="val small" id="h-weapon">PISTOL</span></div>
+    </div>
+
+    <div class="screen" id="title">
+      <div class="eyebrow">MOTH OS PRESENTS // MISSION 01</div>
+      <div class="title">DEAD<br><em>SECTOR</em></div>
+      <div class="sub">E1M1 &nbsp;·&nbsp; CONTAINMENT BREACH</div>
+      <button class="btn" id="start-btn">ENTER THE SECTOR</button>
+      <div class="keys">
+        <div><b>W A S D</b> — move &nbsp;·&nbsp; <b>MOUSE</b> — aim</div>
+        <div><b>LMB</b> — fire &nbsp;·&nbsp; <b>SHIFT</b> — run</div>
+        <div><b>E</b> — open doors / use switch</div>
+        <div><b>1 2</b> / <b>WHEEL</b> — change weapon</div>
+        <div><b>ESC</b> — pause &nbsp;·&nbsp; <b>M</b> — mute</div>
+        <div><b>ARROWS</b> — turn (no mouse)</div>
+      </div>
+      <div class="small">FIND THE RED-HOT EXIT SWITCH. SHOOT ANYTHING THAT MOVES.</div>
+      <div class="scan"></div>
+    </div>
+
+    <div class="screen hidden" id="pause">
+      <div class="eyebrow">GAME PAUSED</div>
+      <div class="title">PAUSE</div>
+      <button class="btn" id="resume-btn">RESUME</button>
+      <div class="small">CLICK RESUME TO REGAIN MOUSE CONTROL</div>
+      <div class="scan"></div>
+    </div>
+
+    <div class="screen hidden dead" id="dead">
+      <div class="eyebrow">MISSION FAILED</div>
+      <div class="title">YOU<br><em>DIED</em></div>
+      <div class="stats" id="dead-stats"></div>
+      <button class="btn" id="retry-btn">TRY AGAIN</button>
+      <div class="scan"></div>
+    </div>
+
+    <div class="screen hidden" id="win">
+      <div class="eyebrow">SECTOR PURGED</div>
+      <div class="title">MISSION<br><em>COMPLETE</em></div>
+      <div class="stats" id="win-stats"></div>
+      <button class="btn" id="again-btn">PLAY AGAIN</button>
+      <div class="small">MORE SECTORS WILL OPEN LATER</div>
+      <div class="scan"></div>
+    </div>
+
+    <div id="loading">BOOTING RENDERER…</div>
+  </div>
+</div>
+<script>
+"use strict";
+(function(){
+/* =========================================================
+   DEAD SECTOR  —  E1M1 "Containment Breach"
+   A small Doom-style raycasting zombie shooter.
+   Everything (levels, textures, sprites, audio) is generated in
+   code at boot, so the page is a single self-contained file.
+   ========================================================= */
+"use strict";
+
+/* ---------- tiny helpers ---------- */
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const rand = (a, b) => a + Math.random() * (b - a);
+const randi = (a, b) => Math.floor(rand(a, b + 1));
+const lerp = (a, b, t) => a + (b - a) * t;
+const $ = id => document.getElementById(id);
+
+/* =========================================================
+   1. THE MAP  (E1M1)
+   #  concrete wall     %  bloodstone wall   O  pillar
+   +  door              X  exit switch       T  slime (hurts)
+   .  floor             *  lamp             =  half wall (blocks view only)
+   P  player start      z/s/b  zombie / spitter / brute
+   a  ammo   H health   A  armor   K  keycard   S  shells
+   ========================================================= */
+const MAP_SRC = [
+  "##############################",
+  "##############################",
+  "##############################",
+  "##.......#.+....z.....#.z...##",
+  "##.K.....#.#........#.#...a.##",
+  "##...z...#.#..z...za#.+..b..X#",
+  "##.....S.+.#.O....O.#.#....H##",
+  "##.......#.#...z....#.#S..z.##",
+  "##.......#z#..TTTT..#.########",
+  "##########.#s.TTTTs.#.########",
+  "###.....A.....TTTT....########",
+  "###...s..+.#..TTTT..#.########",
+  "###a.....#.#Hz......#.########",
+  "##########.#.O...zOb#.########",
+  "##########.#S.......#.#....H##",
+  "##.......#.#.......A#.#..z..##",
+  "##.....a.#.##########.+.....##",
+  "##H......+.##########.#.s...##",
+  "##..P....#.##########.#...z.##",
+  "##.......#.+........s.########",
+  "##############################",
+  "##############################"
+];
+const MAP_H = MAP_SRC.length;
+const MAP_W = MAP_SRC[0].length;
+
+/* wall / floor type ids */
+const W_NONE = 0, W_CONCRETE = 1, W_BLOOD = 2, W_PILLAR = 3, W_DOOR = 4,
+      W_EXIT = 5, W_GRATE = 6, W_TECH = 7;
+
+const level = {
+  w: MAP_W, h: MAP_H,
+  wall: new Uint8Array(MAP_W * MAP_H),   // wall type per cell
+  floor: new Uint8Array(MAP_W * MAP_H),  // 0 = stone, 1 = slime, 2 = blood, 3 = tech plates
+  ceilLight: new Uint8Array(MAP_W * MAP_H),
+  doors: [],   // {x,y,open,state,timer,type}
+  items: [],   // pickups
+  spawns: [],  // enemy templates
+  playerStart: { x: 4.5, y: 18.5, a: -Math.PI / 2 },
+  exit: { x: 28, y: 5 },
+};
+const idx = (x, y) => y * MAP_W + x;
+
+function buildLevel() {
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      const c = MAP_SRC[y][x];
+      const i = idx(x, y);
+      level.wall[i] = 0; level.floor[i] = 0;
+      switch (c) {
+        case '#': level.wall[i] = W_CONCRETE; break;
+        case '%': level.wall[i] = W_BLOOD; break;
+        case 'O': level.wall[i] = W_PILLAR; break;
+        case '+': {
+          level.wall[i] = W_DOOR;
+          level.doors.push({ x, y, open: 0, target: 0, timer: 0, locked: false, cool: 0 });
+          break;
+        }
+        case 'X': level.wall[i] = W_EXIT; break;
+        case 'T': level.floor[i] = 1; break;
+        case '*': level.ceilLight[i] = 1; level.floor[i] = 3; break;
+        case '=': level.wall[i] = W_GRATE; break;
+        case 'P': level.playerStart = { x: x + 0.5, y: y + 0.5, a: -Math.PI / 2 }; break;
+        case 'z': level.spawns.push({ kind: 'walker', x: x + 0.5, y: y + 0.5 }); break;
+        case 's': level.spawns.push({ kind: 'spitter', x: x + 0.5, y: y + 0.5 }); break;
+        case 'b': level.spawns.push({ kind: 'brute', x: x + 0.5, y: y + 0.5 }); break;
+        case 'a': level.items.push({ kind: 'ammo', x: x + 0.5, y: y + 0.5 }); break;
+        case 'H': level.items.push({ kind: 'health', x: x + 0.5, y: y + 0.5 }); break;
+        case 'A': level.items.push({ kind: 'armor', x: x + 0.5, y: y + 0.5 }); break;
+        case 'K': level.items.push({ kind: 'card', x: x + 0.5, y: x === -1 ? 0 : y + 0.5 }); break;
+        case 'S': level.items.push({ kind: 'shells', x: x + 0.5, y: y + 0.5 }); break;
+      }
+    }
+  }
+  // the exit switch keeps the cell wall-solid; standing next to it wins the level
+  // red card is needed for the exit door to the east lab
+  for (const d of level.doors) {
+    if (d.x === 22 && d.y === 5) d.locked = true; // door into the east lab
+  }
+  // slime pools trim
+  for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) {
+    const i = idx(x, y);
+    if (level.floor[i] === 1) {
+      const n = (x * 7 + y * 13) % 5;
+      if (n === 0) level.floor[i] = 0;
+    }
+  }
+}
+
+/* walkable for the player: solid walls block, grates block, doors block while closed */
+function wallAt(x, y) {
+  const ix = x | 0, iy = y | 0;
+  if (ix < 0 || iy < 0 || ix >= MAP_W || iy >= MAP_H) return W_CONCRETE;
+  const w = level.wall[idx(ix, iy)];
+  if (w === W_DOOR) {
+    const d = doorAt(ix, iy);
+    return d && d.open > 0.85 ? 0 : W_DOOR;
+  }
+  return w;
+}
+function doorAt(ix, iy) {
+  for (const d of level.doors) if (d.x === ix && d.y === iy) return d;
+  return null;
+}
+function solidAt(x, y) { return wallAt(x, y) !== 0; }
+function floorTypeAt(x, y) {
+  const ix = x | 0, iy = y | 0;
+  if (ix < 0 || iy < 0 || ix >= MAP_W || iy >= MAP_H) return 0;
+  return level.floor[idx(ix, iy)];
+}
+/* can a monster/player body of radius r stand here? */
+function freeAt(x, y, r) {
+  return !solidAt(x - r, y - r) && !solidAt(x + r, y - r) &&
+         !solidAt(x - r, y + r) && !solidAt(x + r, y + r) &&
+         !solidAt(x, y);
+}
+function hasLineOfSight(x0, y0, x1, y1) {
+  const dx = x1 - x0, dy = y1 - y0;
+  const dist = Math.hypot(dx, dy);
+  const steps = Math.ceil(dist / 0.12);
+  for (let s = 1; s < steps; s++) {
+    const t = s / steps;
+    const w = wallAt(x0 + dx * t, y0 + dy * t);
+    if (w !== 0 && w !== W_GRATE) return false;
+  }
+  return true;
+}
+
+/* =========================================================
+   ART.JS  —  procedural textures & sprites (no external files)
+   Works in the browser and in node (for offline previews).
+   ========================================================= */
+(function (root) {
+"use strict";
+
+/* ---------- deterministic rng ---------- */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- raster ---------- */
+class Ras {
+  constructor(w, h) {
+    this.w = w; this.h = h;
+    this.d = new Uint8ClampedArray(w * h * 4);
+  }
+  set(x, y, c, a) {
+    x = x | 0; y = y | 0;
+    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return;
+    const i = (y * this.w + x) * 4, d = this.d;
+    if (a === undefined || a >= 1) { d[i] = c[0]; d[i+1] = c[1]; d[i+2] = c[2]; d[i+3] = 255; return; }
+    if (a <= 0) return;
+    d[i] = d[i] + (c[0] - d[i]) * a;
+    d[i+1] = d[i+1] + (c[1] - d[i+1]) * a;
+    d[i+2] = d[i+2] + (c[2] - d[i+2]) * a;
+    d[i+3] = Math.max(d[i+3], 255 * a);
+  }
+  get(x, y) {
+    const i = (((y | 0) * this.w) + (x | 0)) * 4, d = this.d;
+    return [d[i], d[i+1], d[i+2], d[i+3]];
+  }
+  add(x, y, c, a) { // additive light
+    x = x | 0; y = y | 0;
+    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return;
+    const i = (y * this.w + x) * 4, d = this.d;
+    a = a === undefined ? 1 : a;
+    d[i] += c[0] * a; d[i+1] += c[1] * a; d[i+2] += c[2] * a;
+  }
+  rect(x, y, w, h, c, a) {
+    for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.set(i, j, c, a);
+  }
+  ellipse(cx, cy, rx, ry, c, a) {
+    cx = cx; cy = cy; rx = Math.max(rx, 0.5); ry = Math.max(ry, 0.5);
+    for (let j = Math.floor(cy - ry); j <= Math.ceil(cy + ry); j++) {
+      for (let i = Math.floor(cx - rx); i <= Math.ceil(cx + rx); i++) {
+        const dx = (i + 0.5 - cx) / rx, dy = (j + 0.5 - cy) / ry;
+        if (dx * dx + dy * dy <= 1) this.set(i, j, c, a);
+      }
+    }
+  }
+  ring(cx, cy, rx, ry, th, c, a) {
+    for (let j = Math.floor(cy - ry - th); j <= Math.ceil(cy + ry + th); j++) {
+      for (let i = Math.floor(cx - rx - th); i <= Math.ceil(cx + rx + th); i++) {
+        const dx = (i + 0.5 - cx) / rx, dy = (j + 0.5 - cy) / ry;
+        const d2 = dx * dx + dy * dy;
+        if (d2 <= 1 && d2 >= (1 - th / Math.min(rx, ry)) * (1 - th / Math.min(rx, ry))) this.set(i, j, c, a);
+      }
+    }
+  }
+  /* rounded capsule / limb between two points */
+  limb(x0, y0, x1, y1, w0, w1, c, a) {
+    const steps = Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2) + 1;
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t;
+      const r = w0 + (w1 - w0) * t;
+      this.ellipse(x, y, r, r, c, a);
+    }
+  }
+  poly(pts, c, a) {
+    let minY = Infinity, maxY = -Infinity;
+    for (const p of pts) { minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]); }
+    for (let y = Math.floor(minY); y <= Math.ceil(maxY); y++) {
+      const xs = [];
+      for (let i = 0; i < pts.length; i++) {
+        const a1 = pts[i], b1 = pts[(i + 1) % pts.length];
+        if ((a1[1] <= y && b1[1] > y) || (b1[1] <= y && a1[1] > y)) {
+          xs.push(a1[0] + (y - a1[1]) / (b1[1] - a1[1]) * (b1[0] - a1[0]));
+        }
+      }
+      xs.sort((p, q) => p - q);
+      for (let k = 0; k + 1 < xs.length; k += 2) {
+        for (let x = Math.floor(xs[k]); x <= Math.ceil(xs[k + 1]); x++) this.set(x, y, c, a);
+      }
+    }
+  }
+  /* shade: multiply a region by factor with soft radial falloff (fake lighting) */
+  shade(x0, y0, x1, y1, light, dark, lx, ly) {
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+      if (x < 0 || y < 0 || x >= this.w || y >= this.h) continue;
+      const dx = (x - lx) / 40, dy = (y - ly) / 40;
+      const f = clamp(1 - (dx * dx + dy * dy) * 1.05, 0, 1);
+      const k = lerpc(dark, light, f);
+      const i = (y * this.w + x) * 4, d = this.d;
+      d[i] *= k; d[i+1] *= k; d[i+2] *= k;
+    }
+  }
+  /* dark silhouette outline from alpha */
+  outline(c, th) {
+    th = th || 1;
+    const src = this.d.slice();
+    const W = this.w, H = this.h;
+    const at = (x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? 0 : src[(y * W + x) * 4 + 3];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (at(x, y) > 40) continue;
+      let near = false;
+      for (let j = -th; j <= th && !near; j++) for (let i = -th; i <= th; i++) {
+        if (at(x + i, y + j) > 110) { near = true; break; }
+      }
+      if (near) this.set(x, y, c, 1);
+    }
+  }
+  /* speckle grime */
+  grime(rng, amount, col, a) {
+    for (let k = 0; k < amount; k++) {
+      const x = rng() * this.w, y = rng() * this.h;
+      const r = rng() * 2.2 + .3;
+      this.ellipse(x, y, r, r * (0.5 + rng()), col, a * (0.25 + rng() * 0.6));
+    }
+  }
+  bloodSpray(rng, cx, cy, n, spread, col) {
+    for (let k = 0; k < n; k++) {
+      const a = rng() * TAU, r = Math.pow(rng(), 0.6) * spread;
+      const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.85;
+      const s = rng() * 1.8 + 0.4;
+      this.ellipse(x, y, s, s * (0.7 + rng() * 0.7), col, 0.75 + rng() * 0.25);
+    }
+  }
+}
+function lerpc(a, b, t) { return a + (b - a) * t; }
+function rgb(r, g, b) { return [r, g, b]; }
+function shadeCol(c, k) { return [clamp(c[0] * k, 0, 255), clamp(c[1] * k, 0, 255), clamp(c[2] * k, 0, 255)]; }
+function mixCol(a, b, t) { return [lerpc(a[0], b[0], t), lerpc(a[1], b[1], t), lerpc(a[2], b[2], t)]; }
+const TAU = Math.PI * 2;
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+/* =========================================================
+   WALL TEXTURES  (64 x 64)
+   ========================================================= */
+const TEX = 64;
+
+function texConcrete() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(1337);
+  r.rect(0, 0, TEX, TEX, rgb(78, 70, 60));
+  // large blocks
+  const bh = 32, bw = 32, mortar = 2;
+  for (let by = 0; by < TEX; by += bh) {
+    for (let bx = 0; bx < TEX; bx += bw) {
+      const off = (by / bh) % 2 ? 16 : 0;
+      const x = (bx + off) % TEX;
+      const tone = 0.86 + rng() * 0.3;
+      const base = shadeCol(rgb(96, 86, 73), tone);
+      r.rect(x + mortar, by + mortar, bw - mortar * 2, bh - mortar * 2, base);
+      // subtle inner shading
+      r.rect(x + mortar, by + bh - mortar - 3, bw - mortar * 2, 3, shadeCol(base, 0.72));
+      r.rect(x + mortar, by + mortar, bw - mortar * 2, 2, shadeCol(base, 1.14));
+      // cracks
+      if (rng() < 0.5) {
+        let cx = x + 4 + rng() * (bw - 10), cy = by + 4 + rng() * 8;
+        for (let k = 0; k < 10; k++) {
+          r.set(cx, cy, rgb(34, 30, 26), 0.9);
+          r.set(cx + 1, cy, rgb(60, 54, 46), 0.5);
+          cx += rng() * 3 - 1.2; cy += rng() * 2.6;
+          if (cy > by + bh - 4) break;
+        }
+      }
+      // moss / stain
+      if (rng() < 0.55) {
+        const sc = [60 + rng() * 20, 78 + rng() * 30, 42 + rng() * 16];
+        for (let k = 0; k < 26; k++) {
+          const px = x + rng() * (bw - 3), py = by + bh - 3 - Math.pow(rng(), 2) * 20;
+          r.ellipse(px, py, 1 + rng() * 2.5, 1 + rng() * 2, sc, 0.18 + rng() * 0.3);
+        }
+      }
+    }
+  }
+  // mortar shadow lines
+  for (let by = 0; by < TEX; by += bh) r.rect(0, by, TEX, mortar, rgb(42, 38, 33));
+  for (let bx = 0; bx < TEX; bx += 16) {
+    for (let by = 0; by < TEX; by += bh) {
+      const off = (by / bh) % 2 ? 16 : 0;
+      const x = (bx + off) % TEX;
+      r.rect(x, by, mortar, bh, rgb(46, 41, 35));
+    }
+  }
+  r.grime(rng, 260, rgb(24, 20, 16), 0.25);
+  // blood streak
+  if (true) {
+    const bx = 40 + rng() * 8;
+    for (let k = 0; k < 90; k++) {
+      const y = rng() * TEX, w = (0.6 + rng() * 2.6) * (1 - y / TEX * 0.4);
+      r.ellipse(bx + Math.sin(y / 5) * 2 + rng() * 3, y, w, 1.4, [122 - rng() * 40, 20, 16], 0.5 + rng() * 0.4);
+    }
+    r.bloodSpray(rng, 44, 14, 30, 9, [96, 16, 12]);
+  }
+  r.shade(0, 0, TEX, TEX, 1.12, 0.62, 16, 8);
+  return r;
+}
+
+function texBloodstone() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(99);
+  r.rect(0, 0, TEX, TEX, rgb(48, 16, 14));
+  const bw = 21, bh = 16;
+  for (let by = 0, row = 0; by < TEX; by += bh, row++) {
+    for (let bx = -bw; bx < TEX + bw; bx += bw) {
+      const off = row % 2 ? bw / 2 : 0;
+      const x = bx + off, y = by;
+      const tone = 0.8 + rng() * 0.5;
+      const base = shadeCol(rgb(118, 38, 30), tone);
+      r.rect(x + 1, y + 1, bw - 2, bh - 2, base);
+      r.rect(x + 1, y + bh - 3, bw - 2, 2, shadeCol(base, 0.6));
+      r.rect(x + 1, y + 1, bw - 2, 2, shadeCol(base, 1.22));
+      for (let k = 0; k < 14; k++) r.ellipse(x + rng() * bw, y + rng() * bh, rng() * 2, rng() * 2, shadeCol(base, 0.7 + rng() * 0.6), 0.35);
+      if (rng() < 0.35) { // glowing vein
+        let cx = x + rng() * bw, cy = y + rng() * bh;
+        for (let k = 0; k < 12; k++) {
+          r.set(cx, cy, [196, 72, 40], 0.8);
+          r.set(cx, cy + 1, [110, 26, 18], 0.5);
+          cx += rng() * 2.4 - 1.2; cy += rng() * 2.4 - 0.6;
+        }
+      }
+    }
+  }
+  r.grime(rng, 200, rgb(30, 8, 6), 0.3);
+  r.shade(0, 0, TEX, TEX, 1.1, 0.5, 20, 6);
+  return r;
+}
+
+function texPillar() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(7);
+  r.rect(0, 0, TEX, TEX, rgb(58, 54, 50));
+  // vertical metal ribs
+  for (let x = 0; x < TEX; x += 8) {
+    r.rect(x, 0, 5, TEX, rgb(96, 92, 86));
+    r.rect(x, 0, 1, TEX, rgb(132, 128, 120));
+    r.rect(x + 5, 0, 3, TEX, rgb(44, 42, 38));
+  }
+  // cross bands
+  for (const y of [6, 34, 56]) {
+    r.rect(0, y, TEX, 6, rgb(74, 70, 64));
+    r.rect(0, y, TEX, 1, rgb(120, 114, 104));
+    r.rect(0, y + 5, TEX, 1, rgb(30, 28, 26));
+  }
+  // rivets
+  for (let y = 9; y < TEX; y += 22) for (let x = 4; x < TEX; x += 8) {
+    r.ellipse(x, y, 1.3, 1.3, [150, 144, 130]);
+    r.set(x - 1, y - 1, [58, 55, 50]);
+  }
+  // rust and grime
+  for (let k = 0; k < 26; k++) {
+    const x = rng() * TEX, y = rng() * TEX, h = 6 + rng() * 26;
+    for (let j = 0; j < h; j++) r.ellipse(x + Math.sin(j / 3) * 1.5, y + j, 0.8 + rng() * 1.6, 1, [96 + rng() * 40, 44 + rng() * 20, 22], 0.3);
+  }
+  r.grime(rng, 120, rgb(20, 18, 16), 0.3);
+  r.shade(0, 0, TEX, TEX, 1.14, 0.55, 24, 10);
+  return r;
+}
+
+function texDoor() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(4242);
+  r.rect(0, 0, TEX, TEX, rgb(48, 50, 48));
+  // frame
+  r.rect(0, 0, TEX, 4, rgb(104, 106, 100));
+  r.rect(0, TEX - 4, TEX, 4, rgb(86, 88, 84));
+  // panels
+  for (let side = 0; side < 2; side++) {
+    const x = side ? 34 : 2;
+    r.rect(x, 6, 28, 52, rgb(88, 92, 88));
+    r.rect(x, 6, 28, 2, rgb(132, 136, 128));
+    r.rect(x, 56, 28, 2, rgb(52, 54, 52));
+    // hazard stripes
+    for (let k = -20; k < 28; k += 10) {
+      for (let j = 0; j < 10; j++) for (let i = 0; i < 4; i++) {
+        const px = x + k + j, py = 44 + j - i;
+        if (px >= x && px < x + 28 && py >= 6 && py < 58) r.set(px, py, rgb(186, 150, 44), 0.85);
+      }
+    }
+    // rivets
+    for (let j = 10; j < 56; j += 10) { r.ellipse(x + 3, j, 1.2, 1.2, [140, 144, 136]); r.ellipse(x + 25, j, 1.2, 1.2, [140, 144, 136]); }
+  }
+  // centre seam glow
+  r.rect(31, 4, 2, 56, rgb(20, 22, 20));
+  r.rect(30, 4, 1, 56, rgb(150, 40, 28));
+  r.rect(33, 4, 1, 56, rgb(60, 16, 12));
+  r.grime(rng, 90, rgb(18, 18, 16), 0.35);
+  r.shade(0, 0, TEX, TEX, 1.1, 0.6, 20, 12);
+  return r;
+}
+
+function texExit() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(555);
+  r.rect(0, 0, TEX, TEX, rgb(52, 50, 46));
+  // hazard border
+  r.rect(0, 0, TEX, TEX, rgb(150, 120, 36));
+  for (let k = -64; k < 64; k += 12) {
+    for (let j = 0; j < 12; j++) for (let i = 0; i < 64; i++) {
+      const px = i, py = j + k + i * 0.6;
+      if (py >= 0 && py < 64) { /* stripes only near border */ }
+    }
+  }
+  r.rect(0, 0, TEX, TEX, rgb(46, 44, 40));
+  r.rect(3, 3, 58, 58, rgb(70, 68, 62));
+  // big switch plate
+  r.rect(10, 10, 44, 34, rgb(38, 36, 34));
+  r.rect(10, 10, 44, 2, rgb(96, 94, 86));
+  // glow button
+  for (let j = 0; j < 18; j++) for (let i = 0; i < 24; i++) {
+    const dx = (i - 12) / 12, dy = (j - 9) / 9;
+    const d = dx * dx + dy * dy;
+    if (d <= 1) {
+      const k = 1 - d;
+      r.set(20 + i, 18 + j, mixCol(rgb(150, 20, 12), rgb(255, 190, 90), k * 0.9));
+    }
+  }
+  r.ellipse(32, 22, 3, 5, [255, 240, 200]);
+  // "EXIT" bars
+  for (let k = 0; k < 4; k++) r.rect(18 + k * 7, 48, 5, 8, [220, 60, 40], 0.9);
+  r.rect(10, 46, 44, 1, [120, 40, 30]);
+  // bolts
+  for (const [x, y] of [[6, 6], [57, 6], [6, 57], [57, 57]]) { r.ellipse(x, y, 2, 2, [130, 126, 114]); r.set(x, y, [60, 58, 52]); }
+  r.shade(0, 0, TEX, TEX, 1.1, 0.6, 32, 22);
+  return r;
+}
+
+function texGrate() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(2024);
+  // transparent background with bars
+  for (let y = 0; y < TEX; y += 10) {
+    r.rect(0, y, TEX, 6, rgb(96, 92, 84));
+    r.rect(0, y, TEX, 1, rgb(140, 134, 122));
+    r.rect(0, y + 5, TEX, 1, rgb(44, 42, 38));
+  }
+  for (let x = 4; x < TEX; x += 20) {
+    r.rect(x, 0, 3, TEX, rgb(78, 74, 68));
+    r.rect(x, 0, 1, TEX, rgb(118, 112, 102));
+  }
+  r.grime(rng, 160, rgb(60, 30, 20), 0.35);
+  r.shade(0, 0, TEX, TEX, 1.1, 0.6, 16, 12);
+  return r;
+}
+
+/* ---------- flats ---------- */
+function flatStone() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(31);
+  r.rect(0, 0, TEX, TEX, rgb(40, 38, 34));
+  for (let y = 0; y < TEX; y += 16) for (let x = 0; x < TEX; x += 16) {
+    const tone = 0.8 + rng() * 0.4;
+    r.rect(x + 1, y + 1, 14, 14, shadeCol(rgb(66, 62, 55), tone));
+    r.rect(x + 1, y + 1, 14, 1, shadeCol(rgb(76, 72, 64), tone));
+  }
+  r.grime(rng, 240, rgb(26, 22, 18), 0.28);
+  for (let k = 0; k < 12; k++) r.ellipse(rng() * TEX, rng() * TEX, 2 + rng() * 5, 1.5 + rng() * 4, [64, 20, 14], 0.2);
+  return r;
+}
+function flatSlime() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(77);
+  r.rect(0, 0, TEX, TEX, rgb(22, 48, 16));
+  for (let k = 0; k < 120; k++) {
+    const x = rng() * TEX, y = rng() * TEX, rad = 3 + rng() * 12;
+    r.ellipse(x, y, rad, rad, [30 + rng() * 40, 70 + rng() * 60, 18 + rng() * 26], 0.35);
+  }
+  for (let k = 0; k < 40; k++) {
+    const x = rng() * TEX, y = rng() * TEX, rad = 0.8 + rng() * 2.2;
+    r.ellipse(x, y, rad, rad, [150, 230, 90], 0.5);
+  }
+  return r;
+}
+function flatBlood() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(88);
+  r.rect(0, 0, TEX, TEX, rgb(52, 18, 14));
+  for (let k = 0; k < 90; k++) {
+    const x = rng() * TEX, y = rng() * TEX, rad = 3 + rng() * 14;
+    r.ellipse(x, y, rad, rad, [80 + rng() * 50, 18 + rng() * 12, 14], 0.4);
+  }
+  return r;
+}
+function flatTech() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(191);
+  r.rect(0, 0, TEX, TEX, rgb(34, 34, 32));
+  for (let y = 0; y < TEX; y += 16) for (let x = 0; x < TEX; x += 16) {
+    r.rect(x + 1, y + 1, 14, 14, rgb(58, 58, 54));
+    r.rect(x + 1, y + 1, 14, 1, rgb(84, 84, 78));
+    for (let k = 0; k < 6; k++) r.set(x + rng() * 14, y + rng() * 14, [30, 30, 28], 0.6);
+  }
+  r.grime(rng, 120, rgb(20, 20, 18), 0.3);
+  return r;
+}
+function flatCeil() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(64);
+  r.rect(0, 0, TEX, TEX, rgb(30, 29, 27));
+  for (let k = 0; k < 220; k++) r.ellipse(rng() * TEX, rng() * TEX, 1 + rng() * 5, 1 + rng() * 4, [44, 42, 38], 0.3);
+  for (let k = 0; k < 8; k++) r.ellipse(rng() * TEX, rng() * TEX, 3 + rng() * 8, 2 + rng() * 5, [20, 18, 16], 0.4);
+  return r;
+}
+function flatLight() {
+  const r = new Ras(TEX, TEX), rng = mulberry32(12);
+  r.rect(0, 0, TEX, TEX, rgb(28, 28, 26));
+  r.rect(6, 6, 52, 52, rgb(46, 46, 42));
+  for (let y = 0; y < 40; y++) for (let x = 0; x < 40; x++) {
+    const d = Math.hypot(x - 20, y - 20) / 20;
+    const c = mixCol([255, 246, 210], [150, 120, 60], Math.pow(d, 2));
+    r.set(12 + x, 12 + y, c);
+  }
+  r.rect(12, 12, 40, 2, [255, 255, 240]);
+  r.grime(rng, 30, [40, 36, 28], 0.4);
+  return r;
+}
+/* =========================================================
+   SPRITES
+   ========================================================= */
+const SP = 64; // base sprite box
+
+/* generic humanoid zombie. cfg tweaks = per-type look. */
+function drawZombie(cfg, frame, mode) {
+  // mode: 'walk' | 'attack' | 'dead'
+  const r = new Ras(SP, SP), rng = mulberry32((cfg.seed || 1) * 977 + frame * 31 + (mode === 'attack' ? 7 : 0));
+  const cx = SP / 2;
+
+  if (mode === 'dead') {
+    // corpse seen from above-ish, will be squashed by the renderer
+    const sp = new Ras(SP, SP);
+    sp.rect(0, 0, SP, SP, [0, 0, 0], 0);
+    sp.ellipse(cx + 2, 48, 22, 12, [64, 14, 10], 0.95);
+    sp.ellipse(cx + 2, 48, 26, 14, [48, 10, 8], 0.7);
+    for (let k = 0; k < 70; k++) {
+      const a = rng() * TAU, d = 8 + rng() * 26;
+      sp.ellipse(cx + 2 + Math.cos(a) * d, 48 + Math.sin(a) * d * 0.5, 1 + rng() * 3, 0.8 + rng() * 2, [110, 22, 16], 0.85);
+    }
+    // torso
+    sp.limb(cx - 4, 50, cx + 14, 52, 8, 6, cfg.clothD);
+    sp.limb(cx - 4, 49, cx + 13, 50, 6, 5, cfg.cloth);
+    // legs
+    sp.limb(cx - 4, 50, cx - 22, 56, 4, 3, cfg.pants);
+    sp.limb(cx - 2, 52, cx - 18, 60, 4, 3, cfg.pantsD);
+    // arms
+    sp.limb(cx + 8, 48, cx + 22, 40, 4, 3, cfg.skin);
+    sp.limb(cx + 6, 52, cx + 20, 60, 4, 3, cfg.skinD);
+    // head
+    sp.ellipse(cx - 14, 52, 7, 6, cfg.skinD);
+    sp.ellipse(cx - 14, 51, 6, 5, cfg.skin);
+    sp.ellipse(cx - 17, 50, 2, 2, [30, 10, 8], 0.9);
+    sp.ellipse(cx - 11, 51, 1.6, 1.6, [30, 10, 8], 0.9);
+    sp.ellipse(cx - 14, 55, 3, 1.4, [60, 6, 6], 0.9);
+    for (let k = 0; k < 30; k++) sp.ellipse(cx + 2 + (rng() - .5) * 30, 48 + (rng() - .5) * 12, 1 + rng() * 2.5, 1 + rng() * 1.6, [96, 16, 12], 0.9);
+    sp.outline([12, 8, 6], 1);
+    return sp;
+  }
+
+  const att = mode === 'attack';
+  const step = [0, 1, 0, -1][frame % 4];
+  const bob = [0, 0.6, 0, -0.6][frame % 4];
+  const cy = bob;
+  const hipY = 44 + cy, shY = 26 + cy, headY = 15 + cy;
+
+  // ---- legs (walk cycle) ----
+  const legSpread = cfg.legSpread || 4;
+  const lx0 = cx - legSpread, lx1 = cx + legSpread;
+  const lf = step * 2.6;
+  // back leg
+  r.limb(lx1, hipY, lx1 + 1 + lf * 0.4, 57, 4.4, 3.2, cfg.pantsD);
+  r.limb(lx1 + 1 + lf * 0.4, 57, lx1 + 2 + lf, 61.5, 3.2, 2.6, cfg.pantsD);
+  r.rect(lx1 + lf - 1, 60, 6, 2.5, shadeCol(cfg.boot, 0.8));
+  // front leg
+  r.limb(lx0, hipY, lx0 - 1 - lf * 0.4, 57, 4.6, 3.4, cfg.pants);
+  r.limb(lx0 - 1 - lf * 0.4, 57, lx0 - 2 - lf, 61.5, 3.4, 2.8, cfg.pants);
+  r.rect(lx0 - lf - 4, 60, 7, 2.6, cfg.boot);
+
+  // ---- torso ----
+  const tw = cfg.torsoW || 11;
+  r.poly([[cx - tw, shY], [cx + tw, shY], [cx + tw - 2, hipY + 2], [cx - tw + 2, hipY + 2]], cfg.cloth);
+  // ragged shirt hem
+  for (let k = 0; k < 9; k++) {
+    const x = cx - tw + 2 + k * (tw * 2 - 4) / 8;
+    r.ellipse(x, hipY + 2 + rng() * 2, 2.4, 2.6 + rng() * 2, cfg.clothD, 0.9);
+  }
+  // chest shading + tears
+  r.poly([[cx + 3, shY + 1], [cx + tw - 1, shY + 1], [cx + tw - 3, hipY], [cx + 3, hipY]], cfg.clothD, 0.55);
+  for (let k = 0; k < 4; k++) {
+    const x = cx - tw + 3 + rng() * (tw * 2 - 6), y = shY + 4 + rng() * 14;
+    r.ellipse(x, y, 1.4 + rng() * 2, 1.8 + rng() * 2.5, cfg.skinD, 0.95);
+    r.ellipse(x, y + 2, 1 + rng(), 1.6, [70, 8, 6], 0.55);
+  }
+  // belt
+  r.rect(cx - tw + 1, hipY - 3, tw * 2 - 2, 3, shadeCol(cfg.pants, 0.55));
+
+  // ---- arms (reaching forward = toward viewer, drawn spread) ----
+  const armLift = att ? 5 : 0;
+  const sway = [0, 1.2, 0, -1.2][frame % 4];
+  const handY = (att ? 33 : 38) + cy;
+  // left arm
+  r.limb(cx - tw + 1, shY + 2, cx - tw - 5, shY + 9 + armLift + sway, 3.8, 3.2, cfg.skinD);
+  r.limb(cx - tw - 5, shY + 9 + armLift + sway, cx - tw - 3, handY - 6, 3.2, 2.8, cfg.skinD);
+  r.ellipse(cx - tw - 3, handY - 4, 3.4, 3.8, cfg.skinD);
+  // right arm (lit, closer)
+  r.limb(cx + tw - 1, shY + 2, cx + tw + 6, shY + 8 + armLift - sway, 4.2, 3.4, cfg.skin);
+  r.limb(cx + tw + 6, shY + 8 + armLift - sway, cx + tw + 4, handY - 6, 3.4, 3, cfg.skin);
+  r.ellipse(cx + tw + 4, handY - 4, 3.8, 4.2, cfg.skin);
+  // fingers
+  for (let k = 0; k < 4; k++) {
+    r.limb(cx + tw + 2 + k * 1.6, handY - 3, cx + tw + 2.4 + k * 1.8, handY + 1.6, 1.3, 1, mixCol(cfg.skin, cfg.skinD, 0.3));
+  }
+  for (let k = 0; k < 3; k++) r.limb(cx - tw - 4 + k * 1.4, handY - 3, cx - tw - 4.6 + k * 1.6, handY + 0.6, 1.1, 0.9, cfg.skinD);
+  // gore on hands
+  if (cfg.bloody) {
+    r.ellipse(cx + tw + 4, handY - 2, 3, 2.6, [110, 14, 10], 0.5);
+    r.ellipse(cx - tw - 3, handY - 2, 2.4, 2.2, [90, 12, 8], 0.45);
+  }
+
+  // ---- neck + head ----
+  r.rect(cx - 3, shY - 4, 6, 6, cfg.skinD);
+  r.ellipse(cx, headY, 8, 8.6, cfg.skin);
+  r.ellipse(cx + 2, headY + 1, 6, 7, shadeCol(cfg.skin, 1.06));
+  r.ellipse(cx - 4, headY + 1, 4.6, 6, cfg.skinD, 0.55);
+  // jaw / chin
+  r.ellipse(cx, headY + 6, 5.6, 3.4, cfg.skinD);
+  // eye sockets
+  r.ellipse(cx - 3.4, headY - 1.2, 2.6, 2.2, [26, 24, 18]);
+  r.ellipse(cx + 3.4, headY - 1.2, 2.6, 2.2, [26, 24, 18]);
+  // glowing eyes
+  const eyeCol = cfg.eyes || [220, 60, 30];
+  r.ellipse(cx - 3.4, headY - 1.0, 1.2, 1.1, eyeCol);
+  r.ellipse(cx + 3.4, headY - 1.0, 1.2, 1.1, eyeCol);
+  r.add(cx - 3.4, headY - 1, eyeCol, 0.5);
+  r.add(cx + 3.4, headY - 1, eyeCol, 0.5);
+  // brow ridge
+  r.ellipse(cx, headY - 4, 6.6, 1.8, cfg.skinD, 0.8);
+  // nose cavity
+  r.ellipse(cx + 0.4, headY + 2.2, 1.5, 2, [40, 30, 24], 0.95);
+  // mouth: open when attacking, snarl otherwise
+  const mw = att ? 4.2 : 3.4, mh = att ? 3.6 : 1.9;
+  r.ellipse(cx, headY + 5, mw, mh, [22, 10, 10]);
+  for (let k = -2; k <= 2; k++) {
+    r.rect(cx + k * 1.7, headY + 5 - mh, 1, 1.8, [216, 206, 176], 0.95);
+    r.rect(cx + k * 1.7, headY + 5 + mh - 1.6, 1, 1.6, [200, 190, 160], 0.9);
+  }
+  if (att && cfg.acid) r.ellipse(cx, headY + 5.4, 2.2, 1.8, [140, 230, 70], 0.9);
+  // blood on chin
+  for (let k = 0; k < 5; k++) r.ellipse(cx + (rng() - .5) * 5, headY + 7 + rng() * 2.5, 0.9 + rng(), 1.2 + rng() * 1.6, [120, 16, 12], 0.8);
+  // hair patches
+  for (let k = 0; k < 16; k++) {
+    const a = Math.PI + rng() * Math.PI;
+    r.ellipse(cx + Math.cos(a) * 7, headY - 1 + Math.sin(a) * 7.5, 1.2 + rng() * 1.6, 1 + rng() * 1.6, cfg.hair, 0.75);
+  }
+  // wounds
+  for (let k = 0; k < 3; k++) {
+    const wx = cx - 6 + rng() * 12, wy = shY + 4 + rng() * 12;
+    r.ellipse(wx, wy, 1.6 + rng() * 2, 1 + rng() * 1.6, [96, 14, 10], 0.85);
+  }
+  if (cfg.hump) { // brute shoulders
+    r.ellipse(cx - tw - 1, shY + 3, 6, 4.6, cfg.skinD);
+    r.ellipse(cx + tw + 1, shY + 3, 6, 4.6, cfg.skin);
+  }
+  if (cfg.acid) { // glowing grenades/hands for spitter
+    r.ellipse(cx + tw + 4, handY - 4, 3.6, 3.6, [120, 220, 60], 0.55);
+    r.add(cx + tw + 4, handY - 4, [140, 255, 80], 0.6);
+    r.ellipse(cx - tw - 3, handY - 4, 3, 3, [110, 200, 60], 0.45);
+  }
+  r.shade(0, 0, SP, SP, 1.14, 0.55, 46, 12);
+  r.outline([10, 8, 7], 1);
+  return r;
+}
+
+const ZOMBIE_CFG = {
+  walker: {
+    seed: 3, skin: [124, 134, 104], skinD: [74, 84, 62], cloth: [52, 60, 74], clothD: [32, 38, 50],
+    pants: [58, 52, 44], pantsD: [40, 36, 30], boot: [30, 28, 24], hair: [48, 40, 30],
+    eyes: [236, 86, 40], torsoW: 11, legSpread: 4, bloody: true
+  },
+  spitter: {
+    seed: 8, skin: [140, 148, 96], skinD: [78, 88, 52], cloth: [92, 84, 38], clothD: [56, 50, 22],
+    pants: [48, 46, 32], pantsD: [32, 30, 20], boot: [26, 26, 20], hair: [60, 54, 26],
+    eyes: [180, 255, 90], torsoW: 9, legSpread: 3.4, acid: true, bloody: false
+  },
+  brute: {
+    seed: 21, skin: [148, 116, 96], skinD: [92, 64, 50], cloth: [92, 40, 32], clothD: [58, 24, 18],
+    pants: [44, 40, 36], pantsD: [30, 26, 24], boot: [22, 20, 18], hair: [40, 30, 24],
+    eyes: [255, 40, 20], torsoW: 15, legSpread: 5.5, hump: true, bloody: true
+  }
+};
+
+/* pickups */
+function drawPickup(kind) {
+  const r = new Ras(32, 32), rng = mulberry32(kind.length * 71 + kind.charCodeAt(0));
+  if (kind === 'health') {
+    r.rect(9, 12, 14, 16, [222, 220, 208]);
+    r.rect(9, 12, 14, 2, [255, 255, 246]);
+    r.rect(9, 26, 14, 2, [150, 148, 138]);
+    r.rect(11, 15, 10, 9, [186, 30, 24]);
+    r.rect(15, 16, 2.4, 7, [255, 250, 240]);
+    r.rect(12.6, 18.4, 6.6, 2.2, [255, 250, 240]);
+    r.ellipse(16, 10, 3, 2, [180, 176, 164]);
+  } else if (kind === 'armor') {
+    r.poly([[8, 12], [24, 12], [23, 22], [16, 29], [9, 22]], [64, 138, 92]);
+    r.poly([[10, 13], [22, 13], [21, 21], [16, 27], [11, 21]], [92, 176, 118]);
+    r.poly([[10, 13], [16, 13], [16, 27], [11, 21]], [124, 208, 148], 0.6);
+    r.rect(13, 16, 6, 1.4, [40, 90, 60]);
+    r.rect(13, 19, 6, 1.4, [40, 90, 60]);
+  } else if (kind === 'ammo') {
+    r.rect(6, 16, 20, 11, [58, 70, 44]);
+    r.rect(6, 16, 20, 2, [92, 108, 68]);
+    r.rect(6, 25, 20, 2, [34, 42, 26]);
+    for (let k = 0; k < 4; k++) {
+      r.rect(8 + k * 4.6, 11, 3, 6, [186, 150, 74]);
+      r.ellipse(9.5 + k * 4.6, 11, 1.6, 1.2, [236, 206, 130]);
+    }
+    r.rect(9, 19, 14, 2, [30, 36, 22]);
+  } else if (kind === 'shells') {
+    r.rect(6, 15, 20, 12, [96, 34, 26]);
+    r.rect(6, 15, 20, 2, [140, 56, 40]);
+    for (let k = 0; k < 3; k++) {
+      r.rect(9 + k * 5.4, 8, 4, 8, [168, 40, 30]);
+      r.ellipse(11 + k * 5.4, 8, 2, 1.6, [212, 176, 96]);
+      r.rect(9 + k * 5.4, 14, 4, 1.6, [236, 210, 140]);
+    }
+    r.rect(6, 24, 20, 2, [50, 16, 12]);
+  } else { // card
+    r.rect(8, 11, 16, 11, [150, 34, 30]);
+    r.rect(8, 11, 16, 2, [230, 96, 76]);
+    r.rect(10, 15, 8, 1.6, [255, 220, 200], 0.9);
+    r.rect(10, 18, 5, 1.4, [255, 220, 200], 0.7);
+    r.rect(20, 15, 3, 4, [255, 210, 120]);
+    r.add(21.5, 17, [255, 180, 90], 0.4);
+  }
+  r.shade(0, 0, 32, 32, 1.15, 0.6, 10, 10);
+  r.outline([14, 10, 8], 1);
+  return r;
+}
+
+/* green acid fireball */
+function drawFireball() {
+  const r = new Ras(32, 32);
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+    const dx = (x - 16) / 11, dy = (y - 16) / 11;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    if (d < 1) {
+      const k = 1 - d;
+      const c = mixCol([40, 120, 30], [235, 255, 180], Math.pow(k, 0.7));
+      r.set(x, y, c, d < .82 ? 1 : 1 - (d - .82) / .18);
+    }
+  }
+  r.add(14, 13, [255, 255, 220], 0.6);
+  return r;
+}
+function drawMuzzle(scale) {
+  const S = 32 * (scale || 1);
+  const r = new Ras(S, S);
+  const c = S / 2;
+  const rays = 7;
+  for (let k = 0; k < 40; k++) {
+    const a = Math.random() * TAU, d = Math.random() * c;
+    r.ellipse(c + Math.cos(a) * d, c + Math.sin(a) * d, Math.random() * 4 + 1, Math.random() * 4 + 1,
+      mixCol([255, 190, 60], [255, 255, 230], Math.random()), 0.6);
+  }
+  for (let k = 0; k < rays; k++) {
+    const a = k / rays * TAU + 0.2;
+    const len = c * (0.7 + Math.random() * 0.3);
+    r.limb(c, c, c + Math.cos(a) * len, c + Math.sin(a) * len, 3.4, 0.4, [255, 214, 120], 0.85);
+  }
+  r.ellipse(c, c, c * 0.42, c * 0.42, [255, 246, 214]);
+  r.ellipse(c, c, c * 0.24, c * 0.24, [255, 255, 255]);
+  return r;
+}
+
+/* =========================================================
+   WEAPONS  (drawn at 2x then box-downsampled)
+   ========================================================= */
+
+/* soft directional shade, keeps colours readable */
+function softShade(r, lightK, darkK, lx, ly, radius) {
+  for (let y = 0; y < r.h; y++) for (let x = 0; x < r.w; x++) {
+    const i = (y * r.w + x) * 4, d = r.d;
+    if (!d[i + 3]) continue;
+    const dx = (x - lx) / radius, dy = (y - ly) / radius;
+    const f = clamp(1 - (dx * dx + dy * dy) * 0.9, 0, 1);
+    const k = darkK + (lightK - darkK) * f;
+    d[i] *= k; d[i + 1] *= k; d[i + 2] *= k;
+  }
+}
+
+/* shared: armoured forearm + gloved fist, coming up from the bottom of the screen */
+function drawArm(r, W, H, wx, wy, sleeveTop, sleeveBot, scale) {
+  const s = scale || 1;
+  const fx = wx + 10 * s, fy = wy + 26 * s;
+  // forearm sleeve: thick tapered capsule from bottom edge up to the wrist
+  r.limb(wx - 34 * s, H + 24, fx, fy, 36 * s, 22 * s, sleeveBot);
+  r.limb(wx - 22 * s, H + 24, fx + 2 * s, fy + 1, 27 * s, 17 * s, sleeveTop);
+  r.limb(wx - 12 * s, H + 24, fx + 4 * s, fy + 3, 14 * s, 9 * s, shadeCol(sleeveTop, 1.22), 0.55);
+  // sleeve ridges / armour bands
+  for (let k = 0; k < 3; k++) {
+    const t = 0.26 + k * 0.22;
+    const ax = lerpc(wx - 30 * s, fx, t), ay = lerpc(H + 20, fy, t);
+    r.limb(ax - 20 * s, ay + 6 * s, ax + 17 * s, ay - 1 * s, 2.4 * s, 2.4 * s, shadeCol(sleeveBot, 0.62), 0.8);
+  }
+  // cuff
+  r.ellipse(fx, fy - 2 * s, 20 * s, 12 * s, shadeCol(sleeveBot, 0.92));
+  r.ellipse(fx, fy - 4 * s, 16 * s, 9 * s, shadeCol(sleeveTop, 1.06));
+  // gloved fist
+  r.ellipse(wx + 2 * s, wy, 19 * s, 17 * s, [44, 38, 33]);
+  r.ellipse(wx + 5 * s, wy - 4 * s, 15 * s, 13 * s, [64, 56, 48]);
+  r.ellipse(wx + 9 * s, wy - 8 * s, 8 * s, 7 * s, [88, 78, 68], 0.9);
+  // knuckles + fingers
+  for (let k = 0; k < 4; k++) {
+    const kx = wx - 8 * s + k * 6 * s;
+    r.ellipse(kx, wy - 11 * s, 3.6 * s, 3 * s, [56, 48, 42]);
+    r.ellipse(kx, wy - 12 * s, 2.4 * s, 1.8 * s, [92, 82, 72], 0.7);
+  }
+  // thumb
+  r.limb(wx + 12 * s, wy + 2 * s, wx + 20 * s, wy - 6 * s, 5 * s, 4 * s, [70, 60, 52]);
+  // wrist crease shadow
+  r.ellipse(fx + 2 * s, fy + 3 * s, 16 * s, 5 * s, [18, 16, 14], 0.35);
+}
+
+/* rotate + stamp a source raster into dst with nearest-neighbour sampling */
+function stampRot(dst, src, cx, cy, ang, scale) {
+  const s = scale || 1;
+  const ca = Math.cos(-ang), sa = Math.sin(-ang);
+  const R = Math.ceil(Math.hypot(src.w, src.h) * s * 0.6) + 2;
+  for (let y = Math.floor(cy - R); y <= cy + R; y++) {
+    for (let x = Math.floor(cx - R); x <= cx + R; x++) {
+      if (x < 0 || y < 0 || x >= dst.w || y >= dst.h) continue;
+      const dx = (x - cx) / s, dy = (y - cy) / s;
+      const u = dx * ca - dy * sa + src.w / 2;
+      const v = dx * sa + dy * ca + src.h / 2;
+      if (u < 0 || v < 0 || u >= src.w || v >= src.h) continue;
+      const i = ((v | 0) * src.w + (u | 0)) * 4;
+      if (src.d[i + 3] > 110) dst.set(x, y, [src.d[i], src.d[i + 1], src.d[i + 2]]);
+    }
+  }
+}
+
+const SKIN = [154, 116, 92], SKIN_D = [104, 74, 58], SKIN_L = [186, 148, 118];
+const SLEEVE = [72, 84, 58], SLEEVE_D = [44, 52, 36], SLEEVE_L = [96, 110, 76];
+
+/* hand gripping a vertical grip centred at cx, top finger at y0 */
+function gripHand(r, cx, y0, halfW, n, colA, colB) {
+  const fw = halfW + 13;
+  for (let k = 0; k < n; k++) {
+    const y = y0 + k * 13;
+    // palm side (behind grip) shadow
+    r.ellipse(cx - fw + 3, y + 5, 8, 8, colB, 0.95);
+    // finger over the grip
+    r.limb(cx - fw, y, cx + halfW + 2, y + 1, 6.6, 6.0, colB);
+    r.limb(cx - fw + 1, y - 2.6, cx + halfW + 1, y - 1.6, 5.2, 4.8, colA);
+    r.limb(cx - fw + 3, y - 4.2, cx + halfW - 3, y - 3.6, 2.2, 2.0, SKIN_L, 0.55);
+    // knuckle
+    r.ellipse(cx + halfW + 1, y + 0.5, 6, 6, colB);
+    r.ellipse(cx + halfW, y - 1, 4.4, 4.4, colA);
+  }
+  // thumb from the left
+  r.limb(cx - fw - 2, y0 + 16, cx - fw - 12, y0 - 2, 7, 5.4, colA);
+  r.ellipse(cx - fw - 12, y0 - 3, 5.4, 4.8, colB);
+  // palm mass behind the fingers
+  r.ellipse(cx - fw + 1, y0 + n * 6.5, 10, n * 4.2, colB);
+}
+/* forearm rising from the local bottom edge */
+function forearm(r, cx, yTop, halfW) {
+  r.poly([[cx - halfW - 12, r.h + 20], [cx - halfW, yTop], [cx + halfW, yTop],
+          [cx + halfW + 12, r.h + 20]], SLEEVE_D);
+  r.poly([[cx - halfW + 4, r.h + 20], [cx - halfW + 5, yTop + 5], [cx + halfW - 5, yTop + 5],
+          [cx + halfW - 4, r.h + 20]], SLEEVE);
+  r.poly([[cx - halfW + 7, r.h + 20], [cx - halfW + 8, yTop + 9], [cx - halfW * 0.2, yTop + 9],
+          [cx - halfW * 0.1, r.h + 20]], SLEEVE_L, 0.5);
+  for (let k = 0; k < 3; k++) {
+    const t = 0.2 + k * 0.27;
+    const y = lerpc(r.h, yTop, t);
+    const hw = lerpc(halfW + 10, halfW + 1, t);
+    r.limb(cx - hw, y, cx + hw, y + 2, 2.6, 2.6, shadeCol(SLEEVE_D, 0.7), 0.85);
+  }
+  r.ellipse(cx, yTop + 4, halfW + 3, 8, shadeCol(SLEEVE, 1.02));
+}
+
+/* ---------------- PISTOL (local space: muzzle up) ---------------- */
+function pistolLocal(frame) {
+  const W = 120, H = 190;
+  const r = new Ras(W, H);
+  const cx = 60;
+  const kick = frame === 1 ? -12 : 0;   // recoil: gun rides up
+  const tilt = frame === 2 ? 8 : 0;
+
+  const my = 16 + kick;                 // muzzle y
+  const sy = my + 74;                   // slide bottom
+  // ---- slide ----
+  r.poly([[cx - 22, sy], [cx - 17, my], [cx + 17, my], [cx + 22, sy]], [104, 108, 112]);
+  r.poly([[cx - 22, sy], [cx - 17, my], [cx - 9, my], [cx - 11, sy]], [136, 142, 146], 0.7);
+  r.poly([[cx + 12, my], [cx + 17, my], [cx + 22, sy], [cx + 16, sy]], [62, 65, 68], 0.85);
+  // top face
+  r.poly([[cx - 17, my], [cx + 17, my], [cx + 12, my + 9], [cx - 12, my + 9]], [182, 188, 192]);
+  r.poly([[cx - 12, my + 9], [cx + 12, my + 9], [cx + 9, my + 14], [cx - 9, my + 14]], [212, 218, 222], 0.9);
+  r.ellipse(cx, my + 15, 7.4, 3.2, [28, 27, 28], 0.85);       // bore
+  r.ellipse(cx, my + 14.6, 4.2, 1.9, [12, 12, 12]);
+  // front sight
+  r.rect(cx - 4, my - 5, 8, 6, [78, 82, 86]);
+  r.rect(cx - 3, my - 7, 6, 3, [158, 164, 168]);
+  // rear sight ears
+  r.rect(cx - 22, my + 68, 7, 9, [74, 78, 82]);
+  r.rect(cx + 15, my + 68, 7, 9, [74, 78, 82]);
+  // serrations down the slide
+  for (let k = 0; k < 10; k++) {
+    const t = k / 9;
+    const y = lerpc(sy - 6, my + 40, t), hw = lerpc(21, 15, t);
+    r.limb(cx - hw + 2, y, cx + hw - 2, y - 1.2, 1.6, 1.6, [56, 58, 62], 0.7);
+  }
+  // ---- frame ----
+  r.poly([[cx - 24, sy - 3], [cx + 24, sy - 3], [cx + 22, sy + 20], [cx - 22, sy + 20]], [80, 84, 88]);
+  r.poly([[cx - 24, sy - 3], [cx + 24, sy - 3], [cx + 24, sy + 3], [cx - 24, sy + 3]], [154, 160, 164], 0.8);
+  r.poly([[cx - 22, sy + 15], [cx + 22, sy + 15], [cx + 22, sy + 20], [cx - 22, sy + 20]], [48, 50, 54]);
+  // trigger guard
+  r.ring(cx, sy + 26, 13, 12, 3, [70, 72, 76]);
+  // ---- grip (angled back a little) ----
+  r.poly([[cx - 19, sy + 18], [cx + 19, sy + 18], [cx + 14, sy + 62], [cx - 14, sy + 62]], [58, 46, 38]);
+  for (let k = 0; k < 5; k++) r.limb(cx - 17, sy + 24 + k * 9, cx + 17, sy + 25 + k * 9, 1.1, 1.1, [36, 28, 22], 0.75);
+  // ---- hand ----
+  forearm(r, cx - 3, sy + 56, 25);
+  r.ellipse(cx + 1, sy + 52, 26, 13, SKIN_D);
+  r.ellipse(cx + 1, sy + 49, 23, 10, SKIN);
+  gripHand(r, cx + 1, sy + 26, 15, 4, SKIN, SKIN_D);
+
+  // grime / wear
+  const rng = mulberry32(41);
+  for (let k = 0; k < 30; k++) r.set(cx - 20 + rng() * 40, my + 12 + rng() * 60, [214, 218, 222], 0.14);
+  if (tilt) { /* handled by caller rotation offsets */ }
+  r.outline([12, 10, 9], 1);
+  return r;
+}
+
+/* ---------------- SHOTGUN (local space: muzzle up) ---------------- */
+function shotgunLocal(frame) {
+  const W = 170, H = 230;
+  const r = new Ras(W, H);
+  const cx = 85;
+  const kick = frame === 1 ? -16 : 0;
+
+  const my = 10 + kick;
+  const by = my + 96;   // barrel base
+  // ---- twin barrels ----
+  for (const dx of [-19, 19]) {
+    const bx = cx + dx;
+    r.poly([[bx - 18, by], [bx - 14, my], [bx + 14, my], [bx + 18, by]], [88, 92, 96]);
+    r.poly([[bx - 18, by], [bx - 14, my], [bx - 5, my], [bx - 7, by]], [128, 134, 138], 0.65);
+    r.poly([[bx + 10, my], [bx + 14, my], [bx + 18, by], [bx + 12, by]], [56, 58, 62], 0.85);
+    r.poly([[bx - 14, my], [bx + 14, my], [bx + 10, my + 9], [bx - 10, my + 9]], [176, 182, 186]);
+    r.poly([[bx - 10, my + 9], [bx + 10, my + 9], [bx + 7, my + 14], [bx - 7, my + 14]], [208, 214, 218], 0.9);
+    r.ellipse(bx, my + 16, 7, 3.4, [26, 25, 26], 0.9);
+    r.ellipse(bx, my + 15.4, 3.8, 1.6, [10, 10, 10]);
+  }
+  // rib
+  r.rect(cx - 3.5, my + 12, 7, by - my - 8, [64, 66, 70]);
+  // muzzle band
+  r.poly([[cx - 40, my + 3], [cx + 40, my + 3], [cx + 38, my + 17], [cx - 38, my + 17]], [58, 60, 64], 0.8);
+  // bead sight
+  r.ellipse(cx, my - 1, 5, 3, [240, 218, 142]);
+  r.add(cx, my - 1, [255, 224, 150], 0.35);
+  // ---- receiver ----
+  r.poly([[cx - 40, by - 4], [cx + 40, by - 4], [cx + 37, by + 34], [cx - 37, by + 34]], [72, 74, 78]);
+  r.poly([[cx - 40, by - 4], [cx + 40, by - 4], [cx + 40, by + 3], [cx - 40, by + 3]], [132, 136, 140], 0.8);
+  r.rect(cx + 10, by + 9, 22, 11, [30, 30, 32]);      // ejection port
+  r.rect(cx + 11, by + 10, 20, 3.5, [126, 88, 42], 0.7);
+  r.ring(cx, by + 42, 17, 14, 3.2, [68, 70, 74]);
+  // ---- pump with support hand ----
+  const py = by + 30;
+  r.poly([[cx - 38, py], [cx + 38, py], [cx + 28, py + 50], [cx - 28, py + 50]], [98, 64, 42]);
+  r.poly([[cx - 38, py], [cx + 38, py], [cx + 37, py + 5], [cx - 37, py + 5]], [144, 98, 62], 0.8);
+  for (let k = 0; k < 9; k++) r.limb(cx - 36 + k * 9, py + 4, cx - 26 + k * 7, py + 46, 1.4, 1.4, [64, 40, 25], 0.85);
+
+  // hands: support hand on the pump, firing hand on the grip (right)
+  r.ellipse(cx, py + 46, 30, 14, SKIN_D);
+  gripHand(r, cx, py + 20, 26, 3, SKIN, SKIN_D);
+  forearm(r, cx + 6, py + 50, 30);
+  // right hand on the stock grip
+  r.ellipse(cx + 44, by + 30, 16, 12, SKIN_D);
+  r.ellipse(cx + 45, by + 27, 13, 9, SKIN);
+  for (let k = 0; k < 3; k++) r.limb(cx + 36, by + 20 + k * 8, cx + 27, by + 21 + k * 8, 4, 3.4, SKIN_D);
+
+  const rng = mulberry32(23);
+  for (let k = 0; k < 34; k++) r.set(cx - 34 + rng() * 68, my + 10 + rng() * 80, [202, 206, 210], 0.13);
+  r.outline([12, 10, 9], 1);
+  return r;
+}
+
+/* ---------------- final canvases ---------------- */
+function drawPistol(frame) {
+  const r = new Ras(240, 190);
+  const local = pistolLocal(frame);
+  // do not rotate; keep the gun pointing up but shifted toward the lower-right
+  const bob = frame === 2 ? 26 : 0;
+  stampRot(r, local, 164, 128 + bob, 0.10, 1.0);
+  return r;
+}
+function drawShotgun(frame) {
+  const r = new Ras(260, 210);
+  const local = shotgunLocal(frame);
+  const bob = frame === 2 ? 34 : 0;
+  stampRot(r, local, 150, 142 + bob, 0.055, 1.0);
+  return r;
+}
+
+/* =========================================================
+   CONVERT TO ENGINE FORMAT
+   ========================================================= */
+function toSprite(ras, anchorBottom) {
+  const w = ras.w, h = ras.h, d = ras.d;
+  const px = new Uint32Array(w * h);
+  const mask = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    const a = d[i * 4 + 3];
+    if (a > 110) {
+      px[i] = (255 << 24) | (d[i * 4 + 2] << 16) | (d[i * 4 + 1] << 8) | d[i * 4];
+      mask[i] = 1;
+    }
+  }
+  return { w, h, px, mask };
+}
+
+const ART = {};
+function buildArt() {
+  ART.walls = {
+    [W_CONCRETE]: texConcrete(), [W_BLOOD]: texBloodstone(), [W_PILLAR]: texPillar(),
+    [W_DOOR]: texDoor(), [W_EXIT]: texExit(), [W_GRATE]: texGrate()
+  };
+  ART.flats = [flatStone(), flatSlime(), flatBlood(), flatTech()];
+  ART.ceils = [flatCeil(), flatCeil(), flatCeil(), flatTech()];
+  ART.ceilGlow = flatLight();
+  ART.enemies = {};
+  for (const kind of ['walker', 'spitter', 'brute']) {
+    const cfg = ZOMBIE_CFG[kind];
+    ART.enemies[kind] = {
+      walk: [0, 1, 2, 3].map(f => toSprite(drawZombie(cfg, f, 'walk'))),
+      attack: [0, 1].map(f => toSprite(drawZombie(cfg, f, f === 0 ? 'walk' : 'attack'))),
+      pain: [toSprite(drawZombie(cfg, 1, 'attack'))],
+      dead: toSprite(drawZombie(cfg, 0, 'dead')),
+      corpse: toSprite(drawZombie(cfg, 0, 'dead'))
+    };
+  }
+  ART.items = {
+    health: toSprite(drawPickup('health')), armor: toSprite(drawPickup('armor')),
+    ammo: toSprite(drawPickup('ammo')), shells: toSprite(drawPickup('shells')),
+    card: toSprite(drawPickup('card'))
+  };
+  ART.fireball = toSprite(drawFireball());
+  ART.muzzle = [0, 1, 2, 3].map(() => toSprite(drawMuzzle(1)));
+  ART.weapons = {
+    pistol: [0, 1, 2].map(drawPistol).map(r => toSprite(r)),
+    shotgun: [0, 1, 2].map(drawShotgun).map(r => toSprite(r))
+  };
+}
+
+root.DS_ART = { buildArt, ART, Ras, toSprite, mulberry32, ZOMBIE_CFG, drawZombie, drawPickup, drawPistol, drawShotgun, drawFireball, drawMuzzle, texConcrete, texBloodstone, texPillar, texDoor, texExit, texGrate, flatStone, flatSlime, flatBlood, flatTech, flatCeil, flatLight };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* =========================================================
+   2. BOOTSTRAP  —  canvas, art cache, audio
+   ========================================================= */
+const canvas = $('view');
+const ctx = canvas.getContext('2d', { alpha: false });
+const VW = 400, VH = 216;                 // internal render resolution
+canvas.width = VW; canvas.height = VH;
+const img = ctx.createImageData(VW, VH);
+const buf32 = new Uint32Array(img.data.buffer);
+const FOV = 1.28;                          // ~73 degrees
+const PROJ = VW / (2 * Math.tan(FOV / 2)); // projection distance in px for a 1-unit wall
+const planeLen = Math.tan(FOV / 2);
+
+let ART;
+let TEXW, FLATW, CEILW, GLOWW, SPR, MUZZLE_CANVAS;
+art_boot();
+function art_boot() {
+  buildLevel();
+  const t0 = performance.now();
+  DS_ART.buildArt();
+  ART = DS_ART.ART;
+  // walls / flats -> Uint32 pixel buffers for the software renderer
+  const pack = (ras) => {
+    const px = new Uint32Array(ras.w * ras.h);
+    for (let i = 0; i < px.length; i++) {
+      px[i] = (255 << 24) | (ras.d[i * 4 + 2] << 16) | (ras.d[i * 4 + 1] << 8) | ras.d[i * 4];
+    }
+    return px;
+  };
+  TEXW = {}; for (const k in ART.walls) TEXW[k] = pack(ART.walls[k]);
+  FLATW = ART.flats.map(pack);
+  CEILW = ART.ceils.map(pack);
+  GLOWW = pack(ART.ceilGlow);
+  // sprites used by the renderer: keep px + mask (already packed in toSprite)
+  SPR = {
+    enemies: ART.enemies, items: ART.items,
+    fireball: ART.fireball, muzzle: ART.muzzle,
+    weapons: {
+      pistol: ART.weapons.pistol.map(s => spriteToCanvas(s)),
+      shotgun: ART.weapons.shotgun.map(s => spriteToCanvas(s))
+    }
+  };
+  MUZZLE_CANVAS = ART.muzzle.map(s => spriteToCanvas(s));
+  console.log('art built in', Math.round(performance.now() - t0), 'ms');
+  $('loading').remove();
+}
+function spriteToCanvas(sp) {
+  const c = document.createElement('canvas');
+  c.width = sp.w; c.height = sp.h;
+  const g = c.getContext('2d');
+  const id = g.createImageData(sp.w, sp.h);
+  const d32 = new Uint32Array(id.data.buffer);
+  for (let i = 0; i < sp.px.length; i++) d32[i] = sp.px[i];
+  g.putImageData(id, 0, 0);
+  return c;
+}
+
+/* ---------------- audio ---------------- */
+const Audio_ = (() => {
+  let ac = null, master = null, muted = false, droneStarted = false;
+  function ensure() {
+    if (ac) return ac;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    ac = new AC();
+    master = ac.createGain();
+    master.gain.value = 0.55;
+    master.connect(ac.destination);
+    return ac;
+  }
+  let noiseBuf = null;
+  function noise() {
+    if (!noiseBuf) {
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return noiseBuf;
+  }
+  function env(node, t0, a, d, peak) {
+    node.gain.setValueAtTime(0.0001, t0);
+    node.gain.exponentialRampToValueAtTime(peak, t0 + a);
+    node.gain.exponentialRampToValueAtTime(0.0001, t0 + a + d);
+  }
+  function noiseHit({ dur = 0.18, freq = 900, q = 1, peak = 0.7, type = 'lowpass', sweep = 0 }) {
+    if (!ensure() || muted) return;
+    const t = ac.currentTime;
+    const src = ac.createBufferSource(); src.buffer = noise(); src.loop = true;
+    const f = ac.createBiquadFilter(); f.type = type; f.frequency.setValueAtTime(freq, t);
+    if (sweep) f.frequency.exponentialRampToValueAtTime(Math.max(60, freq + sweep), t + dur);
+    f.Q.value = q;
+    const g = ac.createGain(); env(g, t, 0.004, dur, peak);
+    src.connect(f).connect(g).connect(master);
+    src.start(t); src.stop(t + dur + 0.06);
+  }
+  function tone({ freq = 440, dur = 0.2, type = 'square', peak = 0.3, to = null, delay = 0 }) {
+    if (!ensure() || muted) return;
+    const t = ac.currentTime + delay;
+    const o = ac.createOscillator(); o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(Math.max(30, to), t + dur);
+    const g = ac.createGain(); env(g, t, 0.006, dur, peak);
+    o.connect(g).connect(master);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  return {
+    unlock() { const a = ensure(); if (a && a.state === 'suspended') a.resume(); startDrone(); },
+    setMuted(m) { muted = m; if (master) master.gain.value = m ? 0 : 0.55; },
+    isMuted() { return muted; },
+    pistol() { noiseHit({ dur: 0.16, freq: 2600, q: 0.9, peak: 0.55, sweep: -2100 }); tone({ freq: 190, to: 60, dur: 0.14, type: 'square', peak: 0.22 }); },
+    shotgun() { noiseHit({ dur: 0.34, freq: 1900, q: 0.7, peak: 0.85, sweep: -1500 }); tone({ freq: 120, to: 38, dur: 0.3, type: 'sawtooth', peak: 0.4 }); },
+    pump() { noiseHit({ dur: 0.07, freq: 900, q: 3, peak: 0.28, type: 'bandpass' }); tone({ freq: 240, to: 150, dur: 0.05, type: 'square', peak: 0.12, delay: 0.16 }); },
+    dryFire() { noiseHit({ dur: 0.04, freq: 3200, q: 4, peak: 0.2, type: 'bandpass' }); },
+    hit() { noiseHit({ dur: 0.12, freq: 700, q: 1.2, peak: 0.5, sweep: -420 }); },
+    flesh() { noiseHit({ dur: 0.16, freq: 420, q: 0.8, peak: 0.42, sweep: -260 }); },
+    growl(pitch = 1) {
+      tone({ freq: 110 * pitch, to: 62 * pitch, dur: 0.5, type: 'sawtooth', peak: 0.1 });
+      noiseHit({ dur: 0.4, freq: 380 * pitch, q: 2.5, peak: 0.09, type: 'bandpass', sweep: -140 });
+    },
+    spit() { noiseHit({ dur: 0.22, freq: 1500, q: 3, peak: 0.22, type: 'bandpass', sweep: -1100 }); tone({ freq: 300, to: 120, dur: 0.2, type: 'sawtooth', peak: 0.1 }); },
+    pain() { tone({ freq: 320, to: 120, dur: 0.22, type: 'sawtooth', peak: 0.22 }); },
+    pickup() { tone({ freq: 660, dur: 0.07, type: 'square', peak: 0.16 }); tone({ freq: 990, dur: 0.1, type: 'square', peak: 0.14, delay: 0.06 }); },
+    door(open) { noiseHit({ dur: open ? 0.5 : 0.4, freq: 420, q: 1.4, peak: 0.3, sweep: open ? 260 : -160 }); tone({ freq: open ? 90 : 120, to: open ? 130 : 70, dur: 0.45, type: 'sawtooth', peak: 0.14 }); },
+    locked() { tone({ freq: 180, dur: 0.09, type: 'square', peak: 0.2 }); tone({ freq: 140, dur: 0.12, type: 'square', peak: 0.2, delay: 0.1 }); },
+    die() { noiseHit({ dur: 1.1, freq: 900, q: 0.8, peak: 0.5, sweep: -780 }); tone({ freq: 220, to: 40, dur: 1.0, type: 'sawtooth', peak: 0.25 }); },
+    win() { [523, 659, 784, 1046].forEach((f, i) => tone({ freq: f, dur: 0.3, type: 'square', peak: 0.16, delay: i * 0.16 })); },
+    step() { noiseHit({ dur: 0.05, freq: 320, q: 1.5, peak: 0.12 }); },
+    startDrone() {
+      if (droneStarted || !ensure() || muted) return;
+      droneStarted = true;
+      const src = ac.createBufferSource(); src.buffer = noise(); src.loop = true;
+      const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 180;
+      const g = ac.createGain(); g.gain.value = 0.05;
+      const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = 44;
+      const og = ac.createGain(); og.gain.value = 0.045;
+      src.connect(f).connect(g).connect(master);
+      o.connect(og).connect(master);
+      src.start(); o.start();
+    }
+  };
+})();
+
+/* =========================================================
+   3. STATE
+   ========================================================= */
+const state = {
+  mode: 'title',        // title | play | pause | dead | win
+  t: 0,
+  kills: 0, totalKills: 0, secrets: 0,
+  time: 0,
+  shake: 0,
+  flash: 0,
+  painTimer: 0,
+  hitMark: 0,
+  msg: '', msgTimer: 0,
+  noMouse: false,
+};
+const player = {
+  x: 0, y: 0, a: 0, pitch: 0,
+  vx: 0, vy: 0,
+  hp: 100, armor: 0, ammo: 40, shells: 0, card: false,
+  weapon: 'pistol',
+  hasShotgun: false,
+  cool: 0, switchTimer: 0, bob: 0, stepTimer: 0,
+  hurt: 0, dead: false,
+  fireAnim: 0, pumpAnim: 0, muzzle: 0,
+};
+let enemies = [], projectiles = [], particles = [], pickups = [];
+let zbuf = new Float32Array(VW);
+let weaponRecoil = 0, weaponSway = 0, weaponRaise = 1;
+
+/* ---------------- input ---------------- */
+const keys = Object.create(null);
+let mouseDown = false;
+let mouseDX = 0;
+let pointerLocked = false;
+const MOUSE_SENS = 0.0026;
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Escape') { if (state.mode === 'play') pauseGame(); }
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code)) e.preventDefault();
+  keys[e.code] = true;
+  if (state.mode !== 'play') return;
+  if (e.code === 'Digit1') selectWeapon('pistol');
+  if (e.code === 'Digit2') selectWeapon('shotgun');
+  if (e.code === 'KeyE') useAction();
+  if (e.code === 'KeyM') { Audio_.setMuted(!Audio_.isMuted()); toast(Audio_.isMuted() ? 'AUDIO OFF' : 'AUDIO ON'); }
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+canvas.addEventListener('mousedown', e => {
+  if (state.mode !== 'play') return;
+  if (e.button === 0) { mouseDown = true; tryFire(); }
+  if (e.button === 2) tryFire();
+});
+document.addEventListener('mouseup', e => { if (e.button === 0) mouseDown = false; });
+document.addEventListener('contextmenu', e => { if (e.target === canvas) e.preventDefault(); });
+document.addEventListener('mousemove', e => {
+  if (state.mode !== 'play') return;
+  if (pointerLocked) mouseDX += e.movementX;
+  else if (mouseDown) mouseDX += e.movementX;
+});
+document.addEventListener('pointerlockchange', () => {
+  pointerLocked = document.pointerLockElement === canvas;
+  if (!pointerLocked && state.mode === 'play' && !state.noMouse) pauseGame();
+});
+canvas.addEventListener('wheel', e => {
+  if (state.mode !== 'play') return;
+  e.preventDefault();
+  player.hasShotgun ? selectWeapon(player.weapon === 'pistol' ? 'shotgun' : 'pistol') : null;
+}, { passive: false });
+
+/* ---------------- overlays ---------------- */
+function show(id) { $(id).classList.remove('hidden'); }
+function hide(id) { $(id).classList.add('hidden'); }
+function toast(text, dur = 2.2) { state.msg = text; state.msgTimer = dur; }
+function updateToast() {
+  const el = $('toast');
+  el.textContent = state.msgTimer > 0 ? state.msg : '';
+  el.style.opacity = state.msgTimer > 0 ? 1 : 0;
+}
+
+/* =========================================================
+   4. GAME SETUP
+   ========================================================= */
+function resetGame() {
+  buildLevel();
+  enemies = []; projectiles = []; particles = []; pickups = [];
+  player.x = level.playerStart.x; player.y = level.playerStart.y; player.a = level.playerStart.a;
+  player.pitch = 0; player.vx = player.vy = 0;
+  player.hp = 100; player.armor = 0; player.ammo = 45; player.shells = 0;
+  player.card = false; player.hasShotgun = false; player.weapon = 'pistol';
+  player.cool = 0; player.switchTimer = 0; player.bob = 0; player.stepTimer = 0;
+  player.hurt = 0; player.dead = false; player.fireAnim = 0; player.pumpAnim = 0; player.muzzle = 0;
+  mouseDown = false; mouseDX = 0;
+  state.kills = 0; state.time = 0; state.shake = 0; state.flash = 0; state.painTimer = 0;
+  state.msgTimer = 0; state.hitMark = 0;
+
+  for (const s of level.spawns) enemies.push(makeEnemy(s.kind, s.x, s.y));
+  state.totalKills = enemies.length;
+  for (const it of level.items) pickups.push({ ...it, t: rand(0, 6), taken: false });
+  for (const d of level.doors) { d.open = 0; d.target = 0; d.timer = 0; d.cool = 0; }
+
+  zbuf = new Float32Array(VW);
+  weaponRecoil = 0; weaponSway = 0; weaponRaise = 1;
+  updateHud();
+}
+
+const ENEMY_DEF = {
+  walker:  { hp: 42, speed: 1.55, radius: 0.32, dmg: 9,  atkRange: 1.15, atkCool: 1.15, height: 0.92, sprScale: 1, score: 1, pain: 0.35, pitch: 1 },
+  spitter: { hp: 30, speed: 1.2,  radius: 0.30, dmg: 12, atkRange: 8.5,  atkCool: 2.2,  height: 0.92, sprScale: 1, score: 1, pain: 0.4, ranged: true, pitch: 1.35 },
+  brute:   { hp: 150, speed: 1.05, radius: 0.44, dmg: 22, atkRange: 1.5, atkCool: 1.7, height: 1.2, sprScale: 1.28, score: 3, pain: 0.16, pitch: 0.72 }
+};
+
+function makeEnemy(kind, x, y) {
+  const d = ENEMY_DEF[kind];
+  return {
+    kind, x, y, hp: d.hp, def: d,
+    state: 'idle', alert: false, anim: rand(0, 3), attackTimer: 0, cool: rand(0.2, 1.2),
+    vx: 0, vy: 0, hurt: 0, deadT: 0, dying: false, corpse: false,
+    wanderA: rand(0, TAU), wanderT: 0, growlT: rand(2, 8), stepT: 0,
+    seeTimer: 0, lastSeen: { x, y }
+  };
+}
+
+function selectWeapon(w) {
+  if (w === 'shotgun' && !player.hasShotgun) return;
+  if (player.weapon === w || player.switchTimer > 0) return;
+  player.weapon = w;
+  player.switchTimer = 0.35;
+  weaponRaise = 0;
+  updateHud();
+}
+
+/* =========================================================
+   5. PLAYER
+   ========================================================= */
+function tryMove(nx, ny) {
+  const r = 0.26;
+  // separate axes so we slide along walls
+  if (freeAt(nx, player.y, r)) player.x = nx;
+  if (freeAt(player.x, ny, r)) player.y = ny;
+}
+
+function updatePlayer(dt) {
+  if (player.dead) return;
+  const sprint = keys['ShiftLeft'] || keys['ShiftRight'];
+  const speed = (sprint ? 4.35 : 2.85) * (player.hurt > 0 ? 0.94 : 1);
+  let fx = 0, fy = 0;
+  if (keys['KeyW'] || keys['ArrowUp']) fy += 1;
+  if (keys['KeyS'] || keys['ArrowDown']) fy -= 1;
+  if (keys['KeyA']) fx -= 1;
+  if (keys['KeyD']) fx += 1;
+  let strafe = 0;
+  if (keys['KeyQ'] || keys['KeyA']) strafe -= 1;
+  // A/D strafe (A also used for nothing else)
+  fx = (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0);
+
+  const turnKeys = (keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0);
+  if (turnKeys) player.a += turnKeys * dt * 2.4;
+
+  const cos = Math.cos(player.a), sin = Math.sin(player.a);
+  // forward vector (cos, sin), right vector (-sin, cos)? use standard: right = (cos(a+PI/2), sin(a+PI/2))
+  const rx = Math.cos(player.a + Math.PI / 2), ry = Math.sin(player.a + Math.PI / 2);
+  let mx = cos * fy + rx * fx, my = sin * fy + ry * fx;
+  const len = Math.hypot(mx, my);
+  if (len > 0) { mx /= len; my /= len; }
+  const accel = 14;
+  player.vx += (mx * speed - player.vx) * Math.min(1, accel * dt);
+  player.vy += (my * speed - player.vy) * Math.min(1, accel * dt);
+  if (len === 0) { player.vx *= Math.pow(0.0008, dt); player.vy *= Math.pow(0.0008, dt); }
+  tryMove(player.x + player.vx * dt, player.y + player.vy * dt);
+
+  // head bob & footsteps
+  const sp = Math.hypot(player.vx, player.vy);
+  player.bob += sp * dt * 2.4;
+  weaponSway = Math.sin(player.bob * 2) * 0.6;
+  player.stepTimer -= dt * sp;
+  if (player.stepTimer <= 0 && sp > 0.4) { player.stepTimer = 1.1; Audio_.step(); }
+
+  // slime damage
+  if (floorTypeAt(player.x, player.y) === 1) { damagePlayer(4 * dt, true); }
+
+  // mouse look
+  player.a += mouseDX * MOUSE_SENS;
+  mouseDX = 0;
+  player.a = (player.a % TAU + TAU) % TAU;
+
+  // timers
+  player.cool = Math.max(0, player.cool - dt);
+  player.switchTimer = Math.max(0, player.switchTimer - dt);
+  player.fireAnim = Math.max(0, player.fireAnim - dt);
+  player.muzzle = Math.max(0, player.muzzle - dt);
+  player.hurt = Math.max(0, player.hurt - dt);
+  weaponRecoil = Math.max(0, weaponRecoil - dt * 6);
+  weaponSway *= Math.pow(0.02, dt);
+  weaponRaise = Math.min(1, weaponRaise + dt * 3.4);
+  if (mouseDown) tryFire();
+
+  // doors auto close
+  for (const d of level.doors) {
+    if (d.open > 0 && d.target === 1) {
+      d.timer -= dt;
+      if (d.timer <= 0) d.target = 0;
+    }
+    d.open = d.open + clamp(d.target - d.open, -dt * 2.2, dt * 2.2);
+    d.open = clamp(d.open, 0, 1);
+    d.cool = Math.max(0, d.cool - dt);
+  }
+
+  // win condition: next to the exit switch
+  if (Math.hypot(player.x - (level.exit.x + 0.5), player.y - (level.exit.y + 0.5)) < 1.35) {
+    winGame();
+  }
+}
+
+function useAction() {
+  const px = player.x, py = player.y;
+  const dirs = [[Math.cos(player.a), Math.sin(player.a)]];
+  for (const [dx, dy] of dirs) {
+    for (let t = 0.4; t <= 1.6; t += 0.15) {
+      const d = doorAt(Math.floor(px + dx * t), Math.floor(py + dy * t));
+      if (d) {
+        if (d.locked && !player.card) { Audio_.locked(); toast('YOU NEED THE RED KEYCARD', 2); return; }
+        if (d.cool > 0) return;
+        d.target = d.target === 1 ? 0 : 1;
+        d.timer = 5;
+        d.cool = 0.3;
+        Audio_.door(d.target === 1);
+        if (d.locked) { toast('LAB UNLOCKED', 1.6); }
+        return;
+      }
+      const w = wallAt(px + dx * t, py + dy * t);
+      if (w) break;
+    }
+  }
+}
+
+/* =========================================================
+   6. WEAPONS
+   ========================================================= */
+const WEAP = {
+  pistol:  { dmg: 26, spread: 0.012, pellets: 1, rate: 0.27, ammo: 'ammo', sfx: 'pistol', recoil: 1, kick: 2.4 },
+  shotgun: { dmg: 14, spread: 0.11, pellets: 8, rate: 0.82, ammo: 'shells', sfx: 'shotgun', recoil: 2.2, kick: 6 }
+};
+
+function tryFire() {
+  if (player.dead || state.mode !== 'play') return;
+  if (player.switchTimer > 0) return;
+  const w = WEAP[player.weapon];
+  if (player.cool > 0) return;
+  if (player[w.ammo] <= 0) {
+    if (player.cool === 0) { Audio_.dryFire(); player.cool = 0.35; toast('OUT OF AMMO — FIND SOME', 1.2); }
+    return;
+  }
+  player[w.ammo]--;
+  player.cool = w.rate;
+  player.fireAnim = w.rate;
+  player.muzzle = 0.07;
+  weaponRecoil = w.recoil;
+  state.shake = Math.max(state.shake, w.recoil * 0.55);
+  Audio_[w.sfx]();
+  if (player.weapon === 'shotgun') setTimeout(() => Audio_.pump(), 220);
+
+  // hit-scan cone
+  let anyHit = false;
+  for (let p = 0; p < w.pellets; p++) {
+    const ang = player.a + rand(-w.spread, w.spread);
+    const hit = raycastEnemies(ang, 22);
+    if (hit) {
+      anyHit = true;
+      damageEnemy(hit.enemy, w.dmg * rand(0.85, 1.15), ang);
+      spawnBloodAt(hit.x, hit.y, hit.enemy.def.height * 0.66, player.weapon === 'shotgun' ? 10 : 5);
+    }
+  }
+  if (anyHit) { state.hitMark = 0.14; }
+  updateHud();
+}
+
+function raycastEnemies(ang, maxDist) {
+  const dx = Math.cos(ang), dy = Math.sin(ang);
+  let best = null, bestT = maxDist;
+  for (const e of enemies) {
+    if (e.state === 'dead') continue;
+    const ox = e.x - player.x, oy = e.y - player.y;
+    const along = ox * dx + oy * dy;
+    if (along < 0.25 || along > maxDist) continue;
+    const perp = Math.abs(-ox * dy + oy * dx);
+    const rad = e.def.radius * 1.25;
+    if (perp > rad) continue;
+    // wall occlusion
+    if (!hasLineOfSight(player.x, player.y, e.x, e.y)) continue;
+    if (along < bestT) { bestT = along; best = e; }
+  }
+  if (!best) {
+    // wall impact puff
+    let t = 0.3;
+    while (t < maxDist && !solidAt(player.x + dx * t, player.y + dy * t)) t += 0.1;
+    if (t < maxDist) spawnImpact(player.x + dx * t, player.y + dy * t);
+    return null;
+  }
+  return { enemy: best, x: best.x, y: best.y };
+}
+
+function damageEnemy(e, dmg, ang) {
+  if (e.state === 'dead') return;
+  e.hp -= dmg;
+  e.hurt = 0.16;
+  e.alert = true;
+  Audio_.flesh();
+  if (e.hp <= 0) {
+    e.state = 'dead';
+    e.dying = true;
+    e.deadT = 0;
+    state.kills++;
+    Audio_.growl(e.def.pitch * 0.7);
+    spawnGibs(e);
+    maybeDrop(e);
+    updateHud();
+  } else if (Math.random() < e.def.pain) {
+    e.attackTimer = 0;
+    if (Math.random() < 0.25) Audio_.growl(e.def.pitch);
+  }
+}
+
+function maybeDrop(e) {
+  if (e.kind === 'brute') pickups.push({ kind: 'health', x: e.x, y: e.y, t: 0, taken: false });
+  else if (e.kind === 'spitter') pickups.push({ kind: 'shells', x: e.x, y: e.y, t: 0, taken: false });
+  else if (Math.random() < 0.3) pickups.push({ kind: 'ammo', x: e.x, y: e.y, t: 0, taken: false });
+  else if (Math.random() < 0.12) pickups.push({ kind: 'health', x: e.x, y: e.y, t: 0, taken: false });
+}
+
+/* =========================================================
+   7. ENEMIES
+   ========================================================= */
+function updateEnemies(dt) {
+  const px = player.x, py = player.y;
+  for (const e of enemies) {
+    if (e.state === 'dead') { if (e.dying) { e.deadT += dt; if (e.deadT > 0.42) e.dying = false; } continue; }
+    e.hurt = Math.max(0, e.hurt - dt);
+    const dx = px - e.x, dy = py - e.y;
+    const dist = Math.hypot(dx, dy);
+    const los = dist < 16 && hasLineOfSight(e.x, e.y, px, py);
+    if (los && dist < 15) {
+      if (!e.alert) { Audio_.growl(e.def.pitch); }
+      e.alert = true; e.seeTimer = 3;
+      e.lastSeen.x = px; e.lastSeen.y = py;
+      e.wanderA = Math.atan2(dy, dx);
+    } else {
+      e.seeTimer = Math.max(0, e.seeTimer - dt);
+      if (e.seeTimer <= 0 && e.alert && dist > 2) {
+        // walk toward last seen spot
+        const lx = e.lastSeen.x - e.x, ly = e.lastSeen.y - e.y;
+        if (Math.hypot(lx, ly) > 0.6) e.wanderA = Math.atan2(ly, lx);
+        else e.wanderA = Math.atan2(dy, dx);
+      }
+    }
+
+    // growls
+    e.growlT -= dt;
+    if (e.growlT <= 0) { e.growlT = rand(4, 11); if (dist < 11) Audio_.growl(e.def.pitch * rand(0.9, 1.15)); }
+
+    // ---- attack / chase ----
+    e.cool = Math.max(0, e.cool - dt);
+    if (e.attackTimer > 0) {
+      e.attackTimer -= dt;
+      e.anim = 1;
+      if (e.attackTimer <= 0) e.anim = 0;
+      continue; // busy attacking -> no movement
+    }
+
+    const canRanged = e.def.ranged && los && dist < e.def.atkRange;
+    if (los && dist <= e.def.atkRange && e.cool <= 0) {
+      // melee lunge / ranged spit
+      e.attackTimer = e.def.ranged ? 0.45 : 0.42;
+      e.cool = e.def.atkCool;
+      if (e.def.ranged) {
+        setTimeout(() => { if (e.state !== 'dead' && state.mode === 'play') spitFireball(e); }, 220);
+      } else {
+        setTimeout(() => {
+          if (e.state === 'dead' || state.mode !== 'play') return;
+          if (Math.hypot(player.x - e.x, player.y - e.y) < e.def.atkRange + 0.35) damagePlayer(e.def.dmg);
+          Audio_.hit();
+        }, 200);
+      }
+    } else {
+      // move
+      const target = los ? 1 : (e.seeTimer > 0 ? 0.6 : 0.34);
+      const speed = e.def.speed * (e.alert ? target : 0.32);
+      let ang = e.wanderA;
+      if (los) {
+        // slight strafing so they don't clump into a conga line
+        const wobble = Math.sin(state.t * 1.4 + e.x * 3.1 + e.y) * 0.22;
+        ang = Math.atan2(dy, dx) + wobble;
+      }
+      const sp = e.def.ranged && dist < 3 ? -speed * 0.6 : speed; // spitters back off a bit
+      const nx = e.x + Math.cos(ang) * sp * dt;
+      const ny = e.y + Math.sin(ang) * sp * dt;
+      // separation from other enemies
+      let sx = 0, sy = 0;
+      for (const o of enemies) {
+        if (o === e || o.state === 'dead') continue;
+        const ox = e.x - o.x, oy = e.y - o.y;
+        const d2 = ox * ox + oy * oy;
+        const rr = (e.def.radius + o.def.radius) * 0.95;
+        if (d2 < rr * rr && d2 > 0.0001) {
+          const d1 = Math.sqrt(d2);
+          sx += ox / d1 * (rr - d1) * 6; sy += oy / d1 * (rr - d1) * 6;
+        }
+      }
+      moveEnemy(e, nx + sx * dt, ny + sy * dt, dt);
+      e.anim += dt * (3 + speed * 2);
+      e.stepT -= dt;
+      if (e.stepT <= 0) { e.stepT = 0.55 / Math.max(0.4, speed); if (dist < 4) Audio_.growl(e.def.pitch * 0.85); }
+    }
+  }
+  // remove far corpses after a while (keep some for atmosphere)
+  enemies = enemies.filter(e => !(e.state === 'dead' && e.deadT > 30));
+}
+
+function moveEnemy(e, nx, ny, dt) {
+  const r = e.def.radius;
+  if (freeAt(nx, e.y, r)) e.x = nx;
+  else if (e.alert) {
+    // try side-stepping
+    const py = e.y + Math.sin(e.wanderA + Math.PI / 2) * 0.9;
+    if (freeAt(e.x, py, r)) e.y += (py - e.y) * Math.min(1, dt * 3);
+  }
+  if (freeAt(e.x, ny, r)) e.y = ny;
+  else if (e.alert) {
+    const px = e.x + Math.cos(e.wanderA + Math.PI / 2) * 0.9;
+    if (freeAt(px, e.y, r)) e.x += (px - e.x) * Math.min(1, dt * 3);
+  }
+  // don't walk into the player
+  const d = Math.hypot(player.x - e.x, player.y - e.y);
+  if (d < r + 0.28) {
+    const a = Math.atan2(e.y - player.y, e.x - player.x);
+    e.x += Math.cos(a) * 0.02; e.y += Math.sin(a) * 0.02;
+  }
+}
+
+function spitFireball(e) {
+  e.attackTimer = 0;
+  const ang = Math.atan2(player.y - e.y, player.x - e.x) + rand(-0.04, 0.04);
+  projectiles.push({ x: e.x, y: e.y, vx: Math.cos(ang) * 6.2, vy: Math.sin(ang) * 6.2, t: 0, life: 4 });
+  Audio_.spit();
+}
+
+function updateProjectiles(dt) {
+  for (const p of projectiles) {
+    p.t += dt;
+    const steps = 3;
+    for (let s = 0; s < steps; s++) {
+      p.x += p.vx * dt / steps; p.y += p.vy * dt / steps;
+      if (solidAt(p.x, p.y)) { explode(p.x, p.y); p.dead = true; break; }
+      if (Math.hypot(p.x - player.x, p.y - player.y) < 0.36) {
+        damagePlayer(ENEMY_DEF.spitter.dmg);
+        explode(p.x, p.y);
+        p.dead = true; break;
+      }
+    }
+    if (p.t > p.life) { explode(p.x, p.y); p.dead = true; }
+  }
+  projectiles = projectiles.filter(p => !p.dead);
+}
+
+/* =========================================================
+   8. PARTICLES / PICKUPS / HUD
+   ========================================================= */
+function spawnBloodAt(x, y, h, n) {
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, TAU);
+    particles.push({
+      x, y, h: h + rand(-0.08, 0.08), z: rand(0, 1.2), vz: rand(0.6, 2.4),
+      vx: Math.cos(a) * rand(0.6, 2.6), vy: Math.sin(a) * rand(0.6, 2.6),
+      life: rand(0.35, 0.7), max: 0.7, col: [140 + randi(0, 50), randi(12, 30), randi(8, 20)], size: rand(0.02, 0.05)
+    });
+  }
+}
+function spawnGibs(e) {
+  for (let i = 0; i < 22; i++) {
+    const a = rand(0, TAU);
+    particles.push({
+      x: e.x, y: e.y, h: e.def.height * rand(0.3, 0.9), z: rand(0.5, 2),
+      vz: rand(0.4, 2.6), vx: Math.cos(a) * rand(0.4, 2.2), vy: Math.sin(a) * rand(0.4, 2.2),
+      life: rand(0.5, 1.1), max: 1.1, col: [120 + randi(0, 60), randi(10, 34), randi(8, 22)], size: rand(0.02, 0.06)
+    });
+  }
+}
+function spawnImpact(x, y) {
+  for (let i = 0; i < 5; i++) {
+    const a = rand(0, TAU);
+    particles.push({
+      x, y, h: rand(0.4, 0.9), z: rand(0, 0.6), vz: rand(0.2, 1.2),
+      vx: Math.cos(a) * rand(0.2, 0.9), vy: Math.sin(a) * rand(0.2, 0.9),
+      life: rand(0.2, 0.4), max: 0.4, col: [190, 180, 150], size: rand(0.01, 0.03)
+    });
+  }
+}
+function explode(x, y) {
+  for (let i = 0; i < 18; i++) {
+    const a = rand(0, TAU);
+    particles.push({
+      x, y, h: rand(0.4, 0.8), z: rand(0.2, 1.4), vz: rand(0.2, 1.6),
+      vx: Math.cos(a) * rand(0.5, 2.4), vy: Math.sin(a) * rand(0.5, 2.4),
+      life: rand(0.25, 0.6), max: 0.6, col: [110 + randi(0, 90), 220, 90], size: rand(0.02, 0.05), glow: true
+    });
+  }
+  state.shake = Math.max(state.shake, 0.6);
+}
+function updateParticles(dt) {
+  for (const p of particles) {
+    p.life -= dt;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.z += p.vz * dt; p.vz -= 4.6 * dt;
+    p.h += p.vz * dt;
+    if (p.z < 0) { p.z = 0; p.vz *= -0.25; p.vx *= 0.4; p.vy *= 0.4; }
+  }
+  particles = particles.filter(p => p.life > 0);
+  if (particles.length > 500) particles.splice(0, particles.length - 500);
+}
+
+function updatePickups(dt) {
+  for (const it of pickups) {
+    if (it.taken) continue;
+    it.t += dt;
+    if (Math.hypot(it.x - player.x, it.y - player.y) < 0.55) {
+      let got = false;
+      switch (it.kind) {
+        case 'health': if (player.hp < 100) { player.hp = Math.min(100, player.hp + 25); got = true; toast('+25 HEALTH', 1.1); } break;
+        case 'armor': if (player.armor < 100) { player.armor = Math.min(100, player.armor + 40); got = true; toast('+40 ARMOR', 1.1); } break;
+        case 'ammo': if (player.ammo < 200) { player.ammo = Math.min(200, player.ammo + 16); got = true; toast('+16 BULLETS', 1.1); } break;
+        case 'shells':
+          if (!player.hasShotgun) { player.hasShotgun = true; player.shells += 8; player.weapon = 'shotgun'; player.switchTimer = 0.4; got = true; toast('SHOTGUN ACQUIRED  [2]', 2.4); }
+          else if (player.shells < 60) { player.shells = Math.min(60, player.shells + 8); got = true; toast('+8 SHELLS', 1.1); }
+          break;
+        case 'card': player.card = true; got = true; toast('RED KEYCARD ACQUIRED', 2.4); break;
+      }
+      if (got) { it.taken = true; Audio_.pickup(); updateHud(); }
+    }
+  }
+}
+
+function damagePlayer(amount, silent) {
+  if (player.dead || state.mode !== 'play') return;
+  let dmg = amount;
+  if (player.armor > 0) {
+    const absorb = Math.min(player.armor, dmg * 0.6);
+    player.armor -= absorb;
+    dmg -= absorb;
+  }
+  player.hp -= dmg;
+  player.hurt = 0.35;
+  state.painTimer = 0.35;
+  if (!silent) Audio_.pain();
+  if (!silent) state.shake = Math.max(state.shake, 0.8);
+  updateHud();
+  if (player.hp <= 0) { player.hp = 0; dieGame(); }
+}
+
+function updateHud() {
+  $('h-health').textContent = Math.max(0, Math.round(player.hp));
+  $('h-armor').textContent = Math.round(player.armor);
+  $('h-ammo').textContent = player.ammo;
+  $('h-shells').textContent = player.shells;
+  $('h-kills').textContent = state.kills + ' / ' + state.totalKills;
+  $('h-weapon').textContent = player.weapon === 'shotgun' ? 'SHOTGUN' : 'PISTOL';
+  const ammoNow = player[WEAP[player.weapon].ammo];
+  $('h-' + (player.weapon === 'shotgun' ? 'shells' : 'ammo')).style.color = ammoNow === 0 ? '#ff2410' : '';
+  $('blood').style.opacity = Math.max(0, Math.min(1, (100 - player.hp) / 100 * 0.85 + (state.painTimer > 0 ? 0.25 : 0)));
+  const hud = $('hud');
+  if (state.painTimer > 0 && !hud.classList.contains('hurt')) {
+    hud.classList.add('hurt');
+    setTimeout(() => hud.classList.remove('hurt'), 360);
+  }
+  // hint for the exit
+  const hint = $('hint');
+  const nearExit = Math.hypot(player.x - (level.exit.x + 0.5), player.y - (level.exit.y + 0.5)) < 2.4;
+  if (nearExit) { hint.style.display = 'block'; hint.textContent = 'EXIT SWITCH — WALK UP TO IT'; }
+  else if (!player.card && Math.hypot(player.x - (22.5), player.y - (5.5)) < 3) {
+    hint.style.display = 'block'; hint.textContent = 'LOCKED — FIND THE RED KEYCARD';
+  } else hint.style.display = 'none';
+}
+
+/* =========================================================
+   9. RENDERER  —  software raycast walls + billboard sprites
+   ========================================================= */
+const CAM_H = 0.5;          // eye height in world units (walls are 1 tall)
+
+let horizonRef = 0, overshoot = 0;
+function render() {
+  overshoot = 0;
+  const px = player.x, py = player.y;
+  const ang = player.a;
+  const dirX = Math.cos(ang), dirY = Math.sin(ang);
+  const plX = -dirY * planeLen, plY = dirX * planeLen;   // camera plane
+
+  // bob + shake offsets
+  const bob = Math.sin(player.bob * 2) * 1.7 + Math.cos(player.bob) * 0.7;
+  const shake = state.shake * 5;
+  const shs = Math.sin(state.t * 88) * shake, shc = Math.cos(state.t * 73) * shake;
+  const horizon = VH * 0.5 + bob + shc;
+  const camZ = CAM_H;
+
+  /* ---------------- floor & ceiling ---------------- */
+  // left / right camera-plane edge directions, used for both halves
+  const ldx = dirX + plX, ldy = dirY + plY;
+  const rdx2 = dirX - plX, rdy2 = dirY - plY;
+  const VW2 = VW;
+
+  function texturedQuad(isFloor, yStart, yEnd) {
+    for (let y = yStart; y < yEnd; y++) {
+      const p = y - horizon;
+      if (isFloor ? p <= 0.5 : p >= -0.5) continue;
+      const row = y * VW2;
+      const rowDist = Math.abs(CAM_H * PROJ / p);
+      let fx = px + rowDist * ldx, fy = py + rowDist * ldy;
+      const dxs = (rowDist * (rdx2 - ldx)) / VW2, dys = (rowDist * (rdy2 - ldy)) / VW2;
+      const lightK = isFloor
+        ? clamp(1.2 - rowDist * 0.06, 0.16, 1.15)
+        : clamp(1.0 - rowDist * 0.05, 0.14, 1.0) * 0.92;
+      const wave = isFloor ? 1 : 0;
+      for (let x = 0; x < VW2; x++) {
+        const cx = fx | 0, cy = fy | 0;
+        if (cx < 0 || cy < 0 || cx >= MAP_W || cy >= MAP_H) { buf32[row + x] = 0xff080706; fx += dxs; fy += dys; continue; }
+        const u = ((fx - cx) * 64) | 0, v = ((fy - cy) * 64) | 0;
+        const ci = cy * MAP_W + cx;
+        let col, k = lightK;
+        if (isFloor) {
+          const ft = level.floor[ci];
+          col = FLATW[ft][v * 64 + u];
+          if (ft === 1) k += Math.sin(state.t * 2.4 + cx * 0.7 + cy * 0.9) * 0.07;
+        } else {
+          const glow = level.ceilLight[ci];
+          col = glow ? GLOWW[v * 64 + u] : CEILW[0][v * 64 + u];
+          if (glow) k *= 1.28;
+        }
+        buf32[row + x] = shadePix(col, k);
+        fx += dxs; fy += dys;
+      }
+    }
+  }
+  // full-res textured pass, gated by column visibility
+  const colVisible = new Uint8Array(VW);
+  texturedQuad(true, Math.ceil(horizon + 1), VH);
+  texturedQuad(false, 0, Math.floor(horizon - 1));
+
+  /* ---------------- walls (DDA) with sliding doors ---------------- */
+  for (let x = 0; x < VW; x++) {
+    const cameraX = 2 * x / VW - 1;
+    const rayX = dirX + plX * cameraX;
+    const rayY = dirY + plY * cameraX;
+    let mapX = px | 0, mapY = py | 0;
+    const deltaX = Math.abs(1 / (rayX || 1e-9));
+    const deltaY = Math.abs(1 / (rayY || 1e-9));
+    let stepX, stepY, sideX, sideY;
+    if (rayX < 0) { stepX = -1; sideX = (px - mapX) * deltaX; } else { stepX = 1; sideX = (mapX + 1 - px) * deltaX; }
+    if (rayY < 0) { stepY = -1; sideY = (py - mapY) * deltaY; } else { stepY = 1; sideY = (mapY + 1 - py) * deltaY; }
+
+    let side = 0, hit = 0, guard = 0;
+    let doorPerp = -1, doorSide = 0, doorOpen = 0, doorPX = 0, doorPY = 0, doorHitFlag = false;
+    while (guard++ < 220) {
+      if (sideX < sideY) { sideX += deltaX; mapX += stepX; side = 0; }
+      else { sideY += deltaY; mapY += stepY; side = 1; }
+      if (mapX < 0 || mapY < 0 || mapX >= MAP_W || mapY >= MAP_H) { hit = W_CONCRETE; break; }
+      const w = level.wall[mapY * MAP_W + mapX];
+      if (w === W_DOOR) {
+        const d = doorAt(mapX, mapY);
+        const open = d ? d.open : 0;
+        if (open > 0.97) continue;                     // wide open: ray passes
+        if (!doorHitFlag) {
+          doorHitFlag = true;
+          doorPerp = (side === 0) ? (sideX - deltaX) : (sideY - deltaY);
+          doorSide = side; doorOpen = open;
+        }
+        continue;                                      // keep looking for the far wall
+      }
+      if (w) { hit = w; break; }
+    }
+
+    // ---- far wall ----
+    let perp = (side === 0) ? (sideX - deltaX) : (sideY - deltaY);
+    if (perp < 0.001) perp = 0.001;
+    let wallX = (side === 0) ? (py + perp * rayY) : (px + perp * rayX);
+    wallX -= Math.floor(wallX);
+    let texX = (wallX * 64) | 0;
+    if (side === 0 && rayX > 0) texX = 63 - texX;
+    if (side === 1 && rayY < 0) texX = 63 - texX;
+
+    const lineH = PROJ / perp;
+    const top = horizon - lineH * (1 - camZ);
+    const bottom = top + lineH;
+    const y0 = Math.max(0, Math.ceil(top));
+    const y1 = Math.min(VH - 1, Math.floor(bottom));
+    zbuf[x] = perp;
+
+    if (hit) {
+      const tex = TEXW[hit] || TEXW[W_CONCRETE];
+      const step = 64 / lineH;
+      let texPos = (y0 - top) * step;
+      const sideK = side === 1 ? 0.72 : 1.0;
+      const lightK = clamp(1.16 - perp * 0.052, 0.1, 1.12) * sideK;
+      let idx = y0 * VW + x;
+      for (let y = y0; y <= y1; y++, idx += VW) {
+        const ty = texPos & 63;
+        texPos += step;
+        buf32[idx] = shadePix(tex[(ty << 6) + texX], lightK);
+      }
+      if (hit === W_EXIT) exitFaces.push({ x, top, bottom, perp });
+    }
+
+    // ---- door slab (slides up into the ceiling) ----
+    if (doorHitFlag) {
+      const dPerp = doorPerp < 0.001 ? 0.001 : doorPerp;
+      const dLineH = PROJ / dPerp;
+      const dTop = horizon - dLineH * (1 - camZ);
+      const dFull = dTop + dLineH;
+      const slabBottom = dFull - dLineH * 0.86 * doorOpen;  // opening rises from the floor
+      const yy0 = Math.max(0, Math.ceil(dTop));
+      const yy1 = Math.min(VH - 1, Math.floor(slabBottom));
+      overshoot = Math.min(1, Math.max(overshoot, dLineH * 0.004));
+      if (yy1 >= yy0) {
+        let dwx = (doorSide === 0) ? (py + dPerp * rayY) : (px + dPerp * rayX);
+        dwx -= Math.floor(dwx);
+        let dtexX = (dwx * 64) | 0;
+        if (doorSide === 0 && rayX > 0) dtexX = 63 - dtexX;
+        if (doorSide === 1 && rayY < 0) dtexX = 63 - dtexX;
+        const tex = TEXW[W_DOOR];
+        const step = 64 / dLineH;
+        let texPos = (yy0 - dTop) * step;
+        const sideK = doorSide === 1 ? 0.72 : 1.0;
+        const lightK = clamp(1.16 - dPerp * 0.052, 0.1, 1.12) * sideK;
+        let idx = yy0 * VW + x;
+        for (let y = yy0; y <= yy1; y++, idx += VW) {
+          const ty = texPos & 63;
+          texPos += step;
+          buf32[idx] = shadePix(tex[(ty << 6) + dtexX], lightK);
+        }
+      }
+      if (doorOpen < 0.35) zbuf[x] = dPerp;
+    }
+  }
+  horizonRef = horizon;
+
+  /* ---------------- sprites ---------------- */
+  const sprites = [];
+  // enemies
+  for (const e of enemies) {
+    const dx = e.x - px, dy = e.y - py;
+    const dist = Math.hypot(dx, dy);
+    if (dist > 26) continue;
+    sprites.push({ x: e.x, y: e.y, dist, kind: 'enemy', ref: e });
+  }
+  for (const p of projectiles) {
+    const dx = p.x - px, dy = p.y - py;
+    sprites.push({ x: p.x, y: p.y, dist: Math.hypot(dx, dy), kind: 'fire', ref: p, z: 0.45 });
+  }
+  for (const it of pickups) {
+    if (it.taken) continue;
+    const dx = it.x - px, dy = it.y - py;
+    const dist = Math.hypot(dx, dy);
+    if (dist > 20) continue;
+    sprites.push({ x: it.x, y: it.y, dist, kind: 'item', ref: it });
+  }
+  sprites.sort((a, b) => b.dist - a.dist);
+
+  const invDet = 1 / (plX * dirY - dirX * plY);
+  for (const s of sprites) {
+    const sx = s.x - px, sy = s.y - py;
+    const transX = invDet * (dirY * sx - dirX * sy);
+    const transY = invDet * (-plY * sx + plX * sy);
+    if (transY < 0.12) continue;
+    const screenX = (VW / 2) * (1 + transX / transY);
+    let spr, scaleH, baseH, zOff;
+    if (s.kind === 'enemy') {
+      const e = s.ref, def = e.def;
+      if (e.state === 'dead') {
+        spr = ART.enemies[e.kind].corpse;
+        scaleH = def.sprScale * 0.36; baseH = 0; zOff = 0;
+      } else {
+        const set = ART.enemies[e.kind];
+        const walkF = Math.floor(e.anim) % 4;
+        spr = (e.attackTimer > 0 ? set.attack[1] : (e.hurt > 0 ? set.pain[0] : set.walk[walkF]));
+        scaleH = def.sprScale; baseH = 0; zOff = 0;
+        if (e.dying) { scaleH *= 1 + e.deadT * 0.9; }
+      }
+    } else if (s.kind === 'fire') {
+      spr = ART.fireball; scaleH = 0.34; baseH = 0; zOff = 0;
+    } else {
+      spr = ART.items[s.ref.kind];
+      scaleH = 0.3 + Math.sin(s.ref.t * 2.2) * 0.02; baseH = 0; zOff = 0;
+    }
+    const hWorld = scaleH * 1.15;
+    const sprH = (PROJ / transY) * hWorld;
+    const sprW = sprH * (spr.w / spr.h);
+    const lift = (s.kind === 'fire') ? (0.5 - hWorld * 0.5 + 0.12) : (0.06);
+    const bottomY = horizon + (PROJ / transY) * (camZ - lift) + bob * 0.4;
+    const topY = bottomY - sprH;
+    const x0 = Math.floor(screenX - sprW / 2), x1 = Math.ceil(screenX + sprW / 2);
+    if (x1 < 0 || x0 >= VW) continue;
+    const y0 = Math.floor(topY), y1 = Math.ceil(bottomY);
+    const lightK = clamp(1.2 - transY * 0.06, 0.12, 1.12);
+    const glow = s.kind === 'fire' ? 1 : 0;
+    drawSprite(spr, x0, x1, y0, y1, transY, lightK, glow, s.kind === 'enemy' && s.ref.hurt > 0);
+  }
+
+  /* ---------------- doors (drawn after enemies? no: before) handled below ---------------- */
+  // (doors are rendered into the sprite/wall pass via their own draw call)
+
+  ctx.putImageData(img, 0, 0);
+
+  /* ---------------- additive pass: exit glow, muzzle store ---------------- */
+  drawExitGlow();
+  drawWeapon();
+  drawScreenFx();
+}
+
+const exitFaces = [];
+
+function drawSprite(spr, x0, x1, y0, y1, dist, lightK, glow, flash) {
+  const sw = spr.w, sh = spr.h, px = spr.px, mask = spr.mask;
+  const spanX = x1 - x0, spanY = y1 - y0;
+  if (spanX <= 0 || spanY <= 0) return;
+  const sxStep = sw / spanX, syStep = sh / spanY;
+  const X0 = Math.max(0, x0), X1 = Math.min(VW - 1, x1);
+  for (let x = X0; x <= X1; x++) {
+    if (dist >= zbuf[x]) continue;
+    const u = ((x - x0) * sxStep) | 0;
+    if (u < 0 || u >= sw) continue;
+    for (let y = Math.max(0, y0); y <= Math.min(VH - 1, y1); y++) {
+      const v = ((y - y0) * syStep) | 0;
+      if (v < 0 || v >= sh) continue;
+      const si = v * sw + u;
+      if (!mask[si]) continue;
+      let c = px[si];
+      if (flash) c = mixPix(c, 0xff6040ff | 0, 0.55);
+      buf32[y * VW + x] = glow ? addPix(buf32[y * VW + x], c, 0.9) : shadePix(c, lightK);
+    }
+  }
+}
+
+/* -------- fast pixel helpers -------- */
+function shadePix(c, k) {
+  k = k > 1.12 ? 1.12 : k < 0.05 ? 0.05 : k;
+  let r = (c & 255) * k, g = ((c >> 8) & 255) * k, b = ((c >> 16) & 255) * k;
+  if (r > 255) r = 255; if (g > 255) g = 255; if (b > 255) b = 255;
+  return 0xff000000 | (b << 16) | (g << 8) | r;
+}
+function addPix(c, a, k) {
+  let r = (c & 255) + (a & 255) * k;
+  let g = ((c >> 8) & 255) + ((a >> 8) & 255) * k;
+  let b = ((c >> 16) & 255) + ((a >> 16) & 255) * k;
+  if (r > 255) r = 255; if (g > 255) g = 255; if (b > 255) b = 255;
+  return 0xff000000 | (b << 16) | (g << 8) | r;
+}
+function mixPix(c, a, t) {
+  const r = (c & 255) * (1 - t) + (a & 255) * t;
+  const g = ((c >> 8) & 255) * (1 - t) + ((a >> 8) & 255) * t;
+  const b = ((c >> 16) & 255) * (1 - t) + ((a >> 16) & 255) * t;
+  return 0xff000000 | (b << 16) | (g << 8) | r;
+}
+function shadeRGB(r, g, b, k) {
+  r = clamp(r * k, 0, 255) | 0; g = clamp(g * k, 0, 255) | 0; b = clamp(b * k, 0, 255) | 0;
+  return 0xff000000 | (b << 16) | (g << 8) | r;
+}
+
+/* ---------------- exit switch glow ---------------- */
+function drawExitGlow() {
+  if (!exitFaces.length) return;
+  const pulse = 0.55 + Math.sin(state.t * 4.2) * 0.45;
+  for (const f of exitFaces) {
+    const h = Math.max(1, f.bottom - f.top);
+    const g = ctx.createLinearGradient(0, f.top, 0, f.bottom);
+    const a = clamp(1.6 - f.perp * 0.12, 0.15, 1);
+    g.addColorStop(0.0, 'rgba(255,60,20,0)');
+    g.addColorStop(0.40, 'rgba(255,70,25,' + (0.16 * pulse * a) + ')');
+    g.addColorStop(0.58, 'rgba(255,205,130,' + (0.42 * pulse * a) + ')');
+    g.addColorStop(0.80, 'rgba(255,70,25,' + (0.16 * pulse * a) + ')');
+    g.addColorStop(1.0, 'rgba(255,60,20,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(f.x, f.top, 1, h);
+  }
+  exitFaces.length = 0;
+}
+
+/* ---------------- weapon view model ---------------- *//* ---------------- weapon view model ---------------- */
+function drawWeapon() {
+  const wname = player.weapon;
+  const set = SPR.weapons[wname];
+  let frame = 0;
+  if (player.fireAnim > 0) frame = 1;
+  else if (wname === 'shotgun' && player.cool > 0.4) frame = 2;
+  else if (wname === 'pistol' && player.cool > 0.16) frame = 2;
+  const cv = set[frame];
+  const scale = (VH / 170) * (wname === 'shotgun' ? 1.02 : 1.12);
+  const dw = cv.width * scale, dh = cv.height * scale;
+  const bobX = Math.sin(player.bob * 2) * 5 - weaponSway * 4;
+  const bobY = Math.abs(Math.cos(player.bob * 2)) * 4 + weaponRecoil * 6;
+  const raise = (1 - weaponRaise) * VH * 1.1 + player.switchTimer * 120;
+  const cx = VW / 2 + (wname === 'shotgun' ? 0 : 14) + bobX;
+  const bottom = VH + raise + bobY - 1;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(cv, Math.round(cx - dw / 2), Math.round(bottom - dh), Math.round(dw), Math.round(dh));
+  ctx.restore();
+
+  // muzzle flash
+  if (player.muzzle > 0) {
+    const flashSet = MUZZLE_CANVAS;
+    const m = flashSet[(Math.random() * flashSet.length) | 0];
+    const fs = wname === 'shotgun' ? 1.5 : 1.0;
+    const fw = VH * 0.34 * fs, fh = fw;
+    const fx = cx + (wname === 'shotgun' ? 0 : 4);
+    const fy = bottom - dh + VH * (wname === 'shotgun' ? 0.03 : 0.02);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.95;
+    ctx.drawImage(m, fx - fw / 2, fy - fh / 2, fw, fh);
+    ctx.restore();
+    // screen light
+    state.flash = Math.max(state.flash, 0.5);
+  }
+}
+
+/* ---------------- full-screen effects ---------------- */
+function drawScreenFx() {
+  // muzzle light on the world
+  if (state.flash > 0.01) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = 'rgba(255,190,110,' + (state.flash * 0.16) + ')';
+    ctx.fillRect(0, 0, VW, VH);
+    ctx.restore();
+  }
+  // damage vignette flash
+  const pf = state.painTimer > 0 ? 0.5 : 0;
+  if (pf > 0) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = 'rgba(150,10,0,' + (pf * 0.5) + ')';
+    ctx.fillRect(0, 0, VW, VH);
+    ctx.restore();
+  }
+  // hit marker
+  if (state.hitMark > 0) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,250,240,0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const cx0 = VW / 2, cy0 = VH / 2;
+    ctx.moveTo(cx0 - 8, cy0 - 8); ctx.lineTo(cx0 - 3, cy0 - 3);
+    ctx.moveTo(cx0 + 8, cy0 - 8); ctx.lineTo(cx0 + 3, cy0 - 3);
+    ctx.moveTo(cx0 - 8, cy0 + 8); ctx.lineTo(cx0 - 3, cy0 + 3);
+    ctx.moveTo(cx0 + 8, cy0 + 8); ctx.lineTo(cx0 + 3, cy0 + 3);
+    ctx.stroke();
+    ctx.restore();
+  }
+  // crosshair dot
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = '#e8f4ff';
+  ctx.fillRect(VW / 2 - 1, VH / 2 - 1, 2, 2);
+  ctx.restore();
+}
+
+/* =========================================================
+   10. PARTICLES (projected quads) + GAME FLOW + MAIN LOOP
+   ========================================================= */
+function drawParticles() {
+  if (!particles.length) return;
+  const px = player.x, py = player.y;
+  const dirX = Math.cos(player.a), dirY = Math.sin(player.a);
+  const plX = -dirY * planeLen, plY = dirX * planeLen;
+  const invDet = 1 / (plX * dirY - dirX * plY);
+  const bob = Math.sin(player.bob * 2) * 1.7;
+  const horizon = VH * 0.5 + bob;
+  ctx.save();
+  for (const p of particles) {
+    const sx = p.x - px, sy = p.y - py;
+    const transX = invDet * (dirY * sx - dirX * sy);
+    const transY = invDet * (-plY * sx + plX * sy);
+    if (transY < 0.15) continue;
+    const sxp = (VW / 2) * (1 + transX / transY);
+    if (sxp < -20 || sxp > VW + 20) continue;
+    const sy2 = horizon + (PROJ / transY) * (CAM_H - p.h);
+    const size = Math.max(1, (PROJ / transY) * p.size * 2);
+    const col = p.col;
+    const a = clamp(p.life / p.max, 0, 1);
+    if (p.z < 0.05) { // ground splat
+      ctx.fillStyle = 'rgba(' + (col[0] | 0) + ',' + (col[1] | 0) + ',' + (col[2] | 0) + ',' + (a * 0.6) + ')';
+      ctx.fillRect(sxp - size, sy2 - size * 0.35, size * 2, size * 0.7);
+    } else {
+      ctx.fillStyle = 'rgba(' + (col[0] | 0) + ',' + (col[1] | 0) + ',' + (col[2] | 0) + ',' + a + ')';
+      ctx.fillRect(sxp - size / 2, sy2 - size / 2, size, size);
+    }
+  }
+  ctx.restore();
+}
+
+/* =========================================================
+   GAME FLOW
+   ========================================================= */
+function startGame() {
+  Audio_.unlock();
+  resetGame();
+  state.mode = 'play';
+  hide('title'); hide('pause'); hide('dead'); hide('win');
+  $('cross').style.display = 'block';
+  document.body.style.cursor = 'none';
+  requestPointerLock();
+  toast('E1M1 — CONTAINMENT BREACH', 3);
+  lastT = performance.now();
+}
+
+function requestPointerLock() {
+  if (state.noMouse) return;
+  try {
+    const p = canvas.requestPointerLock && canvas.requestPointerLock();
+    if (p && p.catch) p.catch(() => { state.noMouse = true; showMouseFallback(); });
+  } catch (e) { state.noMouse = true; showMouseFallback(); }
+}
+function showMouseFallback() {
+  document.body.style.cursor = 'crosshair';
+  toast('MOUSE LOOK OFF — USE ARROW KEYS TO TURN, OR CLICK TO AIM-DRAG', 4);
+}
+
+function pauseGame() {
+  if (state.mode !== 'play') return;
+  state.mode = 'pause';
+  show('pause');
+  $('cross').style.display = 'none';
+  document.body.style.cursor = 'default';
+  if (document.pointerLockElement) document.exitPointerLock();
+  mouseDown = false;
+}
+function resumeGame() {
+  state.mode = 'play';
+  hide('pause');
+  $('cross').style.display = 'block';
+  document.body.style.cursor = 'none';
+  requestPointerLock();
+  lastT = performance.now();
+}
+
+function dieGame() {
+  player.dead = true;
+  state.mode = 'dead';
+  Audio_.die();
+  if (document.pointerLockElement) document.exitPointerLock();
+  document.body.style.cursor = 'default';
+  $('cross').style.display = 'none';
+  const gg = state.kills >= state.totalKills;
+  $('dead-stats').innerHTML =
+    '<span>KILLS<b>' + state.kills + '/' + state.totalKills + '</b></span>' +
+    '<span>TIME<b>' + fmtTime(state.time) + '</b></span>';
+  show('dead');
+  $('blood').style.opacity = 0.9;
+}
+
+function winGame() {
+  if (state.mode !== 'play') return;
+  state.mode = 'win';
+  Audio_.win();
+  if (document.pointerLockElement) document.exitPointerLock();
+  document.body.style.cursor = 'default';
+  $('cross').style.display = 'none';
+  const all = state.kills >= state.totalKills;
+  $('win-stats').innerHTML =
+    '<span>KILLS<b>' + state.kills + '/' + state.totalKills + '</b></span>' +
+    '<span>TIME<b>' + fmtTime(state.time) + '</b></span>' +
+    '<span>RANK<b>' + (all ? 'PURIFIER' : 'SURVIVOR') + '</b></span>';
+  show('win');
+}
+function fmtTime(t) {
+  const m = Math.floor(t / 60), s = Math.floor(t % 60);
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+/* =========================================================
+   MAIN LOOP
+   ========================================================= */
+let lastT = performance.now();
+let fpsAcc = 0, fpsN = 0;
+
+function frame(now) {
+  requestAnimationFrame(frame);
+  let dt = (now - lastT) / 1000;
+  lastT = now;
+  if (dt > 0.1) dt = 0.1;
+  fpsAcc += dt; fpsN++;
+  if (state.mode === 'play') {
+    state.t += dt;
+    state.time += dt;
+    updatePlayer(dt);
+    updateEnemies(dt);
+    updateProjectiles(dt);
+    updateParticles(dt);
+    updatePickups(dt);
+    state.shake = Math.max(0, state.shake - dt * 3.2);
+    state.flash = Math.max(0, state.flash - dt * 6);
+    state.painTimer = Math.max(0, state.painTimer - dt);
+    state.hitMark = Math.max(0, state.hitMark - dt);
+    state.msgTimer = Math.max(0, state.msgTimer - dt);
+    if (!state.started) { state.started = true; }
+    updateHud();
+  } else if (state.mode === 'title') {
+    state.t += dt;
+    // slow idle camera drift on the title screen
+  } else if (state.mode === 'dead' || state.mode === 'win') {
+    state.t += dt;
+    updateParticles(dt);
+  }
+  updateToast();
+  render();
+  drawParticles();
+}
+
+/* =========================================================
+   UI WIRING
+   ========================================================= */
+$('start-btn').addEventListener('click', () => { state.started = true; startGame(); });
+$('resume-btn').addEventListener('click', resumeGame);
+$('retry-btn').addEventListener('click', () => { $('blood').style.opacity = 0; startGame(); });
+$('again-btn').addEventListener('click', () => { $('blood').style.opacity = 0; startGame(); });
+canvas.addEventListener('click', () => {
+  if (state.mode === 'play' && !pointerLocked && !state.noMouse) requestPointerLock();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state.mode === 'play') pauseGame();
+});
+
+/* keyboard fallback for turning / pause */
+document.addEventListener('keydown', e => {
+  if (state.mode === 'pause' && (e.code === 'Enter' || e.code === 'Space')) resumeGame();
+});
+
+/* title-screen attract mode: put the camera at the player start */
+resetGame();
+state.mode = 'title';
+requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
 --
