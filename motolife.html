@@ -3322,21 +3322,38 @@ function drawBenchHotspot() {
   if (!stage || !bench) return;
   const cv = $("#benchCv");
   const s = bench.steps[bench.cur];
-  stage.querySelectorAll(".bench-hotspot").forEach(e => e.remove());
-  if (!s || !s.at || bench.finished) return;
+  const existing = stage.querySelector(".bench-hotspot");
+
+  /* The hotspot must be a STABLE node. This runs every animation frame, so
+     rebuilding the button each frame swapped the element out from under the
+     player's finger: mousedown landed on the old node, which was gone before
+     mouseup, and the click never fired. Only (re)create when the target
+     actually changes; otherwise just move the node we already have. */
+  if (!s || !s.at || bench.finished) {
+    if (existing) existing.remove();
+    bench.hotKey = null;
+    return;
+  }
   const bike = bikeById(bench.bikeId);
   const m = modelById(bike.modelId);
   const G0 = benchGeom(cv.width, cv.height, m);
   const pt = benchAnchor(s.at, G0);
-  if (!pt) return;
-  const b = document.createElement("button");
-  b.className = "bench-hotspot";
-  b.textContent = s.tool || "here";
+  if (!pt) { if (existing) existing.remove(); bench.hotKey = null; return; }
+
+  /* reuse the node whenever we already have one - only its position changes */
+  let b = existing;
+  if (!b) {
+    b = document.createElement("button");
+    b.className = "bench-hotspot";
+    b.type = "button";
+    stage.appendChild(b);
+  }
+  b.dataset.benchSpot = s.id;
+  const label = s.tool || "here";
+  if (b.textContent !== label) b.textContent = label;
   b.style.left = (pt.x / cv.width * 100) + "%";
   b.style.top = (pt.y / cv.height * 100) + "%";
-  b.type = "button";
-  b.dataset.benchSpot = s.id;
-  stage.appendChild(b);
+  bench.hotKey = s.id + ":" + bench.cur;
 }
 
 /* =====================================================================
@@ -6090,12 +6107,8 @@ function wireEvents() {
     }
     const holdBtn = closest("[data-bench-hold]");
     if (holdBtn) {
-      if (bench) {
-        /* pressing the button starts the work; releasing it stops. The
-           pointerup handler clears the flag, so this only has to set it. */
-        bench.holding = true;
-        holdBtn.classList.add("holding");
-      }
+      /* the press is handled on pointerdown; by the time click fires the button
+         has already been released, so there is nothing to start here */
       return;
     }
     const hot = closest("[data-bench-spot]");
@@ -6192,6 +6205,20 @@ function wireEvents() {
     return Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
   }
   document.addEventListener("pointerdown", e => {
+    /* press-and-hold must begin on the press itself. This used to live in the
+       click handler, which the browser only fires after the button is released -
+       so holding did nothing and releasing latched it on instead. */
+    const pressBtn = e.target.closest && e.target.closest("#benchActions [data-bench-hold]");
+    if (pressBtn && bench) {
+      const hs = bench.steps[bench.cur];
+      if (hs && ["hold", "clean", "spin", "check"].includes(hs.kind)) {
+        bench.holding = true;
+        bench.holdStep = hs.id;
+        pressBtn.classList.add("holding");
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+    }
     if (!bench || !bench.dragging) return;
     const stage = e.target.closest("#benchStage") || e.target.closest("#benchCv");
     if (!stage || !bench) return;
