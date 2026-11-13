@@ -692,6 +692,11 @@ body.touch .touch-controls{display:flex}
 .bstep.current .bmeta { color:#ffcf5c; }
 .bench-actions { padding:10px 12px; border-top:1px solid var(--line); display:flex; gap:8px; flex-wrap:wrap; }
 .bench-actions .btn { flex:1; justify-content:center; }
+.bench-holdbtn { position:relative; overflow:hidden; }
+.bench-holdbtn .bh-fill { position:absolute; left:0; top:0; bottom:0; width:0%;
+  background:linear-gradient(90deg,#9fd93c,#c8f04e); opacity:.30; transition:width .08s linear; pointer-events:none; }
+.bench-holdbtn .bh-txt { position:relative; display:flex; align-items:center; gap:7px; }
+.bench-holdbtn.holding { box-shadow:0 0 0 2px #c8f04e88 inset; }
 .bench-prog { height:5px; background:#0b0f0e; border-top:1px solid var(--line); }
 .bench-prog i { display:block; height:100%; background:linear-gradient(90deg,var(--lime),#8fdcc0); transition:width .18s ease; }
 .bench-timer { display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid var(--line);
@@ -705,6 +710,14 @@ body.touch .touch-controls{display:flex}
 
 /* --------- live canvas overlays for the manual work --------- */
 #benchCv { display:block; width:100%; height:auto; background:#121717; }
+.bench-stage.turning { cursor: grabbing; }
+.bench-stage.turning #benchCv { cursor: grabbing; }
+.bench-turn-hint { position:absolute; left:50%; bottom:44px; transform:translateX(-50%);
+  display:none; align-items:center; gap:8px; padding:7px 13px; border-radius:20px;
+  background:#0b0f0ee6; border:1px solid #ffcf5c66; color:#ffcf5c;
+  font:700 10.5px/1 ui-monospace,monospace; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; }
+.bench-stage.turning .bench-turn-hint { display:flex; }
+.bench-turn-hint svg { animation:bspin 2.2s linear infinite reverse; }
 .bench-hotspot { position:absolute; transform:translate(-50%,-50%); padding:4px 9px; border-radius:20px;
   font:800 10px/1 ui-monospace,monospace; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
   color:#0d1210; background:var(--lime); border:0; box-shadow:0 0 0 3px #c8f04e33, 0 6px 16px #0008;
@@ -867,6 +880,13 @@ body.touch .touch-controls{display:flex}
       <div class="bench-badge" id="benchBadge">Bay 1</div>
       <div class="bench-temp" id="benchTemp">—</div>
       <div class="bench-tool-tip" id="benchTip">Pick a part to work on.</div>
+      <div class="bench-turn-hint" id="benchTurnHint">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 11a8 8 0 1 0-.8 4"/><path d="M20 4v7h-7"/>
+        </svg>
+        <span id="benchTurnTxt">Drag round the bolt to unscrew it</span>
+      </div>
     </div>
     <div class="bench-panel">
       <div class="bench-panel-head">
@@ -2383,14 +2403,14 @@ function buildJobSteps(key, optId, bike) {
       S("warm", "Run the engine for a minute so the oil flows", "spin", { hold: 2.4, tool: "idle" }),
       S("undercowl", "Pull the sump guard to reach the drain plug", "spot", { at: "sump", tool: "8 mm socket" }),
       S("tray", "Slide the drain tray under the engine", "spot", { at: "tray", tool: "drain tray" }),
-      S("drainbolt", "Undo the drain bolt", "hold", { hold: 1.6, tool: "17 mm socket" }),
+      S("drainbolt", "Unscrew the drain bolt", "turn", { turns: 2, at: "drainbolt", tool: "17 mm socket" }),
       S("drain", "Let the old oil pour out completely", "drain", { secs: 14, fill: "oil" }),
       S("washer", "Fit a fresh crush washer and refit the drain bolt", "spot", { at: "drainbolt", tool: "17 mm socket" }),
       S("torque", "Torque the drain bolt to 25 Nm", "hold", { hold: 1.4, tool: "torque wrench" })
     ];
     if (eng.oilFilter) {
       steps.push(
-        S("filtercover", "Unbolt the oil filter cover", "spot", { at: "oilfilter", tool: "10 mm socket" }),
+        S("filtercover", "Unscrew the oil filter cover bolts", "turn", { turns: 1.5, at: "oilfilter", tool: "10 mm socket" }),
         S("filterout", "Draw the old filter out of the case", "hold", { hold: 1.6, tool: "filter pliers" }),
         S("filterin", "Oil the new filter's O-ring and seat it", "spot", { at: "oilfilter", tool: "new filter" }),
         S("filtercap", "Refit the cover and torque to 10 Nm", "hold", { hold: 1.5, tool: "10 mm socket" })
@@ -2402,9 +2422,9 @@ function buildJobSteps(key, optId, bike) {
       );
     }
     steps.push(
-      S("fillbolt", "Unscrew the oil fill bolt", "spot", { at: "fill", tool: "hex key" }),
+      S("fillbolt", "Unscrew the oil fill bolt", "turn", { turns: 1, at: "fill", tool: "hex key" }),
       S("pour", "Fill the engine with fresh oil", "pour", { secs: 6, fill: "oil", amount: eng.stroke === 2 ? "0.7 L" : "1.6 L" }),
-      S("fillscrew", "Screw the fill bolt back in", "spot", { at: "fill", tool: "hex key" }),
+      S("fillscrew", "Screw the fill bolt back in", "turn", { turns: 1, dir: -1, at: "fill", tool: "hex key" }),
       S("sight", "Check the sight glass on level ground", "check", { hold: 1.2, tool: "sight glass" }),
       S("run", "Idle it for a minute, then re-check for leaks", "spin", { hold: 2.6, tool: "idle" })
     );
@@ -2421,13 +2441,13 @@ function buildJobSteps(key, optId, bike) {
       bay: "intake",
       steps: [
         S("seat", "Lift the seat to reach the airbox", "spot", { at: "seat", tool: "seat latch" }),
-        S("cover", "Unscrew the airbox cover", "hold", { hold: 1.4, tool: "screwdriver" }),
+        S("cover", "Unscrew the airbox cover", "turn", { turns: 2, at: "airbox", tool: "screwdriver" }),
         S("element", "Draw the dirty element out", "spot", { at: "airbox", tool: "gloves" }),
         S("tap", "Tap the loose dust out of the element", "clean", { hold: 1.8, tool: "palm" }),
         S("wash", "Wash it in cleaner and let the foam dry", "wait", { secs: 5 }),
         S("oilfoam", "Work fresh filter oil into the foam", "hold", { hold: 1.8, tool: "filter oil" }),
         S("seatbox", "Seat the element squarely in the airbox", "spot", { at: "airbox", tool: "gloves" }),
-        S("closebox", "Close the cover — no gaps round the seal", "hold", { hold: 1.3, tool: "screwdriver" }),
+        S("closebox", "Screw the cover back down — no gaps at the seal", "turn", { turns: 2, dir: -1, at: "airbox", tool: "screwdriver" }),
         S("seatdown", "Click the seat back down", "spot", { at: "seat", tool: "seat latch" }),
         S("blip", "Blip the throttle to check it breathes cleanly", "spin", { hold: 1.8, tool: "throttle" })
       ]
@@ -2441,10 +2461,10 @@ function buildJobSteps(key, optId, bike) {
       steps: [
         S("cap", "Pull the plug cap off", "spot", { at: "plugcap", tool: "fingers" }),
         S("blow", "Blow the dirt out of the plug well", "hold", { hold: 1.4, tool: "air line" }),
-        S("undo", "Unscrew the old plug", "hold", { hold: 1.8, tool: "plug spanner" }),
+        S("undo", "Unscrew the old plug", "turn", { turns: 3, at: "plug", tool: "plug spanner" }),
         S("inspect", "Read the old plug's colour — it tells you the mixture", "check", { hold: 1.4, tool: "eye" }),
         S("gap", "Set the gap on the new plug", "hold", { hold: 1.5, tool: "feeler gauge" }),
-        S("hand", "Wind the new plug in by hand until it seats", "spot", { at: "plug", tool: "plug spanner" }),
+        S("hand", "Wind the new plug in by hand until it seats", "turn", { turns: 3, dir: -1, at: "plug", tool: "plug spanner" }),
         S("torque", "Torque to 18 Nm — no more", "hold", { hold: 1.3, tool: "torque wrench" }),
         S("recap", "Push the cap back on until it clicks", "spot", { at: "plugcap", tool: "fingers" }),
         S("start", "Start it and listen for a clean idle", "spin", { hold: 2.2, tool: "starter" })
@@ -2478,10 +2498,10 @@ function buildJobSteps(key, optId, bike) {
       bay: "wheel",
       steps: [
         S("up", "Put it on the stand and pull the rear wheel", "hold", { hold: 1.8, tool: "paddock stand" }),
-        S("nuts", "Crack the six rear sprocket nuts", "hold", { hold: 2.0, tool: "14 mm socket" }),
+        S("nuts", "Crack the six rear sprocket nuts", "turn", { turns: 3, at: "rearSprocket", tool: "14 mm socket" }),
         S("swap", "Swap the sprocket and refit the nuts", "spot", { at: "rearSprocket", tool: "14 mm socket" }),
         S("cover", "Pull the front sprocket cover", "spot", { at: "frontSprocket", tool: "8 mm socket" }),
-        S("frontnut", "Undo the front sprocket nut", "hold", { hold: 2.0, tool: "30 mm socket" }),
+        S("frontnut", "Undo the front sprocket nut", "turn", { turns: 2.5, at: "frontSprocket", tool: "30 mm socket" }),
         S("frontnew", "Fit the new front sprocket and tab washer", "spot", { at: "frontSprocket", tool: "30 mm socket" }),
         S("back", "Refit the wheel and set the chain slack", "hold", { hold: 1.8, tool: "adjuster" }),
         S("spin", "Spin the wheel and watch the chain run true", "spin", { hold: 2.0 }),
@@ -2513,10 +2533,10 @@ function buildJobSteps(key, optId, bike) {
       title: "Bleed the brake fluid",
       bay: "wheel",
       steps: [
-        S("lid", "Unbolt the master cylinder lid", "spot", { at: "mc", tool: "screwdriver" }),
+        S("lid", "Unscrew the master cylinder lid", "turn", { turns: 1.5, at: "mc", tool: "screwdriver" }),
         S("suck", "Draw the old fluid out of the reservoir", "hold", { hold: 1.8, tool: "syringe" }),
         S("fresh", "Top up with fresh fluid", "pour", { secs: 4, fill: "brake", amount: "0.25 L" }),
-        S("hose", "Push the bleed hose onto the caliper nipple", "spot", { at: "nipple", tool: "8 mm spanner" }),
+        S("hose", "Crack the bleed nipple and push the hose on", "turn", { turns: 1, at: "nipple", tool: "8 mm spanner" }),
         S("bleed1", "Pump and hold the lever, crack the nipple", "hold", { hold: 2.4, tool: "8 mm spanner" }),
         S("bubble", "Watch the bubbles until the stream runs clear", "wait", { secs: 5 }),
         S("bleed2", "Repeat the bleed until the lever feels firm", "hold", { hold: 2.4, tool: "8 mm spanner" }),
@@ -2532,7 +2552,7 @@ function buildJobSteps(key, optId, bike) {
       bay: "engine",
       steps: [
         S("cap", "Never open the cap hot — let it cool", "wait", { secs: 3 }),
-        S("drainplug", "Undo the water pump drain plug", "spot", { at: "coolantdrain", tool: "8 mm socket" }),
+        S("drainplug", "Unscrew the water pump drain plug", "turn", { turns: 1.5, at: "coolantdrain", tool: "8 mm socket" }),
         S("drain", "Let the coolant drain into the tray", "drain", { secs: 10, fill: "coolant" }),
         S("flush", "Flush the system with clean water", "pour", { secs: 4, fill: "coolant", amount: "flush" }),
         S("plugback", "Refit the drain plug with a new washer", "spot", { at: "coolantdrain", tool: "8 mm socket" }),
@@ -2550,7 +2570,7 @@ function buildJobSteps(key, optId, bike) {
       bay: "front",
       steps: [
         S("clamp", "Clamp the fork leg in the vice", "hold", { hold: 1.6, tool: "soft jaws" }),
-        S("caps", "Crack the fork cap loose before you strip it", "hold", { hold: 1.8, tool: "24 mm spanner" }),
+        S("caps", "Crack the fork cap loose before you strip it", "turn", { turns: 2, at: "forkseal", tool: "24 mm spanner" }),
         S("legs", "Slide the fork leg out of the triple clamps", "hold", { hold: 2.0, tool: "fingers" }),
         S("dust", "Pry out the dust seal and the circlip", "spot", { at: "forkseal", tool: "seal pick" }),
         S("separate", "Separate the slider from the stanchion", "hold", { hold: 2.4, tool: "slide hammer" }),
@@ -2586,10 +2606,10 @@ function buildJobSteps(key, optId, bike) {
       bay: "controls",
       steps: [
         S("slack", "Back the adjuster off to free the cable", "hold", { hold: 1.4, tool: "12 mm spanner" }),
-        S("housing", "Split the throttle housing", "spot", { at: "grip", tool: "screwdriver" }),
+        S("housing", "Unscrew the throttle housing screws", "turn", { turns: 2, at: "grip", tool: "screwdriver" }),
         S("barrel", "Free the cable barrel from the tube", "hold", { hold: 1.4, tool: "fingers" }),
         S("routeold", "Follow the old cable down and out", "hold", { hold: 1.8, tool: "fingers" }),
-        S("carbrtop", "Pop off the carburettor slide cap", "spot", { at: "carbtop", tool: "8 mm socket" }),
+        S("carbrtop", "Unscrew the carburettor slide cap", "turn", { turns: 2, at: "carbtop", tool: "8 mm socket" }),
         S("newcable", "Thread the new cable down the frame", "hold", { hold: 2.0, tool: "new cable" }),
         S("slide", "Hook the cable into the slide and the carb top", "spot", { at: "carbtop", tool: "fingers" }),
         S("adjust", "Set 2 mm of free play at the bar", "hold", { hold: 1.6, tool: "12 mm spanner" }),
@@ -2602,10 +2622,10 @@ function buildJobSteps(key, optId, bike) {
     const steps = [
       S("drain", "Drain the oil before you open the engine", "drain", { secs: 8, fill: "oil" }),
       S("plugs", "Pull the plug cap and the breathers", "spot", { at: "plugcap", tool: "fingers" }),
-      S("cover", "Unbolt the cam cover", "spot", { at: "head", tool: "10 mm socket" }),
+      S("cover", "Unbolt the cam cover", "turn", { turns: 2.5, at: "head", tool: "10 mm socket" }),
       S("timing", "Set the engine to TDC before you disturb the cam", "hold", { hold: 2.0, tool: "12 mm spanner" }),
       S("cam", "Lift the camshaft out with the chain tied back", "hold", { hold: 2.2, tool: "fingers" }),
-      S("headbolts", "Crack the head bolts in a cross pattern", "hold", { hold: 2.4, tool: "14 mm socket" }),
+      S("headbolts", "Crack the head bolts in a cross pattern", "turn", { turns: 4, at: "head", tool: "14 mm socket" }),
       S("head", "Lift the head and cylinder off the studs", "spot", { at: "head", tool: "dead blow mallet" }),
       S("piston", "Pull the piston pin and lift the old piston", "hold", { hold: 2.0, tool: "piston pin tool" }),
       S("hone", "Deglaze the cylinder and check the bore", "clean", { hold: 2.2, tool: "hone + measure" })
@@ -2642,7 +2662,7 @@ function buildJobSteps(key, optId, bike) {
       steps: [
         S("strip", "Strip it to the bare cases", "hold", { hold: 2.4, tool: "varied" }),
         S("drain", "Drain every fluid first", "drain", { secs: 8, fill: "oil" }),
-        S("flywheel", "Hold the flywheel and crack the rotor nut", "hold", { hold: 2.4, tool: "rotor holder" }),
+        S("flywheel", "Hold the flywheel and crack the rotor nut", "turn", { turns: 3, at: "sump", tool: "rotor holder" }),
         S("split", "Split the crankcases on the jig", "hold", { hold: 2.6, tool: "case splitter" }),
         S("bearings", "Press the old crank bearings out", "hold", { hold: 2.4, tool: "press" }),
         S("measure", "Check the crank runout on V-blocks", "check", { hold: 2.0, tool: "dial gauge" }),
@@ -2694,13 +2714,13 @@ function buildModSteps(kind, bike) {
       title: "Fit the exhaust", bay: "engine",
       steps: [
         S("scrub", "Soak the header nuts in penetrant", "clean", { hold: 1.8, tool: "penetrant" }),
-        S("clamp", "Undo the silencer clamp and hanger bolt", "hold", { hold: 2.0, tool: "12 mm socket" }),
+        S("clamp", "Undo the silencer clamp and hanger bolt", "turn", { turns: 2, at: "sump", tool: "12 mm socket" }),
         S("silencer", "Work the silencer off the link pipe", "spot", { at: "sump", tool: "fingers" }),
-        S("flange", "Crack the header flange nuts", "hold", { hold: 2.0, tool: "12 mm socket" }),
+        S("flange", "Crack the header flange nuts", "turn", { turns: 2.5, at: "sump", tool: "12 mm socket" }),
         S("gasket", "Pull the header and scrape the old gasket", "clean", { hold: 2.0, tool: "gasket scraper" }),
         S("newgasket", "Fit a fresh copper gasket", "spot", { at: "sump", tool: "gasket" }),
-        S("pipe", "Hang the new header and nip the nuts", "hold", { hold: 2.2, tool: "12 mm socket" }),
-        S("hang", "Bolt up the silencer and its heat shield", "hold", { hold: 1.8, tool: "12 mm socket" }),
+        S("pipe", "Hang the new header and nip the nuts up", "turn", { turns: 2.5, dir: -1, at: "sump", tool: "12 mm socket" }),
+        S("hang", "Bolt up the silencer and its heat shield", "turn", { turns: 2, dir: -1, at: "sump", tool: "12 mm socket" }),
         S("leak", "Run it and listen for a leak at the flange", "spin", { hold: 2.2, tool: "ears" })
       ]
     };
@@ -2815,6 +2835,10 @@ function openBench(partKey, optId, opts = {}) {
     timerMax: 0,
     holdProgress: 0,
     holding: false,
+    turn: 0,          /* accumulated degrees for turn-type steps */
+    turnDir: 1,       /* which way the fastener threads */
+    dragging: false,
+    lastAngle: null,
     flash: 0,
     pour: 0,
     spinner: 0,
@@ -2837,6 +2861,8 @@ function benchScreen() {
   $("#benchBadge").textContent = BENCH_BAYS[bench.bay].label;
   $("#benchTitle").textContent = bench.title;
   $("#benchSub").textContent = `${modelById(bench.bikeId ? bikeById(bench.bikeId).modelId : "velocita").name} · ${bench.def.group}`;
+  const hint = $("#benchTurnHint");
+  if (hint) hint.style.display = "none";
   renderBenchSteps();
   renderBenchActions();
 }
@@ -2875,8 +2901,14 @@ function renderBenchActions() {
   if (!s) { host.innerHTML = `<button class="btn btn-primary" data-bench-leave>Finish</button>`; return; }
   const holdable = ["hold", "clean", "spin", "check"].includes(s.kind);
   const auto = ["drain", "pour", "wait"].includes(s.kind);
-  if (holdable) {
-    host.innerHTML = `<button class="btn btn-primary" data-bench-hold="${s.id}">${ic("i-wrench", 14)}${esc(s.label)}</button>
+  if (s.kind === "turn") {
+    host.innerHTML = `<button class="btn btn-primary" data-bench-turn="${s.id}">${ic("i-wrench", 14)}Grab the ${esc(s.tool || "bolt")} and turn</button>
+      <button class="btn btn-ghost" data-bench-abort>Walk away</button>`;
+  } else if (holdable) {
+    host.innerHTML = `<button class="btn btn-primary bench-holdbtn" data-bench-hold="${s.id}">
+        <span class="bh-fill" style="width:${Math.round((bench.holdProgress || 0) * 100)}%"></span>
+        <span class="bh-txt">${ic("i-wrench", 14)}Press and hold: ${esc(s.label)}</span>
+      </button>
       <button class="btn btn-ghost" data-bench-abort>Walk away</button>`;
   } else if (auto) {
     host.innerHTML = `<button class="btn btn-ghost" data-bench-abort>Walk away</button>`;
@@ -2893,6 +2925,10 @@ function benchStepDone() {
   bench.flash = 1;
   bench.cur++;
   bench.holdProgress = 0;
+  /* a finished step must never leave the "am I holding?" flag latched,
+     or the next hold-type step would complete itself untouched */
+  bench.holding = false;
+  if (bench.t && bench.t.accent) bench.t.accent = null;
   bench.timer = 0; bench.timerMax = 0;
   $("#benchTimer").style.display = "none";
   if (bench.cur >= bench.steps.length) {
@@ -2910,6 +2946,8 @@ function benchStepDone() {
   renderBenchSteps(); renderBenchActions();
   const tip = $("#benchTip");
   if (tip) tip.textContent = bench.steps[bench.cur].label + ".";
+  const nh = $("#benchTurnHint");
+  if (nh) nh.style.display = bench.steps[bench.cur].kind === "turn" ? "flex" : "none";
 }
 
 function benchBeginTimed() {
@@ -2956,10 +2994,24 @@ function benchTickForTest(dt) {
       benchStepDone();
     }
   }
+  /* turning a bolt: you have to actually rotate it round, not just press */
+  if (s && s.kind === "turn") {
+    const need = 360 * (s.turns || 2);
+    if (bench.holdProgress >= 1) { /* handled below */ }
+    if (bench.turn >= need) benchStepDone();
+    bench.holdProgress = clamp(bench.turn / need, 0, 1);
+  }
   /* hold steps */
   if (s && ["hold", "clean", "spin", "check"].includes(s.kind)) {
+    if (bench.holding && bench.holdStep !== s.id) {
+      /* first tick of a new step: only trust a press that happened on it */
+      bench.holdStep = s.id;
+      bench.holdProgress = 0;
+    }
     if (bench.holding) {
       bench.holdProgress = clamp(bench.holdProgress + dt / (s.hold || 1.8), 0, 1);
+      const fillEl = $("#benchActions .bh-fill");
+      if (fillEl) fillEl.style.width = Math.round(bench.holdProgress * 100) + "%";
       if (bench.holdProgress >= 1) {
         bench.holding = false;
         benchStepDone();
@@ -3091,20 +3143,62 @@ function drawBench(g, W, H) {
   if (s2 && s2.at) {
     const pt = benchAnchor(s2.at, G0);
     if (pt) {
+      const isTurn = s2.kind === "turn";
       const rr = wheelR * 0.52 + Math.sin(t * 4) * wheelR * 0.05;
       const gr = g.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, rr * 2);
-      gr.addColorStop(0, bench.flash > 0 ? "#c8f04e77" : "#c8f04e3a");
-      gr.addColorStop(1, "#c8f04e00");
+      gr.addColorStop(0, bench.flash > 0 ? "#c8f04e77" : (isTurn ? "#ffcf5c3a" : "#c8f04e3a"));
+      gr.addColorStop(1, "#00000000");
       g.fillStyle = gr; g.beginPath(); g.arc(pt.x, pt.y, rr * 2, 0, 7); g.fill();
-      g.strokeStyle = bench.flash > 0 ? "#e8ffa0" : "#c8f04e"; g.lineWidth = 2.4;
-      g.setLineDash([7, 5]); g.lineDashOffset = -t * 24;
-      g.beginPath(); g.arc(pt.x, pt.y, rr, 0, 7); g.stroke();
-      g.setLineDash([]);
+
+      if (isTurn) {
+        /* draw the actual fastener and spin it with the turn progress */
+        const hexR = wheelR * 0.2;
+        const dir = s2.dir === -1 ? 1 : -1;
+        const spin = bench.turn * dir * Math.PI / 180;
+        g.save();
+        g.translate(pt.x, pt.y);
+        /* socket / spanner outline */
+        g.strokeStyle = "#8f9b95"; g.lineWidth = Math.max(2, hexR * 0.34);
+        g.beginPath(); g.arc(0, 0, hexR * 1.5, 0, 7); g.stroke();
+        g.fillStyle = "#b9c3bd";
+        g.beginPath(); g.arc(0, 0, hexR * 1.42, 0, 7); g.fill();
+        g.fillStyle = "#2b3330";
+        g.beginPath(); g.arc(0, 0, hexR * 1.12, 0, 7); g.fill();
+        /* the bolt head */
+        g.rotate(spin);
+        g.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2;
+          const x2 = Math.cos(a) * hexR, y2 = Math.sin(a) * hexR;
+          if (i === 0) g.moveTo(x2, y2); else g.lineTo(x2, y2);
+        }
+        g.closePath();
+        g.fillStyle = "#d7ded8"; g.fill();
+        g.strokeStyle = "#5d675f"; g.lineWidth = Math.max(1, hexR * 0.1); g.stroke();
+        /* centre mark so the rotation is obvious */
+        g.strokeStyle = "#e3564a"; g.lineWidth = Math.max(1.6, hexR * 0.16);
+        g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -hexR * 0.72); g.stroke();
+        g.restore();
+        /* curved arrow showing the way, and how far is left */
+        const prog = clamp(bench.holdProgress || 0, 0, 1);
+        const arcR = rr * 1.09;
+        const start = -Math.PI / 2;
+        g.strokeStyle = "#5c6a63"; g.lineWidth = 4;
+        g.beginPath(); g.arc(pt.x, pt.y, arcR, start, start + Math.PI * 2); g.stroke();
+        g.strokeStyle = "#ffcf5c"; g.lineWidth = 4; g.lineCap = "round";
+        g.beginPath(); g.arc(pt.x, pt.y, arcR, start, start + Math.PI * 2 * prog); g.stroke();
+        g.setLineDash([]);
+      } else {
+        g.strokeStyle = bench.flash > 0 ? "#e8ffa0" : "#c8f04e"; g.lineWidth = 2.4;
+        g.setLineDash([7, 5]); g.lineDashOffset = -t * 24;
+        g.beginPath(); g.arc(pt.x, pt.y, rr, 0, 7); g.stroke();
+        g.setLineDash([]);
+      }
     }
   }
 
   /* hold-progress ring on whatever you're working on */
-  if (bench.holdProgress > 0 && s2) {
+  if (bench.holdProgress > 0 && s2 && s2.kind !== "turn") {
     const pt = benchAnchor(s2.at || "sump", G0);
     if (pt) {
       g.strokeStyle = "#c8f04e"; g.lineWidth = 5; g.lineCap = "round";
@@ -5929,8 +6023,30 @@ function wireEvents() {
       navigate("garage");
       return;
     }
+    const turnBtn = closest("[data-bench-turn]");
+    if (turnBtn) {
+      if (bench) {
+        bench.turn = 0;
+        bench.holdProgress = 0;
+        bench.dragging = true;
+        bench.turnDir = 1;
+        const txt = $("#benchTurnTxt");
+        if (txt) txt.textContent = (bench.steps[bench.cur].dir === -1)
+          ? "Drag clockwise to do it up"
+          : "Drag anticlockwise to unscrew it";
+      }
+      return;
+    }
     const holdBtn = closest("[data-bench-hold]");
-    if (holdBtn) { if (bench) bench.holding = true; return; }
+    if (holdBtn) {
+      if (bench) {
+        /* pressing the button starts the work; releasing it stops. The
+           pointerup handler clears the flag, so this only has to set it. */
+        bench.holding = true;
+        holdBtn.classList.add("holding");
+      }
+      return;
+    }
     const hot = closest("[data-bench-spot]");
     if (hot && bench) {
       const s2 = bench.steps[bench.cur];
@@ -6018,8 +6134,49 @@ function wireEvents() {
     }
   });
 
+  /* --------- drag in a circle to undo a fastener --------- */
+  function benchAngle(e, el) {
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    return Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+  }
+  document.addEventListener("pointerdown", e => {
+    if (!bench || !bench.dragging) return;
+    const stage = e.target.closest("#benchStage") || e.target.closest("#benchCv");
+    if (!stage || !bench) return;
+    const host = $("#benchStage");
+    bench.lastAngle = benchAngle(e, host || stage);
+    bench.turning = true;
+    if (host) host.classList.add("turning");
+  });
+  document.addEventListener("pointermove", e => {
+    if (!bench || !bench.turning) return;
+    const s = bench.steps[bench.cur];
+    if (!s || s.kind !== "turn") { bench.turning = false; return; }
+    const host = $("#benchStage");
+    const a = benchAngle(e, host);
+    let d = a - bench.lastAngle;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    bench.lastAngle = a;
+    /* counter-clockwise to undo, clockwise to do up */
+    const dir = s.dir === -1 ? 1 : -1;
+    if (Math.sign(d) === dir) bench.turn += Math.abs(d);
+    else bench.turn = Math.max(0, bench.turn - Math.abs(d) * 0.35);
+    const need = 360 * (s.turns || 2);
+    bench.holdProgress = clamp(bench.turn / need, 0, 1);
+    if (bench.turn >= need) { bench.turning = false; bench.dragging = false; benchStepDone(); }
+  });
   document.addEventListener("pointerup", e => {
-    if (bench && bench.holding) bench.holding = false;
+    if (bench) {
+      bench.turning = false;
+      const st = $("#benchStage");
+      if (st) st.classList.remove("turning");
+    }
+    if (bench && bench.holding) {
+      bench.holding = false;
+      $$("#benchActions [data-bench-hold]").forEach(b => b.classList.remove("holding"));
+    }
     const tbtn = e.target.closest("[data-tbtn]");
     if (tbtn) {
       const k = tbtn.dataset.tbtn;
@@ -6029,6 +6186,7 @@ function wireEvents() {
   });
   document.addEventListener("pointercancel", () => {
     if (bench) bench.holding = false;
+    $$("#benchActions [data-bench-hold]").forEach(b => b.classList.remove("holding"));
     Object.keys(touchOn).forEach(k => touchOn[k] = false);
     $$("[data-tbtn]").forEach(b => b.classList.remove("pressed"));
   });
