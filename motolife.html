@@ -158,6 +158,13 @@ h1 .thin{color:var(--dim);font-weight:400}
 .bike-item.selected::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:2px;border-radius:2px;background:var(--orange)}
 .bike-thumb{width:66px;height:40px;flex:none;border-radius:6px;background:#0d1210;border:1px solid #1f2723;overflow:hidden}
 .bike-thumb canvas{width:100%;height:100%}
+/* photo art (assets/bikes) — sits in the same boxes the vector bikes used */
+.bike-thumb>img,.hero-canvas>img,.bc-thumb>img,.ss-bike>img,.dealer-art>img,.listing-art>img{width:100%;height:100%;display:block;object-fit:contain;object-position:center bottom}
+.bike-context .bc-thumb{display:flex;align-items:center;justify-content:center}
+.store-summary .ss-bike>img{width:88px;height:48px;flex:none;border-radius:6px;background:#0b0f0d;border:1px solid #1e2622;object-fit:contain}
+.dealer-art>img{padding:6px 4px 0}
+.hero-canvas>img{object-position:center center}
+.listing-art>img{object-position:center center}
 .bike-item .bi-name{font-size:11.5px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bike-item .bi-meta{font:8.5px var(--mono);letter-spacing:.05em;color:var(--dim);margin-top:3px;display:flex;gap:5px;align-items:center}
 .bike-item .bi-health{margin-left:auto;flex:none;font:700 10px var(--mono);color:var(--muted)}
@@ -1307,9 +1314,47 @@ const MODELS = [
     engine: { stroke: 4, fuel: "efi", oilFilter: true, valves: 16 },
     cc: 998, hp: 138, top: 214, accel: 9.9, price: 16500, rep: 40, weight: 178, wheelbase: 1.42, wheel: 0.32,
     paint: { body: "#b8352c", accent: "#f3f0e6", frame: "#22262a", rim: "#c8cecb", seat: "#14171a" },
-    tire: "street", tagline: "Absurd speed, absurd tire bills. Wheelies in fourth gear, if you dare." }
+    tire: "street", tagline: "Absurd speed, absurd tire bills. Wheelies in fourth gear, if you dare." },
+
+  /* ---------------------------------------------------------------
+     THE CURRENT MACHINES — modelled on the reference photographs in
+     assets/bikes/. These four are the bikes you can actually buy;
+     everything above is heritage stock, retired from the showroom.
+     --------------------------------------------------------------- */
+  { id: "ktm125sx", name: "KTM 125 SX", sub: "Motocross · 125 cc two-stroke · 2023", cls: "dirt", style: "dirt",
+    engine: { stroke: 2, fuel: "carb", oilFilter: false, valves: 0 },
+    cc: 125, hp: 38, top: 118, accel: 7.4, price: 7400, rep: 0, weight: 88, wheelbase: 1.48, wheel: 0.36,
+    paint: { body: "#ff6a00", accent: "#f4f4f2", frame: "#2d3134", rim: "#b9bfc2", seat: "#1b1d1f" },
+    art: "ktm125sx",
+    tire: "hard", tagline: "A 125 two-stroke that begs to be revved. Nothing up top, everything in the pipe." },
+  { id: "rmz250", name: "Suzuki RM-Z 250", sub: "Motocross · 249 cc · 2026", cls: "dirt", style: "dirt",
+    engine: { stroke: 4, fuel: "efi", oilFilter: true, valves: 4 },
+    cc: 249, hp: 39, top: 122, accel: 7.8, price: 8600, rep: 0, weight: 106, wheelbase: 1.49, wheel: 0.36,
+    paint: { body: "#f2d600", accent: "#2b3fa8", frame: "#b8bdc0", rim: "#c9ced1", seat: "#20242b" },
+    art: "rmz250",
+    tire: "hard", tagline: "Fuel-injected 250 four-stroke. Smooth, planted, and quietly quick everywhere." },
+  { id: "ktm85sx", name: "KTM 85 SX", sub: "Mini motocross · 85 cc two-stroke · 2026", cls: "dirt", style: "dirt",
+    engine: { stroke: 2, fuel: "carb", oilFilter: false, valves: 0 },
+    cc: 85, hp: 24, top: 96, accel: 6.2, price: 4900, rep: 0, weight: 68, wheelbase: 1.29, wheel: 0.33,
+    paint: { body: "#ff6a00", accent: "#f4f4f2", frame: "#e8621a", rim: "#c2c7ca", seat: "#1b1d1f" },
+    art: "ktm85sx",
+    tire: "hard", tagline: "The big-wheel 85. Light enough to throw around, punchy enough to bite back." },
+  { id: "kx450f", name: "Kawasaki KX450F", sub: "Motocross · 449 cc · 2026", cls: "dirt", style: "dirt",
+    engine: { stroke: 4, fuel: "efi", oilFilter: true, valves: 4 },
+    cc: 449, hp: 60, top: 138, accel: 9.1, price: 11200, rep: 3, weight: 110, wheelbase: 1.49, wheel: 0.36,
+    paint: { body: "#3fbf3f", accent: "#1d1f21", frame: "#9aa0a3", rim: "#c9ced1", seat: "#171a17" },
+    art: "kx450f",
+    tire: "hard", tagline: "450cc of usable torque. Rolls on the back wheel and asks for more." }
 ];
+/* heritage stock: still in the world (used market, existing saves) but no longer sold new */
+const RETIRED_MODELS = new Set([
+  "velocita","komar","puch","simson","rook","hornet","emerald","kestrel",
+  "striker250f","brawler250","wasp125","trail660","badlands","zephyr","sabre"
+]);
+const NEW_STOCK = MODELS.filter(m => !RETIRED_MODELS.has(m.id));
 const modelById = id => MODELS.find(m => m.id === id) || MODELS[0];
+/* a shopfront player can actually choose: never retired */
+const buyableById = id => { const m = modelById(id); return RETIRED_MODELS.has(m.id) ? null : m; };
 
 /* ------------------------- maps ------------------------- */
 const MAPS = [
@@ -1367,12 +1412,12 @@ const MAX_BIKES = 8;
 const YEAR = 2026;
 
 const STARTERS = [
-  { id: "velocita", label: "Fresh start", cash: 600, odo: 0, wear: 0.02, spread: 0.03, tires: "street",
-    blurb: "Brand-new Velocita 50 with barely-used parts. Little cash, no surprises." },
-  { id: "komar", label: "Cheap and tired", cash: 1500, odo: 21400, wear: 0.52, spread: 0.34, tires: "enduro",
-    blurb: "A high-mileage Komar. Plenty of cash to fix it your way — if it holds together." },
-  { id: "puch", label: "Solid middle", cash: 1050, odo: 11800, wear: 0.3, spread: 0.26, tires: "street",
-    blurb: "A well-loved Puch Maxi. Honest wear, honest fun, rooms to spare in the budget." }
+  { id: "ktm85sx", label: "Fresh start", cash: 900, odo: 0, wear: 0.02, spread: 0.03, tires: "hard",
+    blurb: "A box-fresh KTM 85 SX. Light, forgiving, and cheap to keep — the smart way in." },
+  { id: "ktm125sx", label: "The real thing", cash: 1400, odo: 4200, wear: 0.28, spread: 0.22, tires: "hard",
+    blurb: "A lightly-used KTM 125 SX. Proper two-stroke punch, and enough cash to keep it lit." },
+  { id: "rmz250", label: "Stretch goal", cash: 600, odo: 9800, wear: 0.46, spread: 0.3, tires: "hard",
+    blurb: "A tired but honest RM-Z 250. Little money left over — earn it back on the track." }
 ];
 
 let soundOn = true;
@@ -1535,7 +1580,9 @@ const SELLER_NOTES = [
 
 function generateListing(seed) {
   const rand = mulberry(seed);
-  const model = MODELS[Math.floor(rand() * MODELS.length)];
+  /* the used market still moves heritage bikes, but current stock is what turns up most */
+  const pool = rand() < 0.7 ? NEW_STOCK : MODELS;
+  const model = pool[Math.floor(rand() * pool.length)];
   const year = YEAR - Math.floor(rand() * 16);
   const odo = Math.round((rand() ** 1.7) * (model.cc > 400 ? 52000 : 32000) + 400);
   const neglect = rand();
@@ -1589,6 +1636,10 @@ function selectedBike() { return bikeById(selectedBikeId) || primaryBike(); }
 
 function purchaseBike(modelId, opts = {}) {
   const m = modelById(modelId);
+  if (RETIRED_MODELS.has(m.id) && !opts.allowRetired) {
+    toast("That model is long out of production. Look at the current stock.", "bad");
+    return false;
+  }
   if (state.bikes.length >= MAX_BIKES) { toast(`Your garage holds ${MAX_BIKES} bikes. Sell one first.`, "bad"); return false; }
   if (state.cash < m.price) { toast("Not enough cash for that bike.", "bad"); return false; }
   state.cash -= m.price;
@@ -1780,6 +1831,84 @@ function forkArt(x1, y1, x2, y2, gold = false) {
 /* =====================================================================
    BIKE RENDERER
    ===================================================================== */
+/* =====================================================================
+   PHOTO ART — the current machines are drawn from real reference photos
+   stored in assets/bikes/. Each entry records where that bike's wheels
+   sit inside the 900x560 canvas so the art seats on the ground the same
+   way the vector bikes do.
+   ===================================================================== */
+/* w/h are the real pixel size of each file; baseline is the y of the tyre
+   contact patch; radius is the wheel radius — both in that file's own pixels.
+   rearFrac is the rear axle's x as a fraction of width, used as the wheelie pivot. */
+const BIKE_ART = {
+  ktm125sx: { src: "assets/bikes/ktm125sx.webp", w: 900, h: 556, baseline: 547, radius: 133, rearFrac: 187 / 900 },
+  rmz250:   { src: "assets/bikes/rmz250.webp",   w: 856, h: 560, baseline: 515, radius: 117, rearFrac: 190 / 856 },
+  ktm85sx:  { src: "assets/bikes/ktm85sx.webp",  w: 887, h: 560, baseline: 557, radius: 138, rearFrac: 186 / 887 },
+  kx450f:   { src: "assets/bikes/kx450f.webp",   w: 900, h: 553, baseline: 543, radius: 133, rearFrac: 184 / 900 }
+};
+const _artCache = new Map();
+function bikeArt(key) {
+  if (!key || !BIKE_ART[key]) return null;
+  if (!_artCache.has(key)) {
+    const img = new Image();
+    const entry = { img, ready: false };
+    _artCache.set(key, entry);
+    /* attach the handler BEFORE the src, or a cached image can finish loading
+       before we are listening and the art never appears */
+    img.onload = () => {
+      entry.ready = true;
+      /* repaint whatever is on screen once the photo lands */
+      if (activeScreen === "garage") renderGarage();
+      else if (activeScreen === "market") renderMarket();
+      else if (activeScreen === "store") renderStore();
+      else if (bench) { renderBenchSteps(); }
+    };
+    img.decoding = "async";
+    img.src = BIKE_ART[key].src;
+  }
+  const e = _artCache.get(key);
+  /* an image already in the browser cache can be complete on the first frame */
+  if (!e.ready && e.img.complete && e.img.naturalWidth) e.ready = true;
+  return e.ready ? e.img : null;
+}
+function hasArt(m) { return !!(m && m.art && BIKE_ART[m.art]); }
+
+/* draw the photo bike on a canvas: its tyres land exactly on `groundY` */
+function drawBikeArt(g, m, cx, groundY, heightPx, opts = {}) {
+  const rec = BIKE_ART[m.art];
+  const img = bikeArt(m.art);
+  if (!rec || !img) return false;
+  const sc = heightPx / rec.h;
+  const w = rec.w * sc, h = rec.h * sc;
+  const x = cx - w / 2;
+  const y = groundY - rec.baseline * sc;
+  g.save();
+  if (opts.alpha != null) g.globalAlpha = opts.alpha;
+  if (opts.shadow !== false) {
+    g.fillStyle = "rgba(0,0,0,.30)";
+    g.beginPath();
+    g.ellipse(cx, groundY + h * 0.005, w * 0.30, h * 0.035, 0, 0, 7);
+    g.fill();
+  }
+  g.drawImage(img, x, y, w, h);
+  g.restore();
+  return true;
+}
+
+/* an <img> for the DOM surfaces (cards, thumbnails, previews) */
+function bikeArtImg(m, opts = {}) {
+  if (!hasArt(m)) return "";
+  const { cls = "", style = "" } = opts;
+  return `<img src="${BIKE_ART[m.art].src}" alt="${esc(m.name)}" class="${cls}" style="display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;${style}" draggable="false">`;
+}
+
+/* markup for any bike preview: real photo when we have one, vector art otherwise */
+function bikePreview(bike, opts = {}) {
+  const m = modelById(bike.modelId);
+  if (hasArt(m)) return bikeArtImg(m, opts);
+  return bikeSVG(bike, opts);
+}
+
 function bikeSVG(bike, opts = {}) {
   const m = modelById(bike.modelId);
   const p = bike.paint;
@@ -2160,7 +2289,7 @@ function renderDashboards() {
       goals.push({ done: false, title: "Buy your first bike", sub: "The dealer has new stock, the market has stories." });
     }
     // cash goal
-    const cheapest = state.bikes.length ? null : MODELS[0];
+    const cheapest = state.bikes.length ? null : NEW_STOCK.reduce((a, b) => (b.price < a.price ? b : a));
     if (cheapest) goals.push({ done: false, title: "Save " + money(cheapest.price), sub: `The ${esc(cheapest.name)} is the cheapest way in.` });
     else goals.push({ done: false, title: "Grow the garage", sub: `${state.bikes.length}/${MAX_BIKES} slots used · ${money(state.cash)} in reserve` });
     goalsHost.innerHTML = goals.slice(0, 4).map(g => `<div class="goal-row ${g.done ? "done" : ""}">
@@ -2180,7 +2309,7 @@ function renderBikeList() {
     const cond = avgCond(b);
     const sel = b.id === selectedBikeId || (!selectedBikeId && b.id === primaryBike()?.id);
     return `<button class="bike-item ${sel ? "selected" : ""}" data-bike-select="${b.id}">
-      <span class="bike-thumb">${bikeSVG(b, { w: 132, h: 80, idPrefix: "th" + b.id })}</span>
+      <span class="bike-thumb">${bikePreview(b, { w: 132, h: 80, idPrefix: "th" + b.id })}</span>
       <span style="min-width:0">
         <span class="bi-name">${b.id === state.primary ? "★ " : ""}${esc(m.name)}</span>
         <span class="bi-meta">${b.year} · ${km(b.odo)} km ${b.id === state.primary ? "· ★" : ""}</span>
@@ -2211,7 +2340,7 @@ function renderHero(bike) {
   const power = Math.round(m.hp * (0.72 + 0.28 * cond) * (bike.mods.tune ? 1.06 : 1));
   host.innerHTML = `
     <div class="hero-stage">
-      <div class="hero-canvas">${bikeSVG(bike, { w: 760, h: 456, idPrefix: "hero" + bike.id })}</div>
+      <div class="hero-canvas">${bikePreview(bike, { w: 760, h: 456, idPrefix: "hero" + bike.id })}</div>
       <div class="hero-badges">
         <span class="pill orange">${esc(m.cls)}</span>
         <span class="pill">${m.cc} cc</span>
@@ -3145,7 +3274,12 @@ function drawBench(g, W, H) {
   g.beginPath(); g.ellipse(G0.ax, G0.ay + 3, wheelR * 2.1, wheelR * 0.16, 0, 0, 7); g.fill();
 
   const rr = { model: m, bike, pitch: 0, lean: 0, tuck: 0, ended: false, wheelSpin: (bench.spinner || 0) * 0.6 };
-  drawRider(g, rr, G0.ax, G0.ay, G0.scale, 0, { noRider: true });
+  if (hasArt(m)) {
+    /* the same stand, with the real machine on it */
+    drawBikeArt(g, m, G0.ax, G0.ay + wheelR * 0.06, H * 0.80, { shadow: false });
+  } else {
+    drawRider(g, rr, G0.ax, G0.ay, G0.scale, 0, { noRider: true });
+  }
 
   /* headlamp glow so the machine reads against the wall */
   if (m.style !== "moped") {
@@ -3391,7 +3525,7 @@ function renderMaps() {
   } else {
     const tireOpts = TIRES.map(t => `<option value="${t.id}" ${bike.parts.tire_front.id === t.id ? "selected" : ""}>${esc(t.name)}</option>`).join("");
     ctx.innerHTML = `
-      <span class="bc-thumb">${bikeSVG(bike, { w: 156, h: 88, idPrefix: "ctx" + bike.id })}</span>
+      <span class="bc-thumb">${bikePreview(bike, { w: 156, h: 88, idPrefix: "ctx" + bike.id })}</span>
       <span style="min-width:0">
         <span class="bc-name">${esc(modelById(bike.modelId).name)}</span>
         <span class="bc-meta">${bike.year} · ${km(bike.odo)} km · ${Math.round(avgCond(bike) * 100)}% condition</span>
@@ -3674,7 +3808,7 @@ function renderStore() {
   } else {
     const m = modelById(bike.modelId);
     summary.innerHTML = `
-      <span class="ss-bike">${bikeSVG(bike, { w: 176, h: 96, idPrefix: "store" + bike.id })}<span>
+      <span class="ss-bike">${bikePreview(bike, { w: 176, h: 96, idPrefix: "store" + bike.id })}<span>
         <b>${esc(m.name)}</b><small>Fitting parts to this bike · ${Math.round(avgCond(bike) * 100)}% overall</small></span></span>
       <span class="ss-note">${ic("i-info", 14)}Prices include workshop labor. Better tiers last longer and resist the terrain better.</span>`;
   }
@@ -3762,7 +3896,10 @@ function renderMarket() {
     if (el.dataset.painted === "1") return;
     const b = findBikeByAnyId(el.dataset.paintBike);
     if (!b) return;
-    el.innerHTML = bikeSVG(b, { w: 400, h: 240, idPrefix: "mk" + b.id + Math.random().toString(36).slice(2, 6) });
+    const mdl = modelById(b.modelId);
+    el.innerHTML = hasArt(mdl)
+      ? bikeArtImg(mdl)
+      : bikeSVG(b, { w: 400, h: 240, idPrefix: "mk" + b.id + Math.random().toString(36).slice(2, 6) });
     el.dataset.painted = "1";
   });
 }
@@ -3774,13 +3911,13 @@ function findBikeByAnyId(id) {
 }
 
 function renderDealer() {
-  const cards = MODELS.map(m => {
+  const cards = NEW_STOCK.map(m => {
     const locked = state.rep < m.rep;
     const affordable = state.cash >= m.price;
     const preview = { id: "prev" + m.id, modelId: m.id, paint: { ...m.paint }, parts: {} };
     return `<article class="card dealer-card">
       <div class="dealer-art">
-        ${bikeSVG(preview, { w: 400, h: 240, idPrefix: "dl" + m.id, dim: locked })}
+        ${bikePreview(preview, { w: 400, h: 240, idPrefix: "dl" + m.id, dim: locked })}
         <span class="pill ${locked ? "warn" : "good"}">${locked ? `${ic("i-lock", 9)} ${m.rep} rep` : "in stock"}</span>
       </div>
       <div class="dealer-body">
@@ -3824,7 +3961,7 @@ function renderUsed() {
     const canAfford = state.cash >= l.wants;
     const full = state.bikes.length >= MAX_BIKES;
     return `<div class="listing">
-      <div class="listing-art"><span data-paint-bike="${l.bike.id}" style="position:absolute;inset:0"></span><span class="yr">${l.bike.year}</span></div>
+      <div class="listing-art">${hasArt(modelById(l.bike.modelId)) ? bikeArtImg(modelById(l.bike.modelId)) : `<span data-paint-bike="${l.bike.id}" style="position:absolute;inset:0"></span>`}<span class="yr">${l.bike.year}</span></div>
       <div class="listing-main">
         <h3>${esc(m.name)} ${deal ? `<span class="pill good">good deal</span>` : ""}</h3>
         <div class="listing-sub">${km(l.bike.odo)} km · ${l.bike.year} · seller ${esc(l.seller)} · posted day ${l.posted}</div>
@@ -4968,7 +5105,25 @@ function drawRide() {
   }
 
   /* ---------------- BIKE + RIDER ---------------- */
-  drawRider(g, r, r.bikeX, r.groundY, (H / 620) * 3.55, shakeX);
+  if (hasArt(r.model)) {
+    /* photo machine: seat its tyres on the road, lean it with the bars */
+    const rideH = (H / 620) * 300;
+    const artBottom = r.groundY + r.wheelLift * 0.15;
+    /* pivot about the rear contact patch so a wheelie lifts the front wheel */
+    const rec3 = BIKE_ART[r.model.art];
+    const artW = rec3.w * (rideH / rec3.h);
+    const pivotX = r.bikeX - artW / 2 + rec3.rearFrac * artW;
+    const tilt = -((r.pitch || 0) * Math.PI / 180) * 0.9 + (r.ended ? 0.2 : 0);
+    g.save();
+    g.translate(shakeX, 0);
+    g.translate(pivotX, artBottom);
+    g.rotate(tilt);
+    g.translate(-pivotX, -artBottom);
+    drawBikeArt(g, r.model, r.bikeX, artBottom, rideH, { shadow: true });
+    g.restore();
+  } else {
+    drawRider(g, r, r.bikeX, r.groundY, (H / 620) * 3.55, shakeX);
+  }
 
   /* ---------------- WEATHER OVERLAYS ---------------- */
   if (r.map.weather === "rain") {
@@ -5914,7 +6069,7 @@ function openIntro() {
           const preview = createBike(s.id, { year: YEAR - (s.odo > 10000 ? rndInt(6, 12) : 0), odo: s.odo, wear: s.wear, spread: s.spread, tires: s.tires });
           return `<button class="fit-opt ${i === 1 ? "current" : ""}" data-starter="${s.id}">
             <span style="display:flex;align-items:center;gap:10px;min-width:0">
-              <span class="listing-art" style="width:96px;height:56px">${bikeSVG(preview, { w: 192, h: 112, idPrefix: "st" + s.id })}</span>
+              <span class="listing-art" style="width:96px;height:56px">${bikePreview(preview, { w: 192, h: 112, idPrefix: "st" + s.id })}</span>
               <span style="min-width:0"><span class="fo-name">${esc(m.name)} <span class="pill">${esc(s.label)}</span></span>
                 <span class="fo-meta"><span>${km(s.odo)} km</span><span><b>${money(s.cash)} cash</b></span></span>
                 <span class="tiny dim" style="display:block;margin-top:2px">${esc(s.blurb)}</span>
@@ -5924,7 +6079,7 @@ function openIntro() {
           </button>`;
         }).join("")}
       </div>
-      <div class="intro-keys" style="margin-top:14px"><span>STARTING CASH</span><kbd>$600</kbd> fresh start <kbd>$1,500</kbd> cheap and tired <kbd>$1,050</kbd> solid middle</div>
+      <div class="intro-keys" style="margin-top:14px"><span>STARTING CASH</span><kbd>$900</kbd> fresh start <kbd>$1,400</kbd> the real thing <kbd>$600</kbd> stretch goal</div>
     </div>
     <div class="modal-foot"><span class="tiny dim">Progress saves to this browser automatically.</span>
       <button class="btn btn-primary" data-confirm-intro>${ic("i-play", 15)}Start riding</button></div>`, { size: "wide" });
@@ -5934,7 +6089,7 @@ function chooseStarter(id) {
   $$("#starterOptions .fit-opt").forEach(b => b.classList.toggle("current", b.dataset.starter === id));
   starterChoice = id;
 }
-let starterChoice = "komar";
+let starterChoice = "ktm85sx";
 
 function applyStarter(id) {
   const s = STARTERS.find(x => x.id === id) || STARTERS[0];
@@ -5963,7 +6118,7 @@ function wireEvents() {
     const closest = sel => t.closest(sel);
 
     if (closest("[data-starter]")) { chooseStarter(closest("[data-starter]").dataset.starter); return; }
-    if (closest("[data-confirm-intro]")) { applyStarter(starterChoice || "komar"); return; }
+    if (closest("[data-confirm-intro]")) { applyStarter(starterChoice || "ktm85sx"); return; }
     if (closest("[data-close]")) { closeModal(); return; }
 
     const navBtn = closest("[data-screen]");
