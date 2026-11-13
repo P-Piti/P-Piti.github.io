@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0c0f0e">
-<meta name="description" content="GRIT &amp; GEAR — a motorcycle ownership game. Ride mopeds, dirtbikes and dual-sports, throw wheelies, and keep every part alive. Damage depends on the terrain and how hard you ride.">
-<title>GRIT &amp; GEAR — Ride. Wrench. Repeat.</title>
+<meta name="description" content="MotoLife — a motorcycle ownership game. Ride mopeds, dirtbikes and dual-sports, throw wheelies, and keep every part alive. Every repair is done by hand, and damage depends on the terrain and how hard you ride.">
+<title>MotoLife — Ride. Wrench. Repeat.</title>
 <style>
 :root{
   --bg:#0b0e0d; --bg2:#0f1311; --panel:#141917; --panel2:#191f1c; --panel3:#1f2723;
@@ -55,7 +55,7 @@ ul{margin:0;padding:0;list-style:none}
 .brand-mark{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;color:#1d0d04;
   background:linear-gradient(150deg,#ffa56a,#ff6a2c 45%,#dd4a14);box-shadow:0 6px 18px #ff7a3d30,inset 0 1px #fff6}
 .brand-mark svg{width:25px;height:25px;stroke-width:1.9}
-.brand-name{font-weight:850;font-size:15px;letter-spacing:.13em;line-height:1;text-transform:uppercase}
+.brand-name{font-weight:850;font-size:16px;letter-spacing:.2em;line-height:1;text-transform:uppercase}
 .brand-name b{color:var(--orange);font-weight:850}
 .brand-sub{font:8.5px/1 var(--mono);letter-spacing:.2em;color:var(--dim);margin-top:5px;text-transform:uppercase}
 .mainnav{display:flex;gap:2px;padding:4px;border:1px solid var(--line);background:#11161480;border-radius:12px}
@@ -764,10 +764,10 @@ body.touch .touch-controls{display:flex}
 </defs></svg>
 
 <header class="topbar">
-  <a class="brand" href="#" id="brandHome" aria-label="Grit and Gear home">
+  <a class="brand" href="#" id="brandHome" aria-label="MotoLife home">
     <span class="brand-mark"><svg><use href="#i-helmet"/></svg></span>
     <span>
-      <span class="brand-name">GRIT <b>&amp;</b> GEAR</span>
+      <span class="brand-name">MOTO<b>LIFE</b></span>
       <span class="brand-sub">Ride · Wrench · Repeat</span>
     </span>
   </a>
@@ -1007,7 +1007,7 @@ body.touch .touch-controls{display:flex}
 "use strict";
 (() => {
 /* =====================================================================
-   GRIT & GEAR — a motorcycle ownership game
+   MotoLife — a motorcycle ownership game
    Data, simulation, and UI in one file. No dependencies.
    ===================================================================== */
 
@@ -1338,7 +1338,10 @@ function terrainWear(partKey, map) {
 /* =====================================================================
    STATE + ECONOMY
    ===================================================================== */
-const SAVE_KEY = "gritgear.save.v2";
+const SAVE_KEY = "motolife.save.v2";
+/* Saves written before the rename still restore, so a rider who has been
+   playing under the old name keeps their garage and their cash. */
+const LEGACY_SAVE_KEY = "gritgear.save.v2";
 const WEAR_K = 0.012;           // global wear rate: per-metre wear = WEAR_K / durability(km)
 const MAX_BIKES = 8;
 const YEAR = 2026;
@@ -1375,7 +1378,12 @@ function save() {
 }
 function load() {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    let raw = localStorage.getItem(SAVE_KEY);
+    if (!raw && LEGACY_SAVE_KEY) {
+      /* migrate a pre-rename save into the new key */
+      raw = localStorage.getItem(LEGACY_SAVE_KEY);
+      if (raw) { try { localStorage.setItem(SAVE_KEY, raw); } catch (e) { } }
+    }
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (!data || data.version !== 2 || !Array.isArray(data.bikes)) return null;
