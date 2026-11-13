@@ -1378,6 +1378,7 @@ const STARTERS = [
 let soundOn = true;
 let state = null;
 let activeScreen = "garage";
+let benchLoopOn = false;
 let selectedBikeId = null;
 let storeCat = "tires";
 let marketTab = "dealer";
@@ -2051,9 +2052,21 @@ function updateTopbar() {
 }
 
 function navigate(screen, opts = {}) {
-  if (screen !== "bench") bench = null;
+  /* leaving the bench mid-job keeps the job on the stand so you can come back to it;
+     only an explicit "leave the bench" / "walk away" clears it */
+  if (screen !== "bench" && bench && bench.finished) bench = null;
   closeAllModals();
   activeScreen = screen;
+  /* coming back to a job that is still on the stand: restart its loop and clock */
+  if (screen === "bench" && bench && !bench.finished) {
+    bench.dragging = false;
+    bench.holding = false;
+    bench.lastAngle = null;
+    benchBeginTimed();
+    renderBenchSteps();
+    renderBenchActions();
+    benchLoopStart();
+  }
   $$(".screen").forEach(s => s.classList.toggle("active", s.id === "screen-" + screen));
   $$(".navbtn").forEach(b => b.classList.toggle("active", b.dataset.screen === screen));
   if (opts.tab) marketTab = opts.tab;
@@ -2767,7 +2780,7 @@ function startModJob(kind) {
   };
   benchScreen();
   navigate("bench");
-  requestAnimationFrame(benchFrame);
+  benchLoopStart();
 }
 
 /* ---- apply a finished job to the bike ---- */
@@ -2810,6 +2823,12 @@ function openBench(partKey, optId, opts = {}) {
   const def = partDef(partKey);
   if (!partKey || !partDef(partKey)) return;
   if (String(partKey).startsWith("__mod_")) return; // mods go through startModJob
+  /* already on the stand and paid for: put the player back where they left off */
+  if (bench && !bench.finished && bench.bikeId === bike.id && bench.partKey === partKey
+      && String(bench.optId) === String(optId) && opts.fresh !== true) {
+    resumeBench();
+    return;
+  }
   if (opts.pay !== false) {
     const price = jobPartPrice(partKey, optId);
     const labor = Math.round((SERVICE_LABOR[def.cat] || 14) * 0.55);
@@ -2847,7 +2866,21 @@ function openBench(partKey, optId, opts = {}) {
   };
   benchScreen();
   navigate("bench");
-  requestAnimationFrame(benchFrame);
+  benchLoopStart();
+}
+
+/* re-enter a job that is already paid for and half done */
+function resumeBench() {
+  if (!bench) return;
+  bench.dragging = false;
+  bench.holding = false;
+  bench.lastAngle = null;
+  benchScreen();
+  navigate("bench");
+  renderBenchSteps();
+  renderBenchActions();
+  benchBeginTimed();
+  benchLoopStart();
 }
 
 function benchScreen() {
@@ -2865,6 +2898,7 @@ function benchScreen() {
   if (hint) hint.style.display = "none";
   renderBenchSteps();
   renderBenchActions();
+  benchBeginTimed();
 }
 function renderBenchSteps() {
   const host = $("#benchSteps");
@@ -2948,11 +2982,18 @@ function benchStepDone() {
   if (tip) tip.textContent = bench.steps[bench.cur].label + ".";
   const nh = $("#benchTurnHint");
   if (nh) nh.style.display = bench.steps[bench.cur].kind === "turn" ? "flex" : "none";
+  /* a timed step starts counting the moment it becomes current */
+  benchBeginTimed();
 }
 
 function benchBeginTimed() {
-  const s = bench.steps[bench.cur];
-  if (!s || !["drain", "pour", "wait"].includes(s.kind)) return;
+  const s = bench && bench.steps[bench.cur];
+  const el = $("#benchTimer");
+  if (!s || !["drain", "pour", "wait"].includes(s.kind)) {
+    if (el) el.style.display = "none";
+    return;
+  }
+  if (!el) return;
   bench.timerMax = s.secs;
   bench.timer = s.secs;
   $("#benchTimer").style.display = "flex";
@@ -2960,17 +3001,27 @@ function benchBeginTimed() {
   $("#benchTimerTxt").textContent = s.kind === "drain" ? `Draining… ${s.secs}s` : s.kind === "pour" ? `Filling… ${s.secs}s` : `Waiting… ${s.secs}s`;
 }
 
+function benchLoopStart() {
+  if (benchLoopOn) return;
+  benchLoopOn = true;
+  requestAnimationFrame(benchFrame);
+}
+
 function benchFrame(now) {
+  benchLoopOn = false;
   if (!bench) return;
   const cv = $("#benchCv");
   if (!cv) return;
+  /* leaving the screen stops the loop; it is restarted on return */
+  if (activeScreen !== "bench") return;
   const dt = Math.min(0.05, (now - (bench.last || now)) / 1000);
   bench.last = now;
   bench.spinner += dt * 6;
-  benchTickForTest(dt);
+  /* a modal sits over the bench: the job waits for you, it does not tick on unseen */
+  if (!modalStack.length) benchTickForTest(dt);
   drawBench(cv.getContext("2d"), cv.width, cv.height);
   drawBenchHotspot();
-  requestAnimationFrame(benchFrame);
+  benchLoopStart();
 }
 
 /* one tick of bench logic — split out so it can be driven by tests */
@@ -6224,7 +6275,11 @@ function wireEvents() {
     e.preventDefault();
   });
   window.addEventListener("blur", () => { keys = {}; Object.keys(touchOn).forEach(k => touchOn[k] = false); });
-  window.addEventListener("resize", () => { if (ride) resizeRideCanvas(); });
+  window.addEventListener("resize", () => {
+    if (ride) resizeRideCanvas();
+    /* keep the bench artwork crisp and the hotspots aligned after a resize */
+    if (bench && activeScreen === "bench") { benchScreen(); drawBenchHotspot(); }
+  });
 }
 
 function buyListingConfirmed(id) {
