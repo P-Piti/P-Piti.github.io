@@ -1,47 +1,3 @@
-================================================================================
-  2STROKE - THE HANDS-ON GARAGE  ·  VERSION 1  ·  FULL SOURCE CODE
-  ----------------------------------------------------------------------------
-  Design:   "Industrial Dark Garage" - charcoal surfaces, safety-orange accents,
-            Barlow / Barlow Condensed type, layered panels, sidebar rail nav.
-  Style:    Three files + web fonts.
-
-  HOW TO RUN
-    1. Put index.html, styles.css, game.js and the assets/ folder
-       (fonts.css + the type-*.ttf files) in one directory.
-    2. Open index.html in a browser (or serve the folder with any
-       static file server). Everything is local - no build step.
-
-  HOW TO PLAY
-    - Hold LEFT CLICK on an orange bolt to unscrew it (hold, don't click).
-    - Use the LOOSEN / TIGHTEN ratchet direction change buttons
-      (top-right of the workbench) or press R to flip direction.
-      Orange bolts loosen, green bolts tighten.
-    - Work order: cylinder head -> base bolts -> piston & gasket ->
-      reassemble & torque -> dyno run & tune.
-    - Performance parts shop, fuel/ignition tune, dyno graph, XP & credits,
-      progress saved to localStorage (key: 2stroke-garage-v1).
-    - Engines: SX 125 TBI · SIMSON S51 · SX 85. Each saves its own progress.
-
-  FILES IN THIS DOCUMENT
-    1. index.html   - markup, SVG icon sprite, skeleton
-    2. styles.css   - the complete visual design (v1)
-    3. game.js      - all game logic (state, holds, dyno, audio, save)
-    4. assets/fonts.css - @font-face declarations
-
-  NOTE ON FONTS
-    assets/type-0.ttf ... type-7.ttf are binary TrueType files and cannot be
-    embedded in a text file. They are kept in the workspace under
-    /home/user/assets/ (SIL Open Font License - see assets/OFL.txt).
-    Without them the game still runs, using fallback fonts.
-
-  Generated 2026-11-13 for the 2STROKE project.
-================================================================================
-
-
---------------------------------------------------------------------------------
-FILE: index.html
---------------------------------------------------------------------------------
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,8 +6,58 @@ FILE: index.html
   <meta name="theme-color" content="#111315">
   <meta name="description" content="A hands-on 2-stroke engine workshop. Rebuild, modify, and dyno test the SX 125 TBI, Simson S51, and SX 85.">
   <title>2STROKE — The hands-on garage</title>
-  <link rel="stylesheet" href="assets/fonts.css">
-  <link rel="stylesheet" href="styles.css">
+  <style>
+:root{--bg:#101214;--surface:#181b1e;--surface-light:#202427;--panel:#1b1e21;--line:#303438;--line-soft:#292d30;--text:#edece7;--muted:#858b90;--dim:#5e666c;--orange:#ff7950;--orange-bright:#ff8c61;--green:#b5d895;--font:'Barlow',Arial,sans-serif;--display:'Barlow Condensed','Arial Narrow',sans-serif;--mono:'DejaVu Sans Mono',Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;-webkit-font-smoothing:antialiased}button,a,input{-webkit-tap-highlight-color:transparent}button{font-family:inherit;color:inherit;cursor:pointer}button{border:0;background:none}button:disabled{cursor:not-allowed;opacity:.45}button:focus-visible,a:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--orange);outline-offset:4px}button:not(:disabled){transition:background .18s,color .18s,border-color .18s,transform .18s}button:active:not(:disabled){transform:translateY(1px)}a{color:inherit;text-decoration:none}.icon{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}.svg-library{position:absolute;width:0;height:0;overflow:hidden}.app-shell{display:grid;grid-template-columns:76px minmax(0,1fr);min-height:100vh}.rail{background:#17191c;border-right:1px solid var(--line-soft);display:flex;align-items:center;flex-direction:column;position:sticky;top:0;height:100vh;z-index:20}.rail-logo{width:43px;height:47px;position:relative;display:grid;place-items:center;background:var(--orange);border-radius:4px;color:#1a1c1c;margin:20px 0 28px;box-shadow:0 0 24px #ff795008}.rail-logo .icon{width:26px;height:26px;transform:rotate(-28deg);stroke-width:1.9}.rail-logo>span{font:700 11px var(--display);position:absolute;bottom:2px;right:3px}.rail-nav{display:flex;flex-direction:column;gap:12px;width:100%;align-items:center}.rail-button{width:57px;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#777f84;position:relative;border-radius:5px}.rail-button>span{font-size:8px;font-weight:600;letter-spacing:1px}.rail-button .icon{width:22px;height:22px}.rail-button:hover{background:#ffffff05;color:var(--text)}.rail-button.active{color:var(--orange);background:#ff79500d}.rail-button.active:before{content:'';position:absolute;left:-10px;top:15px;bottom:15px;width:2px;background:var(--orange);border-radius:0 3px 3px 0}.rail-bottom{margin-top:auto;display:flex;align-items:center;flex-direction:column;gap:14px;padding-bottom:21px}.rail-line{width:24px;height:1px;background:var(--line)}.rail-bottom .rail-button{min-height:35px}.rail-build{font-size:10px;color:#555c62;letter-spacing:1px}.app-body{min-width:0}.topbar{height:79px;display:flex;align-items:center;gap:25px;padding:0 30px;border-bottom:1px solid var(--line-soft);background:#151719}.wordmark{font-family:var(--display);font-weight:800;font-size:25px;font-style:italic;line-height:.9;letter-spacing:.6px;white-space:nowrap}.wordmark>span{color:var(--orange)}.wordmark small{display:block;font:500 8px var(--font);font-style:normal;letter-spacing:2.3px;margin-top:7px;color:#8e9292}.header-separator{height:27px;width:1px;background:var(--line)}.breadcrumb{font-size:10px;font-weight:500;letter-spacing:1.4px;display:flex;gap:15px;color:var(--muted)}.breadcrumb span{color:#4b5157}.breadcrumb strong{color:#c1c4c2;font-weight:500}.topbar-right{margin-left:auto;display:flex;align-items:center;gap:27px}.local-save{font-size:9px;letter-spacing:1.3px;color:#7d8486;display:flex;align-items:center;gap:7px}.local-save i,.page-footer i{width:5px;height:5px;border-radius:50%;background:#98b782}.player{display:flex;align-items:center;gap:10px}.player-avatar{display:grid;place-items:center;width:33px;height:33px;background:#2a2e2e;border:1px solid #414641;transform:rotate(-3deg);border-radius:3px;font:600 17px var(--display);color:#c3c8b9}.player strong{font-size:10px;letter-spacing:.8px;font-weight:600;display:block}.player small{font-size:9px;color:#81878a;display:block;letter-spacing:.6px;margin-top:4px}.player small span{padding:0 3px;color:#4f595e}.wallet{background:#242522;border:1px solid #3b3c33;border-radius:5px;padding:10px 13px;display:flex;align-items:center;gap:8px}.wallet .icon{width:18px;height:18px;color:#d8c59a}.wallet strong{font-size:15px;font-weight:600;letter-spacing:.2px}.wallet small{font-size:8px;color:#a49d86;align-self:center;letter-spacing:1px}main{padding:25px 30px 0;max-width:1770px;margin:auto}.page-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:23px}.eyebrow{display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:1.7px;font-weight:600;color:#a6aaa6;margin:0 0 8px}.eyebrow>span{background:var(--orange);height:5px;width:5px;transform:rotate(45deg)}h1{font-family:var(--display);font-size:36px;line-height:1;font-weight:600;letter-spacing:.2px;margin:0}h1>span{color:#929797}.text-button{display:flex;align-items:center;gap:8px;color:#a7adad;font-size:12px;padding:10px 0 10px 10px}.text-button .icon{width:16px;height:16px;color:#7e878a}.text-button:hover{color:var(--orange)}.key,kbd{font:500 9px var(--font);border:1px solid #41474b;background:#ffffff04;padding:3px 5px;line-height:1;border-radius:3px;color:#939b9d;min-width:16px;text-align:center}.text-button .key{margin-left:5px}.engine-switcher{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:22px}.engine-card{position:relative;display:flex;align-items:center;gap:16px;border:1px solid var(--line);background:linear-gradient(110deg,#1d2023,#191c1e);padding:15px 18px;text-align:left;min-height:85px;border-radius:6px;overflow:hidden}.engine-card:after{position:absolute;content:'';inset:0;background:radial-gradient(ellipse at 0 50%,#ff795006,transparent 70%);opacity:0;pointer-events:none}.engine-card:hover{border-color:#66615b;background:#242628}.engine-card.selected{border-color:var(--orange);background:linear-gradient(110deg,#2b2522,#211e1d)}.engine-card.selected:after{opacity:1}.engine-card.selected:before{content:'';position:absolute;top:0;left:25px;right:25px;height:2px;background:var(--orange);box-shadow:0 2px 15px #ff795030}.engine-mini{width:57px;height:50px;flex-shrink:0;opacity:.65;color:#a2a9a7}.selected .engine-mini{color:#c6b5a9;opacity:.9}.engine-card-info{display:flex;flex-direction:column;gap:5px}.engine-card strong{font:600 22px/1 var(--display);letter-spacing:.4px}.engine-card small{font-size:10px;color:#8b9193;letter-spacing:.1px}.engine-card .engine-card-state{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:8px;letter-spacing:1.1px;color:#7c8486;white-space:nowrap}.engine-card-state i{width:6px;height:6px;background:#656d6c;border-radius:50%}.selected .engine-card-state{color:var(--orange)}.selected .engine-card-state i{background:var(--orange);box-shadow:0 0 7px #ff795025}.engine-card .arrow-select{margin-left:auto;width:16px;height:16px;color:#697176}.work-layout{display:grid;grid-template-columns:minmax(0,1fr) 302px;gap:20px;align-items:start}.bench-column{min-width:0}.workbench{border:1px solid #3a3e40;background:#1e2224;border-radius:7px;overflow:hidden;box-shadow:0 8px 36px #0000000a}.bench-toolbar{height:43px;background:#222629;display:flex;align-items:center;justify-content:space-between;padding:0 17px;border-bottom:1px solid #373c3f;position:relative;z-index:3}.bench-label{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:1px;color:#858e91}.bench-label strong{font-size:9px;font-weight:600;color:#c0c6c4;letter-spacing:1.3px}.live-dot{height:5px;width:5px;border-radius:50%;background:var(--green);box-shadow:0 0 7px #b5d89520}.bench-divider{color:#596166;margin:0 2px}.view-controls{display:flex;align-items:center;gap:3px}.view-controls>span{font-size:8px;letter-spacing:1.2px;color:#727d81;margin-right:10px}.icon-button{width:25px;height:25px;display:grid;place-items:center;color:#9ca5a6;border:1px solid transparent;border-radius:3px}.icon-button .icon{width:14px;height:14px}.icon-button:hover{background:#ffffff08;color:var(--text);border-color:#474e51}.reset-view{margin-left:4px}.scene{position:relative;height:472px;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse at 49% 38%,#3e464342 0%,#2b31312b 39%,#20242600 70%),linear-gradient(0deg,#181d1f08,#252b2d);background-color:#222729;touch-action:none;user-select:none}.scene:before{content:'';position:absolute;inset:0;z-index:-1;background-image:linear-gradient(#86979807 1px,transparent 1px),linear-gradient(90deg,#86979807 1px,transparent 1px),linear-gradient(#86979804 1px,transparent 1px),linear-gradient(90deg,#86979804 1px,transparent 1px);background-size:80px 80px,80px 80px,20px 20px,20px 20px;background-position:center;mask-image:linear-gradient(180deg,#000 60%,#0004)}.scene:after{content:'';position:absolute;left:0;right:0;bottom:61px;height:41px;background:linear-gradient(0deg,#11171980,#171e1e30);border-top:1px solid #72817b12;border-bottom:1px solid #080d0d50;box-shadow:0 9px 13px #090e0e24;z-index:-1}.scene-watermark{position:absolute;font:700 210px/1 var(--display);letter-spacing:-8px;color:transparent;-webkit-text-stroke:1px #94a3a30c;right:17%;top:15%;pointer-events:none}.scene-corner{position:absolute;width:8px;height:8px;border-color:#62706f5c;border-style:solid;z-index:2;pointer-events:none}.corner-tl{top:13px;left:13px;border-width:1px 0 0 1px}.corner-tr{top:13px;right:13px;border-width:1px 1px 0 0}.corner-bl{bottom:76px;left:13px;border-width:0 0 1px 1px}.corner-br{bottom:76px;right:13px;border-width:0 1px 1px 0}.scene-part-label{position:absolute;left:28px;top:31px;display:flex;align-items:flex-start;gap:9px;pointer-events:none;z-index:2}.label-index{font:500 10px var(--mono);color:var(--orange);border:1px solid #ff79504a;padding:3px 4px;border-radius:2px}.scene-part-label strong{display:block;font-size:9px;font-weight:500;letter-spacing:1.6px;color:#c4ccca;margin-top:2px}.scene-part-label small{display:block;font:8px var(--mono);color:#75807f;letter-spacing:.3px;margin-top:6px}.direction-control{position:absolute;right:22px;top:23px;z-index:5}.direction-label{font-size:8px;letter-spacing:1.4px;color:#86918f;display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:8px}.direction-label .key{font-size:8px;border-color:#4b5452;padding:2px 4px}.direction-buttons{display:flex;border:1px solid #4e5652;background:#1c2121;border-radius:4px;padding:3px;gap:3px;box-shadow:0 2px 8px #00000018}.direction-buttons button{font-size:8px;font-weight:600;letter-spacing:.8px;display:flex;align-items:center;gap:5px;padding:7px 9px;border-radius:2px;color:#8b9692}.direction-buttons .icon{width:12px;height:12px}.direction-buttons button:hover{color:var(--text);background:#ffffff07}.direction-buttons button.active{background:var(--orange);color:#281b15;box-shadow:0 1px 4px #00000020}.direction-buttons button.active[data-direction=tighten]{background:var(--green);color:#1d271a}.direction-control.attention{animation:shake .4s}.engine-svg{width:100%;height:100%;position:absolute;inset:0;overflow:visible;filter:drop-shadow(0 13px 8px #00000020)}.engine-art{transform-origin:0 0;transition:transform .3s}.engine-part{transition:filter .2s;cursor:default}.engine-part.actionable{cursor:pointer;filter:drop-shadow(0 0 4px #ff795060)}.engine-part.actionable:hover{filter:drop-shadow(0 0 7px #ff7950a0)}.inspect-mode .engine-part{cursor:crosshair}.inspect-mode .engine-part:hover{filter:drop-shadow(0 0 5px #b5d89599)}.bolt{cursor:pointer;outline:none;touch-action:none}.bolt .bolt-halo{transition:opacity .2s;opacity:0}.bolt.available .bolt-halo{opacity:.12}.bolt.available .bolt-outline{stroke:#ff9a68;opacity:.8}.bolt.available:hover .bolt-halo,.bolt:focus-visible .bolt-halo{opacity:.4}.bolt.available:hover .bolt-outline{stroke:#ffd4b2;stroke-width:1.4}.bolt .bolt-outline{stroke:#747f7c;opacity:.25}.bolt.available .hex-face{fill:url(#bolt-metal);stroke:#e6b48a}.bolt.removed .hex-face{opacity:0}.bolt.removed .bolt-inner{opacity:0}.bolt.removed .bolt-outline{stroke:#8b9892;opacity:.38;stroke-dasharray:2 3}.bolt.available.tighten .bolt-outline{stroke:#b5d895}.bolt-progress{stroke:var(--orange);stroke-width:3;fill:none;transform:rotate(-90deg);transform-origin:0 0;stroke-linecap:round;pointer-events:none}.bolt.tighten .bolt-progress{stroke:var(--green)}.bolt.is-held .bolt-halo{opacity:.4}.bolt.is-held .bolt-outline{opacity:1}.bolt-hit{fill:transparent;pointer-events:all}.scene-scale{position:absolute;bottom:89px;left:24px;height:5px;width:67px;border-bottom:1px solid #65716b75;display:flex;justify-content:space-between}.scene-scale>span{height:5px;width:1px;background:#65716b75}.scene-scale small{position:absolute;top:9px;width:100%;text-align:center;font:7px var(--mono);color:#65716b}.bolt-tray{position:absolute;right:23px;bottom:85px;width:134px;padding:10px 11px 9px;border:1px solid #48514b;background:#19201ebf;border-radius:4px;box-shadow:0 4px 10px #0002;z-index:2;pointer-events:none}.bolt-tray>div:first-child{display:flex;align-items:center;gap:7px}.bolt-tray .icon{height:12px;width:12px;color:#7c8880}.bolt-tray span{font-size:7px;letter-spacing:1px;color:#96a195}.bolt-tray strong{margin-left:auto;font:10px var(--mono);color:#c1caba}.tray-bolts{height:18px;display:flex;align-items:center;gap:5px;margin-top:7px}.tray-bolts svg{width:11px;height:11px;filter:drop-shadow(1px 2px 1px #0009)}.tray-empty{font-size:8px!important;letter-spacing:.3px!important;color:#5e6d64!important}.removed-parts{position:absolute;bottom:86px;left:114px;display:flex;gap:5px;max-width:50%;pointer-events:none}.removed-parts span{display:flex;align-items:center;gap:5px;font-size:7px;letter-spacing:.7px;color:#86968d;background:#1b221dbf;border:1px solid #424d4350;padding:5px 7px;border-radius:2px}.removed-parts .icon{width:10px;height:10px}.interaction-hint{position:absolute;bottom:0;left:0;right:0;min-height:63px;background:#191e20ed;border-top:1px solid #3c4343;display:flex;align-items:center;gap:12px;padding:10px 22px;z-index:4;backdrop-filter:blur(8px)}.mouse-key{height:33px;width:31px;border:1px solid #4e5855;background:#2b322d;display:grid;place-items:center;color:#b2bcb2;border-radius:4px;flex-shrink:0}.mouse-key .icon{height:20px;width:20px}.interaction-hint>div{display:flex;flex-direction:column;gap:4px}.interaction-hint strong{font-size:11px;font-weight:500;letter-spacing:.1px;color:#d1d7d1}.interaction-hint div>span{font-size:10px;color:#87938d}.hint-status{margin-left:auto;font-size:7px;font-weight:500;letter-spacing:1.1px;color:#6d7b72;white-space:nowrap}.hold-progress{height:2px;position:absolute;bottom:0;left:0;right:0;z-index:6;pointer-events:none}.hold-progress>div{height:100%;width:0;background:var(--orange);box-shadow:0 0 8px #ff795080;transition:width .04s linear}.toolbox{padding-top:18px}.section-label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:9px;letter-spacing:1.25px;color:#b6bcb8;font-weight:500}.section-label small{font-size:7px;letter-spacing:1.2px;color:#626c6e;font-weight:400}.toolbox>.section-label{margin-bottom:11px}.tool-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.tool{min-width:0;display:flex;align-items:center;gap:9px;padding:12px 10px;position:relative;background:#1b1e21;border:1px solid #303639;border-radius:5px;text-align:left}.tool:hover{background:#23272a;border-color:#5c6260}.tool.active{background:#2b2522;border-color:#885541}.tool-icon{width:30px;height:30px;display:grid;place-items:center;border:1px solid #39413f;background:#252b29;color:#99a39b;border-radius:4px;flex-shrink:0}.tool-icon .icon{width:17px;height:17px}.tool.active .tool-icon{color:var(--orange);background:#ff795010;border-color:#82523e}.tool strong{font-size:10px;font-weight:500;display:block;line-height:1.2;white-space:nowrap}.tool small{display:block;font-size:8px;color:#7b8584;margin-top:5px;white-space:nowrap}.tool .key{position:absolute;right:6px;top:6px;font-size:7px;padding:2px 3px;min-width:12px;border-color:#3e4641;color:#69766c}.tool.active .key{color:#a57660;border-color:#6e4b3a}.details-column{display:flex;flex-direction:column;gap:14px}.card{border:1px solid #303639;background:#1a1e20;border-radius:6px}.engine-status{padding:17px 19px 15px}.status-pill{font-size:7px;border:1px solid #414b45;border-radius:3px;padding:3px 5px;color:#9ba59b;letter-spacing:.9px;line-height:1}.engine-title-row{display:flex;justify-content:space-between;align-items:center;margin-top:13px}.engine-title-row h2{font:600 30px/1 var(--display);letter-spacing:.5px;margin:0}.two-stroke-badge{font:600 12px var(--display);color:#748074;display:grid;place-items:center;width:23px;height:24px;border:1px solid #455043;border-radius:3px;transform:skew(-7deg)}.engine-description{color:#7e8987;font-size:9px;margin:7px 0 16px;white-space:nowrap}.engine-stats{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px;margin-bottom:15px}.engine-stats>div:not(:first-child){border-left:1px solid #313b35;padding-left:14px}.engine-stats div>span{font-size:7px;font-weight:500;letter-spacing:.8px;color:#78867c;display:block;white-space:nowrap}.engine-stats strong{font:500 24px/1 var(--display);display:block;margin-top:7px;color:#dfe5d8}.engine-stats strong small{font:10px var(--font);color:#80907d}.health-label{display:flex;justify-content:space-between;align-items:center}.health-label>span{display:flex;align-items:center;gap:5px;font-size:7px;font-weight:500;letter-spacing:.8px;color:#8c958c}.health-label i{width:4px;height:4px;background:var(--orange);border-radius:50%}.health-label strong{color:var(--orange);font:500 12px var(--mono);letter-spacing:-.5px}.health-label strong span{font-size:9px;margin-left:1px;color:#a47459}.health-meter{height:5px;background:#313a33;margin-top:7px;border-radius:1px;overflow:hidden;position:relative}.health-meter span{display:block;width:62%;height:100%;background:var(--orange);transition:width .6s,background .6s}.health-meter:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent calc(10% - 2px),#1a1e20 calc(10% - 2px),#1a1e20 10%)}.work-order{padding:17px 19px 0;overflow:hidden}.work-order .section-label>span:first-child{color:#acb6ac}.work-status{font-size:7px;letter-spacing:.7px;display:flex;align-items:center;gap:4px;color:var(--orange)}.work-status i{width:4px;height:4px;border-radius:50%;background:currentColor}.work-order h3{font:500 25px/1 var(--display);letter-spacing:.3px;margin:15px 0 8px}.work-description{font-size:10px;line-height:1.6;color:#86928a;margin:0 0 17px;max-width:250px}.task-list{list-style:none;padding:0;margin:0 0 13px;display:flex;flex-direction:column}.task{display:flex;align-items:center;gap:10px;padding:0 0 16px;position:relative;min-height:42px}.task:last-child{padding-bottom:3px;min-height:28px}.task:not(:last-child):after{content:'';position:absolute;left:10px;top:23px;bottom:1px;width:1px;background:#3b453d}.task-number{width:22px;height:22px;border-radius:50%;border:1px solid #3b463e;color:#657768;display:grid;place-items:center;font:8px var(--mono);background:#1a1e20;flex-shrink:0;position:relative;z-index:1}.task-number .icon{width:12px;height:12px}.task>div{flex:1;min-width:0}.task strong{font-weight:400;font-size:10px;color:#79867c;display:block;letter-spacing:.1px}.task small{display:block;font-size:8px;color:#65746b;margin-top:4px}.task>.icon{width:13px;height:13px;color:#6b786b}.task.active .task-number{border-color:#9c5d3f;background:#ff79500a;color:var(--orange)}.task.active strong{color:#e0dcd0}.task.active small{color:#ac896d}.task.active>.icon{color:var(--orange)}.task.done .task-number{border-color:#657c53;color:#aecf8e;background:#b5d89508}.task.done strong{color:#acb9a5}.task.done:after{background:#62764f}.work-reward{margin:10px -19px 0;background:#242921;border-top:1px solid #3a4334;display:flex;align-items:center;justify-content:space-between;padding:12px 18px}.work-reward>span:first-child{color:#91a283;font-size:7px;letter-spacing:1.2px}.work-reward>span:last-child{font-size:10px;color:#c4cead;display:flex;align-items:center;gap:7px}.work-reward .icon{width:13px;height:13px;color:#c0bb85}.work-reward small{color:#7b8d6c;font-size:8px;margin-left:3px}.work-action{margin:3px 0 13px;width:100%}.button-primary{display:flex;align-items:center;justify-content:center;gap:9px;background:var(--orange);color:#231b15;border:1px solid var(--orange);border-radius:4px;padding:12px 17px;font-size:11px;font-weight:600;letter-spacing:.4px}.button-primary:hover:not(:disabled){background:#ff956e;border-color:#ff956e;box-shadow:0 4px 20px #ff795010}.button-primary .icon{width:16px;height:16px}.button-secondary{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #485048;background:#242b25;border-radius:4px;padding:11px 16px;color:#b8c7b2;font-size:11px}.button-secondary:hover:not(:disabled){background:#2d372b;border-color:#69785d}.service-actions{display:flex;flex-direction:column;gap:7px;margin:0 0 14px}.service-action{display:flex;align-items:center;justify-content:space-between;padding:10px;border:1px solid #495243;border-radius:4px;background:#242b23;text-align:left}.service-action strong{font-size:10px;font-weight:500;display:flex;align-items:center;gap:6px}.service-action strong .icon{width:12px;height:12px;color:var(--green)}.service-action span{font-size:9px;color:var(--orange)}.service-action.done{color:var(--green);border-color:#526746;background:#b5d89508;pointer-events:none}.service-action.done span{color:#879e73}.upgrade-banner{display:flex;align-items:center;gap:11px;text-align:left;padding:14px 13px;border:1px solid #434634;background:linear-gradient(110deg,#2a2d23,#20251f);border-radius:5px}.upgrade-banner:hover{border-color:#839666;background:#30382a}.upgrade-icon{width:30px;height:32px;display:grid;place-items:center;background:#afc9840c;border:1px solid #566242;border-radius:4px;color:#b3cc87}.upgrade-icon .icon{width:16px;height:16px}.upgrade-banner>span:nth-child(2){flex:1}.upgrade-banner strong{font-size:8px;letter-spacing:.8px;font-weight:500;color:#ced6b9;display:block}.upgrade-banner small{font-size:9px;color:#869578;display:block;margin-top:5px}.upgrade-banner>.icon{width:16px;height:16px;color:#a4b782}.page-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:21px 0 18px;font-size:7px;letter-spacing:1px;color:#596560}.page-footer>span{display:flex;align-items:center;gap:6px}.page-footer i{width:4px;height:4px;background:#617859}.page-footer>span:nth-child(2){letter-spacing:.1px;color:#7f8b83;font-size:8px}.page-footer kbd{font-size:7px;padding:2px 3px;border-color:#374138;background:#1a201b;color:#83957f;min-width:12px}.page-footer b{font-weight:400;color:#3c4a3f;margin:0 4px}.toast-container{position:fixed;bottom:25px;left:calc(50% + 38px);transform:translateX(-50%);display:flex;align-items:center;flex-direction:column;gap:8px;z-index:200;pointer-events:none;max-width:calc(100vw - 30px)}.toast{background:#2c332c;border:1px solid #65735b;padding:12px 18px;color:#d9e3cf;box-shadow:0 8px 30px #0006;border-radius:5px;display:flex;align-items:center;gap:9px;animation:toast-in .25s ease;font-size:12px;text-align:center}.toast.error{background:#382921;border-color:#9f6545;color:#f5c4a6}.toast .icon{width:16px;height:16px;flex-shrink:0;color:var(--green)}.toast.error .icon{color:var(--orange)}.toast.leaving{opacity:0;transform:translateY(7px);transition:.25s}.modal-layer{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:30px}.modal-layer[hidden]{display:none}.modal-backdrop{position:absolute;inset:0;background:#080c0cce;backdrop-filter:blur(7px)}.modal-dialog{position:relative;width:820px;max-width:100%;max-height:calc(100vh - 60px);overflow:auto;background:#1b2021;border:1px solid #4d564d;border-radius:9px;box-shadow:0 24px 100px #0009;animation:modal-in .25s ease;outline:none}.modal-header{display:flex;align-items:center;justify-content:space-between;padding:24px 27px 20px;border-bottom:1px solid #354135;background:linear-gradient(120deg,#252b25,#1c211f)}.modal-eyebrow{font-size:8px;letter-spacing:1.4px;color:var(--orange);margin:0 0 7px}.modal-header h2{font:600 34px/1 var(--display);margin:0;letter-spacing:.3px}.close-button{width:30px;height:30px;display:grid;place-items:center;border:1px solid #414d41;border-radius:4px;color:#a7b5a1}.close-button .icon{width:17px;height:17px}.close-button:hover{background:#ffffff0a;color:#fff}.modal-content{padding:23px 27px 26px}.modal-subtitle{font-size:12px;color:#97a58f;line-height:1.7;margin:0 0 20px}.modal-summary{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:20px}.modal-engine-tag{font:500 19px var(--display);color:#d9e0cf;display:flex;align-items:center;gap:10px}.modal-engine-tag .icon{width:20px;height:20px;color:var(--orange)}.modal-balance{font-size:10px;color:#9da98d;display:flex;align-items:center;gap:6px}.modal-balance strong{color:#e7e4ce}.modal-balance .icon{width:16px;height:16px;color:#c9be8e}.parts-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.part-card{background:#222923;border:1px solid #3d4b3a;border-radius:5px;overflow:hidden}.part-art{height:113px;background:radial-gradient(ellipse at center,#4a5b3c40,transparent 65%),linear-gradient(0deg,#19201b,#252d26);position:relative;display:grid;place-items:center;border-bottom:1px solid #3c4838}.part-art>svg{width:165px;height:100px;filter:drop-shadow(0 7px 4px #0005)}.part-art>span{position:absolute;top:12px;left:12px;font-size:7px;letter-spacing:1px;color:#8c9f7b}.part-gain{position:absolute;right:12px;bottom:10px;font:500 18px var(--display);color:var(--green)}.part-card-content{padding:16px}.part-card h3{font:500 22px var(--display);margin:0 0 7px}.part-card p{font-size:10px;line-height:1.6;color:#91a084;min-height:32px;margin:0 0 15px}.part-card .button-primary,.part-card .button-secondary{width:100%;font-size:10px;padding:10px}.part-installed{background:#34422d!important;color:#bed6a7!important;border-color:#5d7648!important}.modal-footnote{font-size:9px;line-height:1.6;color:#6f806a;margin:18px 0 0}.help-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.help-step{padding:18px;background:#242b24;border:1px solid #3c4a38;border-radius:5px}.help-step>span{font:500 25px var(--display);color:var(--orange)}.help-step h3{font:500 21px var(--display);margin:10px 0 6px}.help-step p{font-size:11px;line-height:1.7;color:#9aaa91;margin:0}.help-shortcuts{display:flex;align-items:center;justify-content:space-between;padding:18px 0;margin-top:8px;border-bottom:1px solid #384631}.help-shortcuts>div{display:flex;align-items:center;gap:7px;font-size:9px;color:#8d9e83}.help-shortcuts kbd{font-size:9px;padding:5px 7px;border-color:#506344;background:#283421;color:#c1d4ad}.help-footer{display:flex;gap:12px;justify-content:space-between;align-items:center;margin-top:19px}.help-footer p{font-size:9px;color:#6d8064;max-width:410px;line-height:1.7;margin:0}.dyno-layout{display:grid;grid-template-columns:minmax(0,1fr) 222px;gap:19px}.dyno-chart{border:1px solid #3d4d36;background:#151e17;border-radius:5px;position:relative;overflow:hidden}.dyno-chart svg{width:100%;height:auto;display:block}.chart-header{display:flex;align-items:center;justify-content:space-between;padding:14px 15px 0;font-size:8px;letter-spacing:1px;color:#91a47f}.chart-legend{display:flex;gap:10px;font-size:7px}.chart-legend span{display:flex;align-items:center;gap:4px}.chart-legend i{width:12px;height:2px;background:var(--orange)}.chart-legend span:last-child i{background:var(--green)}.dyno-readout{padding:0 17px 15px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}.dyno-readout>div>span{display:block;font-size:7px;letter-spacing:1px;color:#7e956d}.dyno-readout strong{font:500 27px var(--display);display:block;margin-top:6px;color:#dce9d0}.dyno-readout strong small{font:10px var(--font);color:#88a173}.rpm-bar{margin:0 17px 15px;height:4px;border-radius:2px;background:#33432b;overflow:hidden}.rpm-bar span{display:block;width:0%;height:100%;background:var(--orange);transition:width .1s}.tune-panel{background:#242c23;border:1px solid #415238;padding:16px;border-radius:5px}.tune-panel h3{font:500 20px var(--display);margin:0 0 7px}.tune-panel>p{font-size:9px;line-height:1.6;color:#8c9e7e;margin:0 0 17px}.tune-field{margin-top:19px}.tune-field label{display:flex;align-items:center;justify-content:space-between;font-size:9px;color:#a8b89b}.tune-field output{font:10px var(--mono);color:var(--orange)}.tune-field input{width:100%;margin:13px 0 5px;accent-color:var(--orange);height:3px;cursor:pointer}.range-labels{display:flex;justify-content:space-between;font-size:7px;color:#718765}.tune-panel .button-secondary{width:100%;font-size:9px;margin-top:22px;padding:9px}.dyno-run-row{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:18px}.dyno-message{font-size:10px;color:#99aa8a;line-height:1.6;flex:1}.dyno-run-row .button-primary{min-width:175px}.dyno-warning{color:#ecac7c;background:#ff795008;border:1px solid #865b3855;padding:10px 12px;border-radius:4px;font-size:10px;line-height:1.6;margin-bottom:18px}.dyno-complete{color:var(--green)}.inspect-detail{display:grid;grid-template-columns:180px 1fr;gap:24px;align-items:center}.inspect-illustration{height:190px;border:1px solid #415039;border-radius:6px;background:radial-gradient(#52604344,#1a221d);display:grid;place-items:center}.inspect-illustration .icon{height:88px;width:88px;color:#aeba9c;stroke-width:1}.inspect-copy h3{font:500 25px var(--display);margin:0 0 12px}.inspect-copy p{font-size:12px;line-height:1.8;color:#9bab91}.inspect-badge{font-size:9px;letter-spacing:1px;display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid #855d3c;background:#ff795009;color:var(--orange);border-radius:3px}.inspect-badge.good{color:var(--green);border-color:#607b49;background:#b5d89509}.inspect-actions{display:flex;justify-content:flex-end;margin-top:25px}.modal-dialog.dyno-modal{width:865px}.sim-note{font-size:8px;color:#6e8066;letter-spacing:.2px}.completion-banner{display:flex;align-items:center;gap:10px;background:#b5d8950b;border:1px solid #647b4c;border-radius:4px;padding:13px;margin-bottom:16px;color:var(--green)}.completion-banner .icon{width:19px;height:19px}.completion-banner span{font-size:10px;line-height:1.5}.work-order.complete .work-status{color:var(--green)}.work-order.complete h3{color:#d9e8c8}.work-order.complete .work-action{background:var(--green);border-color:var(--green);color:#202919}.work-order.complete .work-description{margin-bottom:13px}.task.completed-test strong{color:var(--green)}
+@keyframes toast-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@keyframes modal-in{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}25%,75%{transform:translateX(-5px)}50%{transform:translateX(5px)}}
+@media(min-width:1600px){main{padding:30px 38px 0}.page-heading{margin-bottom:26px}.scene{height:530px}.work-layout{grid-template-columns:minmax(0,1fr) 326px;gap:24px}.engine-card{padding:17px 23px;min-height:90px}.engine-status{padding:20px 21px}.work-order{padding:20px 21px 0}.work-order h3{font-size:27px}.task{padding-bottom:20px;min-height:47px}.work-reward{margin-left:-21px;margin-right:-21px;padding:14px 21px}.work-description{font-size:11px}.tool{padding:15px 13px;gap:12px}.tool strong{font-size:12px}.tool small{font-size:9px}.tool-icon{height:35px;width:35px}.tool-icon .icon{width:20px;height:20px}.toolbox{padding-top:20px}.engine-stats strong{font-size:27px}}
+@media(max-width:1250px){.topbar{gap:20px;padding:0 24px}.topbar-right{gap:19px}.local-save{display:none}main{padding:23px 23px 0}.work-layout{grid-template-columns:minmax(0,1fr) 280px;gap:16px}.engine-card{gap:10px;padding:14px}.engine-mini{width:45px}.engine-card-state{font-size:7px!important}.engine-card strong{font-size:20px}.engine-card small{font-size:9px}.tool-grid{grid-template-columns:repeat(2,1fr)}.tool{padding:11px 12px}.tool strong{font-size:11px}.tool small{font-size:9px}.scene{height:472px}.hint-status{display:none}.direction-control{right:17px}.scene-part-label{left:22px}.page-footer>span:last-child{display:none}.scene-watermark{font-size:180px}.engine-status{padding:16px}.engine-title-row h2{font-size:28px}.engine-description{font-size:8.5px}.engine-stats>div:not(:first-child){padding-left:10px}.work-order{padding:16px 16px 0}.work-reward{margin-left:-16px;margin-right:-16px;padding:12px 16px}.work-description{font-size:9.5px}}
+@media(max-width:1000px){.breadcrumb{display:none}.header-separator{display:none}.topbar-right{gap:19px}.engine-card .engine-card-state{display:none}.engine-card .arrow-select{display:none}.engine-mini{width:44px;height:42px}.engine-card{gap:10px;padding:14px 12px;min-height:76px}.engine-card strong{font-size:20px}.engine-card small{font-size:8px}.work-layout{grid-template-columns:minmax(0,1fr) 255px;gap:13px}.engine-stats strong{font-size:22px}.engine-stats{gap:6px}.engine-stats div>span{font-size:6px}.engine-status{padding:15px 14px}.engine-title-row h2{font-size:27px}.engine-description{font-size:8px}.scene-part-label{top:29px;left:18px}.scene-part-label strong{font-size:8px;letter-spacing:1px}.scene-part-label small{font-size:7px}.label-index{display:none}.direction-buttons button{font-size:7px;padding:7px 7px}.direction-control{top:24px;right:16px}.direction-label{font-size:7px}.scene{height:455px}.interaction-hint{padding:10px 16px;gap:9px}.interaction-hint strong{font-size:10px}.interaction-hint div>span{font-size:9px}.bolt-tray{right:19px;bottom:88px;width:119px}.removed-parts{left:18px;bottom:117px;max-width:55%;flex-wrap:wrap}.bench-label{font-size:7px;gap:6px}.bench-label strong{font-size:8px}.view-controls>span{display:none}.bench-toolbar{padding:0 13px}.work-order{padding:15px 14px 0}.work-reward{margin-left:-14px;margin-right:-14px;padding-left:14px;padding-right:14px}.upgrade-banner{padding:12px;gap:9px}.upgrade-banner strong{font-size:7px;letter-spacing:.5px}.upgrade-banner small{font-size:8px}.upgrade-banner>.icon{width:13px}.section-label small{font-size:6px;letter-spacing:.7px}.tool{padding:11px 10px;gap:8px}.tool strong{font-size:10px}.tool small{font-size:8px}.page-footer{font-size:6px}.page-footer>span:nth-child(2){font-size:7px}.page-heading{margin-bottom:20px}h1{font-size:33px}}
+@media(max-width:820px){.app-shell{grid-template-columns:61px minmax(0,1fr)}.rail-logo{width:36px;height:42px;margin-top:18px}.rail-button{width:49px}.rail-button.active:before{left:-6px}.rail-button>span{font-size:7px}.topbar{height:73px;padding:0 20px}.wordmark{font-size:24px}.topbar-right{gap:14px}.player{display:none}.wallet{padding:9px 11px}.local-save{display:flex;font-size:8px}main{padding:22px 20px 0}.work-layout{grid-template-columns:1fr}.details-column{display:grid;grid-template-columns:1fr 1fr;align-items:start}.upgrade-banner{grid-column:1/-1;padding:13px 16px}.engine-status{height:100%;padding:18px}.engine-title-row h2{font-size:30px}.engine-description{font-size:9px}.engine-stats{margin:26px 0}.engine-stats strong{font-size:26px}.engine-stats div>span{font-size:7px}.health-label{margin-top:28px}.work-order{padding:18px 16px 0}.work-reward{margin-left:-16px;margin-right:-16px}.engine-card{padding:12px 10px;gap:7px;min-height:72px}.engine-mini{width:37px}.engine-card strong{font-size:19px}.engine-card small{font-size:7px}.engine-switcher{gap:8px;margin-bottom:16px}.scene{height:480px}.tool-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.tool{padding:12px 9px;gap:7px}.tool-icon{width:27px;height:29px}.tool strong{font-size:9px}.tool small{font-size:7px}.tool .key{display:none}.toolbox{padding-top:15px;margin-bottom:3px}.page-footer{padding-top:18px;flex-wrap:wrap;gap:13px}.page-heading{margin-bottom:21px}.scene-part-label{top:30px;left:24px}.scene-part-label strong{font-size:9px}.direction-control{top:25px;right:23px}.direction-buttons button{font-size:8px;padding:7px 9px}.direction-label{font-size:8px}.hint-status{display:block;font-size:6px}.interaction-hint{padding:10px 20px}.scene-scale{left:25px}.bolt-tray{width:132px;right:24px}.removed-parts{left:115px;bottom:87px}.toast-container{left:calc(50% + 30px)}.modal-layer{padding:20px}.modal-dialog{max-height:calc(100dvh - 40px)}.dyno-layout{grid-template-columns:1fr 200px}}
+@media(max-width:600px){.app-shell{grid-template-columns:1fr}.rail{height:58px;width:100%;flex-direction:row;position:fixed;top:auto;bottom:0;border-right:0;border-top:1px solid #3a4437;padding:0 12px;background:#191e1aed;backdrop-filter:blur(10px);justify-content:space-between}.rail-logo{width:33px;height:36px;margin:0 10px 0 0;flex-shrink:0}.rail-logo>.icon{width:23px;height:23px}.rail-logo>span{font-size:9px}.rail-nav{flex-direction:row;gap:4px;justify-content:space-between}.rail-button{min-height:48px;width:55px;gap:4px}.rail-button>.icon{width:19px;height:19px}.rail-button>span{font-size:6px}.rail-button.active:before{left:14px;right:14px;top:-5px;bottom:auto;width:auto;height:2px}.rail-bottom{padding:0;margin:0 0 0 9px}.rail-bottom .rail-button{width:28px;min-height:35px}.rail-line,.rail-build{display:none}.topbar{height:69px;padding:0 17px}.wordmark{font-size:24px}.wordmark small{font-size:7px;letter-spacing:2.2px}.topbar-right{gap:13px}.local-save{font-size:7px;letter-spacing:.8px}.local-save i{width:4px;height:4px}.wallet{padding:8px 9px;gap:5px}.wallet strong{font-size:12px}.wallet .icon{width:15px;height:15px}.wallet small{font-size:7px}main{padding:21px 14px 70px}.eyebrow{font-size:7px;letter-spacing:1.3px;margin-bottom:9px}h1{font-size:30px}.page-heading{margin-bottom:19px}.text-button{font-size:0;gap:0;padding:8px}.text-button .icon{width:21px;height:21px}.text-button .key{display:none}.engine-switcher{gap:7px}.engine-card{padding:13px 8px;display:block;text-align:center;min-height:90px}.engine-mini{height:30px;width:38px;margin-bottom:6px}.engine-card-info{gap:5px}.engine-card strong{font-size:18px;letter-spacing:.2px;white-space:nowrap}.engine-card small{font-size:6.5px;letter-spacing:0}.engine-card.selected:before{left:12px;right:12px}.scene{height:443px}.scene-part-label{top:24px;left:16px;gap:0}.scene-part-label strong{font-size:8px;letter-spacing:1px}.scene-part-label small{font-size:6px;margin-top:5px}.direction-control{right:15px;top:19px}.direction-label{font-size:6px;letter-spacing:1px;margin-bottom:7px;gap:5px}.direction-label .key{font-size:7px}.direction-buttons{padding:2px;gap:2px}.direction-buttons button{font-size:6.5px;gap:3px;padding:7px}.direction-buttons .icon{width:10px;height:10px}.engine-svg{width:120%;left:-10%;height:100%;top:0}.scene-watermark{font-size:150px;top:24%;right:12%}.bench-toolbar{height:38px}.bench-label strong{font-size:7px;letter-spacing:.8px}.bench-label{font-size:6px;letter-spacing:.5px;gap:6px}.bench-divider{margin:0}.icon-button{width:21px;height:24px}.reset-view{margin-left:1px}.view-controls{gap:1px}.scene-corner{display:none}.scene-scale{left:17px;bottom:81px;width:46px}.scene-scale small{font-size:6px}.bolt-tray{right:16px;bottom:81px;width:109px;padding:8px 9px}.bolt-tray span{font-size:6px;letter-spacing:.7px}.bolt-tray strong{font-size:9px}.bolt-tray .icon{width:10px;height:10px}.tray-bolts{height:13px;gap:3px;margin-top:6px}.tray-bolts svg{width:9px;height:9px}.tray-empty{font-size:6px!important}.removed-parts{left:80px;bottom:84px;max-width:35%;gap:3px}.removed-parts span{font-size:5px;padding:4px;letter-spacing:.4px;gap:3px}.removed-parts .icon{width:7px;height:7px}.interaction-hint{padding:10px 13px;gap:9px;min-height:61px}.mouse-key{height:30px;width:28px}.mouse-key .icon{height:18px;width:18px}.interaction-hint strong{font-size:9px}.interaction-hint div>span{font-size:8px;line-height:1.4}.hint-status{display:none}.tool-grid{grid-template-columns:1fr 1fr;gap:7px}.tool{padding:11px 12px;gap:9px}.tool strong{font-size:11px}.tool small{font-size:8px}.tool .key{display:block;font-size:6px}.tool-icon{width:29px;height:31px}.toolbox>.section-label small{font-size:6px}.toolbox{padding-top:15px}.work-layout{gap:16px}.details-column{gap:10px;grid-template-columns:1fr}.engine-status{padding:18px}.engine-title-row{margin-top:12px}.engine-title-row h2{font-size:30px}.engine-stats{margin:19px 0;grid-template-columns:1.3fr 1fr 1fr}.engine-stats>div:not(:first-child){padding-left:24px}.engine-stats div>span{font-size:8px}.engine-stats strong{font-size:27px}.engine-description{font-size:10px}.health-label{margin:0}.work-order{padding:18px 19px 0}.work-order h3{font-size:26px}.work-description{max-width:none;font-size:11px}.task strong{font-size:11px}.task small{font-size:9px}.task{padding-bottom:16px;min-height:43px}.work-reward{margin-left:-19px;margin-right:-19px;padding:14px 19px}.work-reward>span:first-child{font-size:8px}.work-reward>span:last-child{font-size:11px}.upgrade-banner{padding:15px 17px}.upgrade-banner strong{font-size:8px;letter-spacing:1px}.upgrade-banner small{font-size:10px}.upgrade-banner>.icon{width:18px}.page-footer{font-size:6px;letter-spacing:.6px;justify-content:center}.page-footer>span:nth-child(2){display:none}.toast-container{left:50%;bottom:75px;width:calc(100% - 24px)}.toast{font-size:11px;padding:11px 13px}.modal-layer{padding:12px}.modal-dialog{max-height:calc(100dvh - 24px)}.modal-header{padding:21px 19px 18px}.modal-header h2{font-size:29px}.modal-content{padding:18px 19px 23px}.modal-summary{gap:10px}.modal-engine-tag{font-size:18px}.modal-balance{font-size:8px}.parts-grid{grid-template-columns:1fr}.part-art{height:120px}.part-card-content{padding:17px}.part-card h3{font-size:24px}.part-card p{font-size:11px;min-height:auto}.help-grid{grid-template-columns:1fr}.help-step{padding:16px}.help-step>span{font-size:21px}.help-step h3{margin:6px 0;font-size:22px}.help-shortcuts{flex-wrap:wrap;gap:14px;justify-content:flex-start}.help-footer{flex-direction:column;align-items:stretch}.help-footer .button-primary{width:100%}.dyno-layout{grid-template-columns:1fr}.tune-panel{display:grid;grid-template-columns:1fr 1fr;gap:0 17px}.tune-panel h3,.tune-panel>p,.tune-panel>.button-secondary{grid-column:1/-1}.tune-panel>p{margin-bottom:5px}.tune-field{margin-top:13px}.tune-panel>.button-secondary{margin-top:17px}.dyno-run-row{align-items:stretch;flex-direction:column-reverse;gap:12px}.dyno-run-row>.button-primary{width:100%}.dyno-message{text-align:center;font-size:10px}.inspect-detail{grid-template-columns:1fr;gap:18px}.inspect-illustration{height:120px}.inspect-illustration .icon{height:70px;width:70px}.inspect-copy p{font-size:11px}.modal-subtitle{font-size:11px}.modal-footnote{font-size:8px}.inspect-actions>.button-primary{width:100%}.parts-grid{gap:17px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Keep the complete assembly above the instruction strip on a wide workbench. */
+@media (min-width:821px){
+  .topbar{height:72px}
+  main{padding-top:23px}
+  .page-heading{margin-bottom:20px}
+  .engine-switcher{margin-bottom:20px}
+  .engine-card{min-height:80px}
+  .engine-svg{height:calc(100% - 63px)}
+  .work-order h3{margin-top:12px;margin-bottom:7px}
+  .work-description{margin-bottom:12px}
+  .task{min-height:35px;padding-bottom:11px}
+  .task:last-child{min-height:26px;padding-bottom:2px}
+  .task-list{margin-bottom:8px}
+  .work-reward{margin-top:6px}
+}
+@media (min-width:1251px){
+  .tool{padding:14px 12px}
+  .tool strong{font-size:11px}
+  .tool small{font-size:9px}
+  .direction-buttons button{font-size:9px;padding:8px 10px}
+}
+@media (min-width:1600px){
+  .topbar{height:79px}
+  main{padding-top:30px}
+  .engine-card{min-height:90px}
+  .task{min-height:41px;padding-bottom:15px}
+  .work-order h3{margin-top:15px}
+}
+@media (min-width:1251px) and (max-height:950px){
+  .scene{height:440px}
+}
+.reopen-button{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;font-size:9px;color:#a6b69a;margin:-3px 0 13px;padding:7px 0}
+.reopen-button .icon{width:12px;height:12px}
+.reopen-button>span{font-size:6px;color:#6f8563;letter-spacing:.6px;margin-left:3px}
+.reopen-button:hover{color:var(--green)}
+@media (max-width:600px){
+  .direction-buttons button{font-size:8px;padding:8px 9px;gap:4px}
+  .direction-buttons .icon{width:12px;height:12px}
+  .direction-label{font-size:7px}
+}
+  </style>
 </head>
 <body>
   <svg class="svg-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -162,190 +168,633 @@ FILE: index.html
   </div>
   <div class="toast-container" id="toast-container" aria-live="polite"></div>
   <div class="modal-layer" id="modal-layer" hidden><div class="modal-backdrop" data-action="close-modal"></div><section class="modal-dialog" id="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1"></section></div>
-  <script src="game.js"></script>
+  <script>
+'use strict';
+
+/* 2STROKE Garage — a completely local, dependency-free workshop simulation. */
+const $ = (selector, root = document) => root.querySelector(selector);
+const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+const icon = (name, cls = '') => `<svg class="icon ${cls}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+const money = value => Math.round(value).toLocaleString('en-US');
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const ENGINE_DATA = {
+  sx125: { name: 'SX 125 TBI', short: '125', cc: 124.8, hp: 39.2, torque: 19.5, rpm: 11800, cooling: 'Liquid cooled', transmission: '6-speed', fuel: 'Throttle-body injection', mini: 'LIQUID COOLED', headY: 172, headH: 53, cylinderY: 222, rotation: -9, pistonPrice: 95, gasketPrice: 25, reward: 350, optimalFuel: 104, optimalIgnition: 19, description: 'Low compression. Worn rings. Let’s get this 125 back on song.' },
+  simson: { name: 'SIMSON S51', short: '51', cc: 49.8, hp: 3.7, torque: 5, rpm: 6500, cooling: 'Air cooled', transmission: '4-speed', fuel: 'Carbureted', mini: 'AIR COOLED', headY: 207, headH: 43, cylinderY: 249, rotation: -4, pistonPrice: 45, gasketPrice: 15, reward: 200, optimalFuel: 98, optimalIgnition: 18, description: 'An East German classic with tired rings. Give this little legend a second life.' },
+  sx85: { name: 'SX 85', short: '85', cc: 84.9, hp: 23.8, torque: 11.5, rpm: 12500, cooling: 'Liquid cooled', transmission: '6-speed', fuel: 'Carbureted', mini: 'LIQUID COOLED', headY: 190, headH: 47, cylinderY: 235, rotation: -9, pistonPrice: 70, gasketPrice: 20, reward: 275, optimalFuel: 103, optimalIgnition: 18, description: 'Small bore. Serious attitude. A top-end refresh will bring the snap back.' }
+};
+const freshEngine = () => ({ phase: 'headBolts', head: [0, 0, 0, 0], base: [0, 0, 0, 0], piston: false, gasket: false, rewarded: false, tested: false, mods: [], tune: { fuel: 100, ignition: 16 }, lastDyno: null });
+let profile = { current: 'sx125', credits: 1250, xp: 0, sound: false, engines: { sx125: freshEngine(), simson: freshEngine(), sx85: freshEngine() } };
+let persistentSave = false;
+try {
+  localStorage.setItem('2stroke-storage-check', 'ok');
+  localStorage.removeItem('2stroke-storage-check');
+  persistentSave = true;
+  const stored = JSON.parse(localStorage.getItem('2stroke-garage-v1'));
+  if (stored && stored.engines && ENGINE_DATA[stored.current] && Number.isFinite(stored.credits)) {
+    profile = { ...profile, ...stored };
+    Object.keys(ENGINE_DATA).forEach(id => { profile.engines[id] = { ...freshEngine(), ...stored.engines[id] }; });
+  }
+} catch (_) { /* Sandboxed browsers can decline persistent storage. The session still works. */ }
+let direction = 'loosen';
+let tool = 'socket';
+let zoom = 1;
+let hold = null;
+let holdFrame = 0;
+let currentModal = null;
+let previousFocus = null;
+let dynoFrame = 0;
+let dynoRunning = false;
+let audio = null;
+let engineSound = null;
+const cfg = () => ENGINE_DATA[profile.current];
+const state = () => profile.engines[profile.current];
+const save = () => { try { localStorage.setItem('2stroke-garage-v1', JSON.stringify(profile)); } catch (_) { persistentSave = false; } };
+const engineHealth = () => state().rewarded ? 100 : 62 + (state().piston ? 25 : 0) + (state().gasket ? 13 : 0);
+const tuneFactor = () => {
+  const c = cfg(), s = state();
+  const originalError = Math.abs(100 - c.optimalFuel) * .3 + Math.abs(16 - c.optimalIgnition);
+  const error = Math.abs(s.tune.fuel - c.optimalFuel) * .3 + Math.abs(s.tune.ignition - c.optimalIgnition);
+  return 1 + clamp((originalError - error) * .007, -.1, .04);
+};
+const modGain = () => state().mods.reduce((sum, id) => sum + ({ exhaust: .07, reeds: .04, cylinder: .10, fueling: .05 }[id] || 0), 0);
+const peakPower = () => cfg().hp * (.26 + engineHealth() * .0074) * (1 + modGain()) * tuneFactor();
+const peakTorque = () => cfg().torque * (peakPower() / cfg().hp);
+const assembled = () => state().phase === 'complete' || (state().phase === 'headBolts' && state().head.every(v => v === 0) && state().base.every(v => v === 0));
+
+function toast(message, error = false) {
+  const el = document.createElement('div');
+  el.className = `toast${error ? ' error' : ''}`;
+  el.innerHTML = `${icon(error ? 'help' : 'check')}<span>${message}</span>`;
+  $('#toast-container').append(el);
+  setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 260); }, 3400);
+}
+
+function miniEngine(id) {
+  const air = id === 'simson';
+  return `<svg class="engine-mini" viewBox="0 0 80 62" fill="none" aria-hidden="true"><g stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M20 32 15 42l5 12h38l9-11-7-14-22-2-7 6Z" fill="currentColor" fill-opacity=".06"/><circle cx="51" cy="41" r="12"/><circle cx="51" cy="41" r="7"/><path d="m26 32-5-22 22-4 6 23M20 12l24-5M20 17l25-5m-24 10 25-5m-23 10 24-5M29 8 28 2h6l1 5M17 38l-7 4 3 7h9M57 24l7-3 5 6-8 4M34 52v5m19-4v4"/>${air ? '<path d="m18 13 28-5m-27 11 29-5m-28 11 29-5m-27 11 28-5"/>' : '<path d="M45 13h10l4 9M25 13l3 15m10-17 4 16"/>'}<circle cx="29" cy="42" r="5"/><circle cx="29" cy="42" r="2"/><path d="M23 34h1m34 2h1m-4 12h1M38 49h1" stroke-width="2.5"/></g></svg>`;
+}
+function renderSwitcher() {
+  $('#engine-switcher').innerHTML = Object.entries(ENGINE_DATA).map(([id, e]) => `<button class="engine-card${id === profile.current ? ' selected' : ''}" data-engine="${id}" aria-pressed="${id === profile.current}">${miniEngine(id)}<span class="engine-card-info"><strong>${e.name}</strong><small>${e.cc} cc <span>·</span> ${e.cooling} <span>·</span> 2-stroke</small></span>${id === profile.current ? '<span class="engine-card-state"><i></i> ON THE BENCH</span>' : `${icon('chevron', 'arrow-select')}`}</button>`).join('');
+}
+function renderStats() {
+  const c = cfg(), s = state(), health = engineHealth();
+  $('.local-save').innerHTML = `<i></i> ${persistentSave ? 'LOCAL SAVE' : 'SESSION SAVE'}`;
+  $('.page-footer > span:first-child').innerHTML = `<i></i> ${persistentSave ? 'YOUR PROGRESS IS SAVED AUTOMATICALLY' : 'PROGRESS KEPT DURING THIS SESSION'}`;
+  $('#wallet').textContent = money(profile.credits);
+  $('#player-level').innerHTML = `LEVEL ${String(4 + Math.floor(profile.xp / 375)).padStart(2, '0')} <span>·</span> ${profile.xp % 375} / 375 XP`;
+  $('#selected-engine-name').textContent = c.name;
+  $('#engine-description').textContent = `${c.cooling} · Single cylinder · ${c.transmission}`;
+  $('#stat-cc').innerHTML = `${c.cc} <small>cc</small>`;
+  $('#stat-power').innerHTML = `${peakPower().toFixed(1)} <small>hp</small>`;
+  $('#stat-rpm').innerHTML = `${(c.rpm / 1000).toFixed(1)} <small>k</small>`;
+  $('#health-value').innerHTML = `${health}<span>%</span>`;
+  $('#health-value').style.color = health === 100 ? 'var(--green)' : 'var(--orange)';
+  $('#health-meter span').style.width = `${health}%`;
+  $('#health-meter span').style.background = health === 100 ? 'var(--green)' : 'var(--orange)';
+  $('#engine-build').textContent = s.mods.length ? `${s.mods.length} MOD${s.mods.length > 1 ? 'S' : ''} FITTED` : 'STOCK';
+  $('#scene-watermark').textContent = c.short;
+}
+function phaseStep() {
+  return { headBolts: 0, liftHead: 0, baseBolts: 1, liftCylinder: 1, service: 2, baseTighten: 3, fitHead: 3, headTighten: 3, complete: 4 }[state().phase];
+}
+function renderOrder() {
+  const s = state(), c = cfg(), step = phaseStep();
+  const workflowTested = s.phase === 'complete' && s.tested;
+  const headOut = s.head.filter(v => v >= 1).length;
+  const baseOut = s.base.filter(v => v >= 1).length;
+  const headIn = s.head.filter(v => v <= 0).length;
+  const baseIn = s.base.filter(v => v <= 0).length;
+  let subtasks = [
+    s.phase === 'liftHead' ? 'All bolts out. Lift the head.' : `${headOut} of 4 bolts loosened`,
+    s.phase === 'liftCylinder' ? 'All bolts out. Lift the cylinder.' : `${baseOut} of 4 base bolts loosened`,
+    `${Number(s.piston) + Number(s.gasket)} of 2 fresh parts fitted`,
+    s.phase === 'baseTighten' ? `${baseIn} of 4 base bolts torqued` : s.phase === 'fitHead' ? 'Refit the cylinder head' : `${headIn} of 4 head bolts torqued`,
+    s.tested ? `${s.lastDyno?.power?.toFixed(1) || peakPower().toFixed(1)} hp recorded · looking healthy` : 'Hear that two-stroke sing'
+  ];
+  const labels = ['Remove cylinder head', 'Remove cylinder', 'Refresh the top end', 'Reassemble & torque', 'Test & tune'];
+  let action = '';
+  if (s.phase === 'liftHead') action = `<button class="button-primary work-action" data-action="lift-head">Lift cylinder head ${icon('arrow')}</button>`;
+  if (s.phase === 'liftCylinder') action = `<button class="button-primary work-action" data-action="lift-cylinder">Lift cylinder ${icon('arrow')}</button>`;
+  if (s.phase === 'service') {
+    action = `<div class="service-actions"><button class="service-action${s.piston ? ' done' : ''}" data-action="replace-piston"><strong>${s.piston ? icon('check') : icon('piston')} Piston & rings</strong><span>${s.piston ? 'FITTED' : `${c.pistonPrice} CR`}</span></button><button class="service-action${s.gasket ? ' done' : ''}" data-action="replace-gasket"><strong>${s.gasket ? icon('check') : icon('plus')} Fresh base gasket</strong><span>${s.gasket ? 'FITTED' : `${c.gasketPrice} CR`}</span></button></div>${s.piston && s.gasket ? `<button class="button-primary work-action" data-action="fit-cylinder">Refit cylinder ${icon('arrow')}</button>` : ''}`;
+  }
+  if (s.phase === 'fitHead') action = `<button class="button-primary work-action" data-action="fit-head">Refit cylinder head ${icon('arrow')}</button>`;
+  if (s.phase === 'complete') action = `<button class="button-primary work-action" data-action="dyno">${icon('gauge')} ${s.tested ? 'Back to the dyno' : 'Fire it up · run the dyno'}</button><button class="reopen-button" data-action="reopen-engine">${icon('undo')} Open engine again <span>FREE PRACTICE</span></button>`;
+  $('#work-order').classList.toggle('complete', s.phase === 'complete');
+  $('#work-order').innerHTML = `<div class="section-label"><span>WORK ORDER <span style="color:#586652">/ 01</span></span><span class="work-status"><i></i>${workflowTested ? 'COMPLETE' : s.phase === 'complete' ? 'READY TO RUN' : 'IN PROGRESS'}</span></div><h3>${s.phase === 'complete' ? 'Back on the pipe.' : s.rewarded ? 'A closer look.' : 'A fresh start.'}</h3><p class="work-description">${s.phase === 'complete' ? s.tested ? 'A clean rebuild and a clean run. Add some performance parts and make it yours.' : 'Fresh piston. Fresh gaskets. Time to find out what your rebuild can do.' : s.rewarded ? 'Fresh parts inside. Practice a teardown and build it back up. Your upgrades and tune stay.' : c.description}</p><ol class="task-list">${labels.map((label, i) => {
+    const done = i < step || (i === 4 && workflowTested);
+    const active = i === step && !done;
+    return `<li class="task${done ? ' done' : ''}${active ? ' active' : ''}"><span class="task-number">${done ? icon('check') : String(i + 1).padStart(2, '0')}</span><div><strong>${label}</strong>${active || (i === 4 && workflowTested) ? `<small>${subtasks[i]}</small>` : ''}</div>${active ? icon('chevron') : ''}</li>`;
+  }).join('')}</ol>${action}<div class="work-reward"><span>${s.rewarded ? 'REWARD COLLECTED' : 'REBUILD REWARD'}</span><span>${icon(s.rewarded ? 'check' : 'coin')} +${c.reward} CR <small>+125 XP</small></span></div>`;
+}
+
+const hexPoints = r => Array.from({ length: 6 }, (_, i) => `${(Math.cos(i * Math.PI / 3 + Math.PI / 6) * r).toFixed(2)},${(Math.sin(i * Math.PI / 3 + Math.PI / 6) * r).toFixed(2)}`).join(' ');
+function fixedBolt(x, y, r = 5) {
+  return `<g transform="translate(${x} ${y})"><circle r="${r + 1.8}" fill="#262d2d" stroke="#9ca49c" stroke-opacity=".25"/><polygon points="${hexPoints(r)}" fill="url(#bolt-metal)" stroke="#454e4a" stroke-width=".8"/><path d="M-${r * .4} 0h${r * .8}" stroke="#323a36" stroke-width="1.4"/></g>`;
+}
+function renderBolt(group, index, x, y) {
+  const s = state(), p = s[group][index];
+  const active = (group === 'head' && ['headBolts', 'headTighten'].includes(s.phase)) || (group === 'base' && ['baseBolts', 'baseTighten'].includes(s.phase));
+  const tightening = s.phase === 'headTighten' || s.phase === 'baseTighten';
+  const available = active && (tightening ? p > 0 : p < 1);
+  const removed = p >= 1;
+  return `<g class="bolt${available ? ' available' : ''}${removed ? ' removed' : ''}${tightening ? ' tighten' : ''}" data-bolt="${group}-${index}" transform="translate(${x} ${y})" ${available ? `tabindex="0" role="button" aria-label="${tightening ? 'Tighten' : 'Loosen'} ${group === 'head' ? 'cylinder head' : 'cylinder base'} bolt ${index + 1}. Hold left mouse button or space."` : ''}><circle class="bolt-halo" r="22" fill="${tightening ? '#b5d895' : '#ff8c50'}"/><circle r="10" fill="#202926" stroke="#a8afa1" stroke-opacity=".4"/><circle r="6.8" fill="#151e1a"/><g class="bolt-spin" transform="rotate(${-p * 720})"><polygon class="hex-face" points="${hexPoints(8.5)}" fill="url(#bolt-metal)" stroke="#bec5b5" stroke-width=".8"/><polygon class="bolt-inner" points="${hexPoints(3.8)}" fill="#3b433b" stroke="#e6e4c9" stroke-opacity=".3" stroke-width=".6"/></g><circle class="bolt-outline" r="15.5" fill="none" stroke-width="1"/><circle class="bolt-progress" r="18.5" stroke-dasharray="116.24" stroke-dashoffset="${116.24 * (1 - (tightening ? 1 - p : p))}" opacity="${p > 0 && p < 1 ? 1 : 0}"/><circle class="bolt-hit" r="22"/></g>`;
+}
+const SVG_DEFS = `<defs>
+  <linearGradient id="metal" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#b4bcb3"/><stop offset=".18" stop-color="#d0d3c8"/><stop offset=".45" stop-color="#8a968d"/><stop offset=".7" stop-color="#adb5a9"/><stop offset="1" stop-color="#64726b"/></linearGradient>
+  <linearGradient id="case-metal" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#9ba59b"/><stop offset=".28" stop-color="#b7bdb1"/><stop offset=".52" stop-color="#879489"/><stop offset=".82" stop-color="#77857b"/><stop offset="1" stop-color="#596b61"/></linearGradient>
+  <linearGradient id="side-metal" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#46564d"/><stop offset=".32" stop-color="#778a7b"/><stop offset=".6" stop-color="#66796d"/><stop offset="1" stop-color="#293b31"/></linearGradient>
+  <linearGradient id="fin-metal" x1="0" y1="0" x2=".5" y2="1"><stop stop-color="#d0d4c7"/><stop offset=".24" stop-color="#b3beb0"/><stop offset=".55" stop-color="#697c6d"/><stop offset=".8" stop-color="#a7b7a2"/><stop offset="1" stop-color="#3a5041"/></linearGradient>
+  <linearGradient id="bolt-metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e1e1c9"/><stop offset=".45" stop-color="#aab7a4"/><stop offset="1" stop-color="#697c69"/></linearGradient>
+  <radialGradient id="clutch-metal" cx=".35" cy=".25" r=".8"><stop stop-color="#aab4a2"/><stop offset=".5" stop-color="#87977f"/><stop offset=".84" stop-color="#708568"/><stop offset="1" stop-color="#4e6649"/></radialGradient>
+  <linearGradient id="dark-metal" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#465346"/><stop offset=".4" stop-color="#2c3a2e"/><stop offset=".7" stop-color="#394a36"/><stop offset="1" stop-color="#18291e"/></linearGradient>
+  <linearGradient id="orange-metal" x1="0" y1="0" x2=".6" y2="1"><stop stop-color="#ffb05c"/><stop offset=".3" stop-color="#d77835"/><stop offset=".75" stop-color="#a94d24"/><stop offset="1" stop-color="#6e361f"/></linearGradient>
+  <linearGradient id="pipe-metal" x1="0" y1="0" x2="1" y2=".4"><stop stop-color="#605641"/><stop offset=".23" stop-color="#b4a17a"/><stop offset=".45" stop-color="#d1b68a"/><stop offset=".68" stop-color="#938663"/><stop offset="1" stop-color="#575947"/></linearGradient>
+  <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#4c6155"/><stop offset=".2" stop-color="#97ad98"/><stop offset=".43" stop-color="#d8dfc7"/><stop offset=".58" stop-color="#8a9e88"/><stop offset=".8" stop-color="#c2cfb2"/><stop offset="1" stop-color="#465e4b"/></linearGradient>
+  <radialGradient id="ground-shadow"><stop stop-color="#080f0b" stop-opacity=".8"/><stop offset="1" stop-color="#0b100d" stop-opacity="0"/></radialGradient>
+  <pattern id="cast-texture" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".5" fill="#eff5d7" fill-opacity=".11"/><circle cx="3.5" cy="4" r=".7" fill="#092617" fill-opacity=".1"/></pattern>
+  <pattern id="mat-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0 0v7" stroke="#829a76" stroke-opacity=".09" stroke-width="1"/></pattern>
+  <filter id="soft-shadow"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>`;
+
+function renderEngine() {
+  const c = cfg(), s = state(), air = profile.current === 'simson';
+  const hy = c.headY, hh = c.headH, cy = c.cylinderY;
+  const headRemoved = ['baseBolts', 'liftCylinder', 'service', 'baseTighten', 'fitHead'].includes(s.phase);
+  const cylinderRemoved = s.phase === 'service';
+  const headActive = s.phase === 'liftHead';
+  const cylinderActive = s.phase === 'liftCylinder';
+  const raceHead = s.mods.includes('cylinder');
+  const fins = air ? Array.from({ length: 9 }, (_, i) => {
+    const y = cy + i * 9;
+    return `<path d="M322 ${y}h158l5 3-4 4H323l-5-3Z" fill="url(#fin-metal)" stroke="#243c2c" stroke-width="1.1"/><path d="M324 ${y + .8}h153" stroke="#d6e1ca" stroke-opacity=".55" stroke-width=".7"/>`;
+  }).join('') : `<path d="M340 ${cy}h119l7 113H336Z" fill="url(#side-metal)" stroke="#3f5745" stroke-width="2"/><path d="M343 ${cy + 9}h107v83H343Z" fill="url(#metal)" stroke="#61735f"/><path d="M347 ${cy + 15}h16v72h-16Zm84-4h15v77h-15Z" fill="#536c55"/><path d="M366 ${cy + 12}h63v79h-63Z" fill="url(#case-metal)" stroke="#d5dec6" stroke-opacity=".35"/><path d="M373 ${cy + 17}v67m9-67v67m9-67v67m9-67v67m9-67v67m9-67v67" stroke="#5d775b" stroke-opacity=".55" stroke-width="2"/>${[0, 1, 2, 3].map(i => `<path d="M333 ${cy + i * 27}h135l4 5H330Z" fill="url(#fin-metal)" stroke="#3c563e" stroke-width="1"/>`).join('')}<rect x="377" y="${cy + 36}" width="41" height="20" rx="3" fill="#536e52" stroke="#b2c29d" stroke-width=".6"/><text x="397" y="${cy + 49}" text-anchor="middle" fill="#b0c39d" font-family="Barlow Condensed, sans-serif" font-size="10" letter-spacing="2">${profile.current === 'sx125' ? 'TBI' : '85'}</text>`;
+  const coverBolts = [[464, 319], [552, 321], [602, 362], [603, 443], [554, 485], [474, 487], [435, 447], [429, 365]];
+  const label = air ? 'simson' : 'SX';
+  $('#engine-svg').innerHTML = `${SVG_DEFS}<g class="engine-art${tool === 'inspect' ? ' inspect-mode' : ''}" transform="translate(450 340) scale(${zoom}) translate(-450 -340)">
+    <ellipse cx="448" cy="507" rx="235" ry="28" fill="url(#ground-shadow)"/>
+    <path d="M241 493 273 519h342l31-25Z" fill="#151f19" stroke="#495b46" stroke-width="1"/>
+    <path d="M244 494 275 515h337l28-21Z" fill="url(#mat-hatch)"/><path d="M276 516h336" stroke="#6a7f5b" stroke-opacity=".3"/>
+    <g fill="url(#dark-metal)" stroke="#172c1c" stroke-width="2"><path d="M310 462h25l-5 42h-36Z"/><path d="M548 465h29l24 37h-40Z"/></g>
+    <path d="M299 498h29m235 0h34" stroke="#8a9e78" stroke-width="2" opacity=".3"/>
+    <g class="engine-part" data-part="ignition"><path d="M386 ${hy - 17}C345 ${hy - 72} 284 ${hy - 8} 269 223c-5 17-10 25-19 32" fill="none" stroke="#102418" stroke-width="12"/><path d="M386 ${hy - 18}C345 ${hy - 72} 284 ${hy - 8} 269 223c-5 17-10 25-19 32" fill="none" stroke="#516248" stroke-width="3"/><path d="M270 220 265 232m4-22-4 12" stroke="#738368" stroke-width="4"/></g>
+    ${!air ? `<g class="engine-part" data-part="cooling"><path d="M468 262c60 6 46-44 49-70s17-29 48-22" fill="none" stroke="#1a2b1d" stroke-width="19"/><path d="M470 259c55 9 42-45 45-68s18-26 49-20" fill="none" stroke="#5c6e52" stroke-opacity=".5" stroke-width="4"/><path d="m502 249 16 3m-1-57 3-17m24-8 1-8" stroke="url(#chrome)" stroke-width="6"/><path d="M562 159h12v26h-12Z" fill="url(#metal)" stroke="#405d41"/></g>` : ''}
+    <g class="engine-part" data-part="intake"><path d="M458 279 506 264l35 14-9 41-59 3Z" fill="url(#side-metal)" stroke="#213e27" stroke-width="2"/><path d="M510 269h25v43h-25Z" fill="${s.mods.includes('reeds') ? 'url(#orange-metal)' : 'url(#metal)'}" stroke="#415d3f"/><path d="M531 277h44v31h-44Z" fill="url(#dark-metal)" stroke="#182d1b" stroke-width="2"/><path d="M541 279v27m5-27v27m5-27v27m5-27v27m5-27v27m5-27v27" stroke="#657657" stroke-width="2"/><path d="M575 269h32l11 20-9 25h-34Z" fill="#263b25" stroke="#58754c" stroke-width="2"/><path d="M582 274v34m6-34v34m6-34v34m6-34v34" stroke="#57704b" stroke-width="2"/><path d="M520 268v-15l-7-6" fill="none" stroke="#afad76" stroke-width="3"/>${fixedBolt(517, 279, 3)}${fixedBolt(516, 307, 3)}${profile.current === 'sx125' ? '<path d="M528 275c36-25 35-57 12-63s-58-11-60-2" fill="none" stroke="#aa6737" stroke-width="2.5"/><rect x="532" y="276" width="15" height="17" rx="2" fill="#3d4930" stroke="#a07842"/>' : '<path d="M508 301v33h19v-24" fill="url(#metal)" stroke="#547047"/>'}</g>
+    <g class="engine-part" data-part="exhaust"><path d="M337 280c-38-6-59 2-73 28" fill="none" stroke="#213420" stroke-width="27"/><path d="M337 277c-38-6-59 2-73 28" fill="none" stroke="url(#pipe-metal)" stroke-width="22"/><path d="M322 272 318 290m-40-4 12 12" stroke="#d1bc82" stroke-opacity=".6" stroke-width="2"/><path d="M335 262v35" stroke="#5d6946" stroke-width="8"/>${s.mods.includes('exhaust') ? `<path d="M265 306c-31 15-68 53-57 89 11 30 51 17 67 35 15 17 6 36 25 48" fill="none" stroke="#253420" stroke-width="34"/><path d="M265 305c-31 15-68 53-57 89 11 30 51 17 67 35 15 17 6 36 25 48" fill="none" stroke="url(#pipe-metal)" stroke-width="28"/><path d="m222 343 22 12m-41 26 26 1m-15 27 12-20m36 30 18-9m-3 39 15-6" stroke="#d5c292" stroke-width="1.5" stroke-opacity=".5"/>` : '<path d="M252 297 273 311l-5 9-22-15Z" fill="url(#dark-metal)" stroke="#5e7051"/>'}</g>
+    <g class="engine-part" data-part="crankcase">
+      <path d="M305 334c27-23 59-25 97-18l43-10c44-25 110-18 148 17 38 25 52 69 39 109-9 32-38 60-72 68l-78 2-36-13c-37 12-91 12-121 3-29 2-56-8-70-30-17-25-11-64 12-86Z" fill="#2a3f2c" stroke="#172c1c" stroke-width="5"/>
+      <path d="M302 328c27-23 59-25 97-18l43-10c44-25 110-18 148 17 38 25 52 69 39 109-9 32-38 60-72 68l-78 2-36-13c-37 12-91 12-121 3-29 2-56-8-70-30-17-25-11-64 12-86Z" fill="url(#case-metal)" stroke="#a9b79e" stroke-width="1.7"/>
+      <path d="M302 328c27-23 59-25 97-18l43-10c44-25 110-18 148 17 38 25 52 69 39 109-9 32-38 60-72 68l-78 2-36-13c-37 12-91 12-121 3-29 2-56-8-70-30-17-25-11-64 12-86Z" fill="url(#cast-texture)"/>
+      <path d="M296 335c38-28 75-26 116-13m40-11c45-20 100-15 135 14M271 386c-25 51 6 91 47 90m-6 7c44 6 94 6 130-4" fill="none" stroke="#e5e8cb" stroke-opacity=".25" stroke-width="1.4"/>
+      <path d="M304 324 301 303l17-9 18 6 8 20m212-13 5-19 19 3 10 24M350 479v15l14 5 13-11m185-3 7 13h20l9-15" fill="url(#side-metal)" stroke="#3a5638" stroke-width="2"/>
+      <circle cx="317" cy="309" r="7" fill="#142e1d" stroke="#91a77f" stroke-width="3"/><circle cx="575" cy="300" r="6" fill="#1b321d" stroke="#94a580" stroke-width="3"/>
+      <path d="m322 336 17-9 27 10 12 25-13 18-35-7-14-20Z" fill="url(#dark-metal)" stroke="#a2b08c" stroke-width="1.2"/><circle cx="346" cy="351" r="13" fill="#203d22" stroke="#768c5e" stroke-width="3"/><circle cx="346" cy="351" r="6" fill="url(#metal)"/>
+      <path d="M299 374c-26-4-46 12-46 41-8 22 3 49 25 57l91 4c21-2 38-20 40-41l-4-46-47-14Z" fill="url(#metal)" stroke="#4f6c47" stroke-width="2"/>
+      <path d="M267 401c2-14 11-22 27-21l60 4 36 10 5 38c-1 14-13 29-26 31l-84-2c-15-6-23-21-22-35" fill="none" stroke="#cad4b5" stroke-width="1" stroke-opacity=".4"/>
+      <path d="M320 410h55m-52 5h51m-49 5h46m-44 5h40" stroke="#637f56" stroke-width="2.5" stroke-linecap="round"/><text x="347" y="447" text-anchor="middle" fill="#4c6b43" font-family="Barlow Condensed, sans-serif" font-size="11" letter-spacing="2">${air ? 'M531' : '6 SPEED'}</text>
+      ${fixedBolt(281, 386)}${fixedBolt(391, 402)}${fixedBolt(375, 460)}${fixedBolt(272, 447)}
+      <path d="M441 337c10-16 33-28 65-29 60-2 105 42 105 92 0 52-41 89-93 90-45 1-83-23-92-64-6-29-1-69 15-89Z" fill="url(#side-metal)" stroke="#3b5a36" stroke-width="3"/>
+      <path d="M446 341c10-16 32-27 62-28 56-2 99 39 99 86 0 49-39 85-88 86-43 1-78-22-87-60-6-26-1-64 14-84Z" fill="url(#clutch-metal)" stroke="#b6c39e" stroke-width="1.2"/>
+      <path d="M446 341c10-16 32-27 62-28 56-2 99 39 99 86 0 49-39 85-88 86-43 1-78-22-87-60-6-26-1-64 14-84Z" fill="url(#cast-texture)"/>
+      ${air ? '<path d="M453 353h110m-115 9h119m-122 9h125m-126 9h128m-129 9h130m-130 9h130m-130 9h130m-128 9h126m-122 9h116m-110 9h102m-94 9h85" stroke="#68845d" stroke-width="2" opacity=".65"/><path d="M470 378h92v46h-92Z" fill="url(#clutch-metal)" stroke="#90a579" stroke-width=".6"/>' : '<path d="M459 353c36-33 91-21 111 6m-106 83c30 26 75 26 102-6" fill="none" stroke="#bac9a0" stroke-opacity=".35" stroke-width="1"/><circle cx="515" cy="400" r="57" fill="none" stroke="#506e43" stroke-width="1" opacity=".4"/>'}
+      <text x="516" y="${air ? 408 : 407}" text-anchor="middle" fill="#4e6d41" stroke="#d0dbb3" stroke-width=".35" paint-order="stroke" font-family="Barlow Condensed, sans-serif" font-size="${air ? 32 : 42}" font-weight="600" font-style="italic" letter-spacing="${air ? -1 : -2}">${label}</text>
+      <text x="516" y="${air ? 433 : 427}" text-anchor="middle" fill="#48673f" font-family="Barlow Condensed, sans-serif" font-size="${air ? 8 : 12}" letter-spacing="3">${air ? 'SUHL · GERMANY' : c.short + ' · RACING'}</text>
+      ${coverBolts.map(([x, y]) => fixedBolt(x, y, 5.5)).join('')}
+      <path d="M575 357v-21l10-6 12 9-5 14Z" fill="url(#side-metal)" stroke="#425f36"/><path d="M578 339 587 336l5 6-9 5Z" fill="url(#orange-metal)" stroke="#8b642d" stroke-width="1"/>
+      <path d="M462 489v11h20v-11Z" fill="url(#dark-metal)"/><path d="M464 496h17v7h-17Z" fill="url(#orange-metal)" stroke="#5b4e25"/>
+      <path d="M299 367c14-11 41-8 56-1" fill="none" stroke="#2e4c2f" stroke-width="3"/><path d="M315 470h92m-91-4h82" stroke="#506e44" stroke-width="1.5"/>
+    </g>
+    <g class="engine-part" data-part="transmission"><polygon points="${Array.from({ length: 32 }, (_, i) => { const r = i % 2 ? 28 : 32; return `${286 + Math.cos(i * Math.PI / 16) * r},${415 + Math.sin(i * Math.PI / 16) * r}`; }).join(' ')}" fill="url(#dark-metal)" stroke="#7e9368" stroke-width="1.4"/><circle cx="286" cy="415" r="21" fill="#445d39" stroke="#9aaa7d" stroke-width="2"/><circle cx="286" cy="415" r="13" fill="url(#metal)" stroke="#304f2c" stroke-width="2"/><polygon points="${hexPoints(9)}" transform="translate(286 415)" fill="url(#chrome)" stroke="#cad4ad"/><path d="M278 436 243 444l-22-10" fill="none" stroke="#1c341e" stroke-width="10"/><path d="M278 434 243 442l-22-10" fill="none" stroke="url(#metal)" stroke-width="6"/><rect x="207" y="425" width="21" height="11" rx="4" fill="#253d25" stroke="#657f50"/><path d="M212 426v8m4-8v8m4-8v8" stroke="#8c9f73" stroke-width="1"/></g>
+    <g transform="rotate(${c.rotation} 400 335)">
+      ${cylinderRemoved ? `<g class="engine-part" data-part="piston"><path d="M394 374 385 ${cy + 60}h24l13 106Z" fill="url(#chrome)" stroke="#526c44" stroke-width="2"/><circle cx="404" cy="369" r="17" fill="url(#metal)" stroke="#a9ba8c" stroke-width="2"/><circle cx="404" cy="369" r="9" fill="#1f3820" stroke="#718b5c" stroke-width="2"/><path d="M365 ${cy + 29}q34-12 69 0v57q-34 10-69-1Z" fill="${s.piston ? 'url(#chrome)' : 'url(#case-metal)'}" stroke="#a8b798" stroke-width="1.3"/><ellipse cx="399" cy="${cy + 29}" rx="34" ry="8" fill="${s.piston ? '#d4ddc0' : '#687c5b'}" stroke="#aab998"/><path d="M366 ${cy + 37}q33 8 67 0m-67 7q33 8 67 0m-67 7q33 8 67 0" fill="none" stroke="#314f2e" stroke-width="2.8"/><circle cx="399" cy="${cy + 66}" r="8" fill="#314c2a" stroke="#c6d4aa" stroke-width="3"/>${!s.piston ? `<path d="m376 ${cy + 55}-2 21m5-19-2 23m40-23-2 22m-5-18-2 16" stroke="#435f36" stroke-width="1.6"/><path d="m381 ${cy + 59} 2 17m31-19 1 15" stroke="#d9ddb7" stroke-opacity=".5" stroke-width=".6"/>` : `<path d="M367 ${cy + 76}q33 7 66 0" stroke="#ecedcf" stroke-opacity=".65" fill="none"/>`}</g>` : ''}
+      <g class="engine-part${cylinderActive ? ' actionable' : ''}" data-part="cylinder">
+        <path d="M321 330h165l5 15H319Z" fill="${s.gasket ? '#93ad6e' : '#775e36'}" stroke="#344e2d" stroke-width="1.5"/>
+        ${!cylinderRemoved ? `<path d="M327 ${cy}h149v109H327Z" fill="url(#dark-metal)" stroke="#536e48" stroke-width="2"/>${fins}<path d="M327 325h151l8 10H321Z" fill="url(#metal)" stroke="#526e43" stroke-width="1.3"/><path d="M334 ${cy + 5}v${329 - cy}" stroke="#d9e1bf" stroke-opacity=".35" stroke-width="1.3"/>` : ''}
+      </g>
+      ${!headRemoved ? `<g class="engine-part${headActive ? ' actionable' : ''}" data-part="head"><path d="M320 ${hy + hh - 3}h151v6H320Z" fill="${raceHead ? '#6c562d' : '#ad713c'}" stroke="#4e5230" stroke-width="1"/><path d="M317 ${hy + 8} 327 ${hy}h127l21 12v${hh - 16}l-8 7H321Z" fill="${raceHead ? 'url(#orange-metal)' : 'url(#metal)'}" stroke="${headActive ? '#ffad6c' : '#a5b494'}" stroke-width="${headActive ? '2' : '1.5'}"/><path d="M322 ${hy + 12}h148m-147 8h148m-147 8h149m-148 8h147" stroke="${raceHead ? '#733c21' : '#526d46'}" stroke-width="2" opacity=".7"/><path d="M327 ${hy + 2}h126l15 9H323Z" fill="${raceHead ? '#e29b54' : '#c8cfb5'}" stroke="#bcc9a2" stroke-opacity=".6" stroke-width=".7"/><path d="M387 ${hy + 8}v-19h21v19" fill="url(#metal)" stroke="#4a663d" stroke-width="1.5"/><path d="M390 ${hy - 9}v-23h14v23" fill="#c6cead" stroke="#567049"/><path d="M391 ${hy - 26}h12m-12 5h12m-12 5h12" stroke="#6b8055" stroke-width="1.4"/><path d="M389 ${hy - 28}v-20h16v20" fill="url(#dark-metal)" stroke="#536d40"/><path d="M397 ${hy - 45}v-10l-9-7" fill="none" stroke="#283e24" stroke-width="11" stroke-linecap="round"/><path d="M392 ${hy - 44}v13" stroke="#b0c494" stroke-opacity=".2" stroke-width="1"/></g>${[[335, hy + 11], [453, hy + 11], [339, hy + hh - 9], [458, hy + hh - 9]].map(([x, y], i) => renderBolt('head', i, x, y)).join('')}` : s.phase === 'fitHead' ? `<g class="engine-part actionable" data-part="head"><rect x="318" y="${hy}" width="155" height="${hh}" rx="6" fill="#ff79500a" stroke="#e2a570" stroke-dasharray="5 5"/><text x="397" y="${hy + hh / 2 + 4}" text-anchor="middle" font-size="9" fill="#d3ae7f" font-family="Barlow, sans-serif" letter-spacing="2">REFIT HEAD</text></g>` : ''}
+      ${[[331, 331], [473, 331], [346, 348], [485, 348]].map(([x, y], i) => renderBolt('base', i, x, y)).join('')}
+    </g>
+    ${phaseStep() < 2 ? `<path d="M188 185h70l58 ${c.headY + 16 - 185}" fill="none" stroke="#a2b38a" stroke-opacity=".26" stroke-width=".8"/><circle cx="188" cy="185" r="2" fill="#a5b78f" opacity=".5"/>` : ''}
+    <path d="M653 376h34m-17-17v34M234 349h-23m11-11v22" stroke="#91a97a" stroke-width=".8" stroke-opacity=".15"/>
+  </g>`;
+  // Cast aluminum stays neutral; warm anodized parts and active bolts retain their color.
+  $('#engine-svg').innerHTML = $('#engine-svg').innerHTML.replace(/#([a-f0-9]{6})(?![a-f0-9])/gi, (hex, color) => {
+    if (['b5d895', '93ad6e'].includes(color.toLowerCase())) return hex;
+    const r = parseInt(color.slice(0, 2), 16), g = parseInt(color.slice(2, 4), 16), b = parseInt(color.slice(4, 6), 16);
+    if (g < r * .95 || g < b) return hex;
+    const luma = Math.round(r * .299 + g * .587 + b * .114);
+    return `rgb(${clamp(luma, 0, 255)},${clamp(luma + 2, 0, 255)},${clamp(luma + 2, 0, 255)})`;
+  });
+  renderSceneUI();
+}
+
+function renderSceneUI() {
+  const s = state(), step = phaseStep();
+  const totalOut = [...s.head, ...s.base].filter(v => v >= 1).length;
+  $('#bolt-count').textContent = String(totalOut).padStart(2, '0');
+  $('#tray-bolts').innerHTML = totalOut ? Array.from({ length: totalOut }, () => `<svg viewBox="0 0 20 20"><polygon points="${hexPoints(8)}" transform="translate(10 10)" fill="#9da98e" stroke="#c6d0b1" stroke-width="1"/><polygon points="${hexPoints(3.5)}" transform="translate(10 10)" fill="#394b2e"/></svg>`).join('') : '<span class="tray-empty">NO LOOSE BOLTS. YET.</span>';
+  const headRemoved = ['baseBolts', 'liftCylinder', 'service', 'baseTighten', 'fitHead'].includes(s.phase);
+  $('#removed-parts').innerHTML = `${headRemoved ? `<span>${icon('check')} HEAD REMOVED</span>` : ''}${s.phase === 'service' ? `<span>${icon('check')} CYLINDER REMOVED</span>` : ''}`;
+  const parts = [ ['CYLINDER HEAD', '4 × HEAD BOLTS'], ['CYLINDER BASE', '4 × BASE FASTENERS'], ['PISTON ASSEMBLY', s.piston ? 'FRESH PISTON & RINGS' : 'WORN RINGS DETECTED'], ['REASSEMBLY', 'SEAT. TIGHTEN. TORQUE.'], ['READY TO RUN', 'REBUILT BY YOU.'] ];
+  $('#scene-part-label').innerHTML = `<span class="label-index">${String(step + 1).padStart(2, '0')}</span><div><strong>${parts[step][0]}</strong><small>${parts[step][1]}</small></div>`;
+  updateHint();
+}
+function updateHint() {
+  const s = state();
+  let title = 'A good rebuild starts with one bolt.', text = `Hold left click on an orange bolt to ${direction === 'loosen' ? 'loosen' : 'turn'} it.`, status = "HOLD, DON'T CLICK";
+  if (tool === 'inspect') { title = 'Look closer. Know your engine.'; text = 'Click a component to inspect its function and condition.'; status = 'INSPECTION MODE'; }
+  else if (s.phase === 'headBolts') { text = direction === 'loosen' ? 'Hold left click on an orange bolt to loosen it.' : 'These bolts need loosening. Switch your ratchet with R.'; }
+  else if (s.phase === 'liftHead') { title = 'Four bolts down. Head comes next.'; text = 'Click the cylinder head, or use the lift button in your work order.'; status = 'READY TO LIFT'; }
+  else if (s.phase === 'baseBolts') { title = 'Let’s get to the heart of it.'; text = 'Hold left click to loosen the four highlighted cylinder base bolts.'; }
+  else if (s.phase === 'liftCylinder') { title = 'The top end is free.'; text = 'Click the cylinder to lift it and expose the piston.'; status = 'READY TO LIFT'; }
+  else if (s.phase === 'service') { title = s.piston && s.gasket ? 'A fresh start, from the inside out.' : 'That piston has seen better days.'; text = s.piston && s.gasket ? 'Refit the cylinder using the work order, then tighten its base bolts.' : 'Fit a new piston kit and base gasket in your work order.'; status = s.piston && s.gasket ? 'READY TO REBUILD' : 'SERVICE REQUIRED'; }
+  else if (['baseTighten', 'headTighten'].includes(s.phase)) { title = direction === 'tighten' ? 'Bring it home. One bolt at a time.' : 'Time to change direction.'; text = direction === 'tighten' ? 'Hold left click on a green bolt. The torque limiter stops at the click.' : 'Select TIGHTEN above, or press R to reverse the ratchet.'; status = direction === 'tighten' ? 'TORQUE LIMITER ON' : 'PRESS R TO REVERSE'; }
+  else if (s.phase === 'fitHead') { title = 'Almost ready to sing.'; text = 'Click the head outline, or refit the cylinder head in the work order.'; status = 'REFIT CYLINDER HEAD'; }
+  else if (s.phase === 'complete') { title = 'Built, not bought. Nice work.'; text = 'Run the dyno, dial in your tune, or fit some performance parts.'; status = 'REBUILD COMPLETE'; }
+  $('#hint-title').textContent = title;
+  $('#hint-text').textContent = text;
+  $('#hint-status').textContent = status;
+}
+function renderAll() { renderSwitcher(); renderStats(); renderOrder(); renderEngine(); updateDirection(); updateTool(); updateSound(); }
+function updateDirection() {
+  $('#loosen-button').classList.toggle('active', direction === 'loosen');
+  $('#tighten-button').classList.toggle('active', direction === 'tighten');
+  $('#loosen-button').setAttribute('aria-pressed', direction === 'loosen');
+  $('#tighten-button').setAttribute('aria-pressed', direction === 'tighten');
+}
+function setDirection(value) { stopHold(); direction = value; updateDirection(); updateHint(); tickSound(.6); }
+function updateTool() {
+  $('#tool-socket').classList.toggle('active', tool === 'socket');
+  $('#tool-inspect').classList.toggle('active', tool === 'inspect');
+  $('.engine-art')?.classList.toggle('inspect-mode', tool === 'inspect');
+}
+function setTool(value) { stopHold(); tool = value; updateTool(); updateHint(); }
+function selectEngine(id) {
+  if (!ENGINE_DATA[id] || id === profile.current) return;
+  stopHold(); profile.current = id; tool = 'socket'; zoom = 1;
+  direction = ['baseTighten', 'headTighten', 'fitHead'].includes(state().phase) ? 'tighten' : 'loosen';
+  save(); renderAll(); toast(`${cfg().name} is on the bench. Your other rebuilds are saved.`);
+}
+
+function beginHold(bolt, pointerId) {
+  stopHold();
+  if (tool !== 'socket') { inspectPart(bolt.dataset.bolt.startsWith('head') ? 'head' : 'cylinder'); return; }
+  const [group, indexString] = bolt.dataset.bolt.split('-'), index = Number(indexString), s = state();
+  const tightening = ['baseTighten', 'headTighten'].includes(s.phase);
+  const allowed = group === 'head' ? ['headBolts', 'headTighten'].includes(s.phase) : ['baseBolts', 'baseTighten'].includes(s.phase);
+  if (!allowed) { toast(group === 'base' && ['headBolts', 'liftHead'].includes(s.phase) ? 'Remove the cylinder head before tackling the base bolts.' : 'This fastener is not part of your current step.', true); return; }
+  if ((tightening && s[group][index] <= 0) || (!tightening && s[group][index] >= 1)) { toast(tightening ? 'Already torqued. Move on to the next bolt.' : 'That bolt is already in your tray.'); return; }
+  if (direction !== (tightening ? 'tighten' : 'loosen')) {
+    toast(`Wrong direction. Select ${tightening ? 'TIGHTEN' : 'LOOSEN'}, or press R to reverse.`, true);
+    $('.direction-control').classList.remove('attention'); void $('.direction-control').offsetWidth; $('.direction-control').classList.add('attention'); return;
+  }
+  if (!tightening && s.tested) { s.tested = false; s.lastDyno = null; renderOrder(); }
+  if (pointerId !== undefined) { try { $('#engine-svg').setPointerCapture(pointerId); } catch (_) {} }
+  hold = { group, index, element: bolt, tightening, last: performance.now(), lastTick: 0, pointerId };
+  bolt.classList.add('is-held');
+  $('#hint-title').textContent = `${tightening ? 'Tightening' : 'Loosening'} · ${group === 'head' ? 'head' : 'base'} bolt ${String(index + 1).padStart(2, '0')}`;
+  tickSound();
+  holdFrame = requestAnimationFrame(advanceHold);
+}
+function advanceHold(now) {
+  if (!hold) return;
+  const h = hold, s = state();
+  const delta = Math.min(now - h.last, 60) / 1120;
+  h.last = now;
+  s[h.group][h.index] = clamp(s[h.group][h.index] + (h.tightening ? -delta : delta), 0, 1);
+  const p = s[h.group][h.index], amount = h.tightening ? 1 - p : p;
+  const ring = $('.bolt-progress', h.element);
+  ring.setAttribute('opacity', '1'); ring.setAttribute('stroke-dashoffset', (116.24 * (1 - amount)).toFixed(2));
+  $('.bolt-spin', h.element).setAttribute('transform', `rotate(${-p * 720})`);
+  $('#hold-progress-fill').style.width = `${amount * 100}%`;
+  $('#hold-progress-fill').style.background = h.tightening ? 'var(--green)' : 'var(--orange)';
+  $('#hint-text').textContent = h.tightening ? `Keep holding — torque seating ${Math.round(amount * 100)}%` : `Keep holding — fastener released ${Math.round(amount * 100)}%`;
+  $('#hint-status').textContent = `${Math.round(amount * 100)}%`;
+  if (now - h.lastTick > 100) { tickSound(.6 + amount * .3); h.lastTick = now; }
+  if (amount >= 1) {
+    stopHold(false); tickSound(1.5);
+    checkPhase(); save(); renderAll(); return;
+  }
+  holdFrame = requestAnimationFrame(advanceHold);
+}
+function stopHold(restoreHint = true) {
+  if (!hold) return;
+  cancelAnimationFrame(holdFrame);
+  hold.element.classList.remove('is-held');
+  if (hold.pointerId !== undefined) { try { $('#engine-svg').releasePointerCapture(hold.pointerId); } catch (_) {} }
+  hold = null; $('#hold-progress-fill').style.width = '0'; save();
+  if (restoreHint) updateHint();
+}
+function checkPhase() {
+  const s = state();
+  if (s.phase === 'headBolts' && s.head.every(v => v >= 1)) { s.phase = 'liftHead'; toast('All head bolts removed. Lift the cylinder head.'); }
+  else if (s.phase === 'baseBolts' && s.base.every(v => v >= 1)) { s.phase = 'liftCylinder'; toast('The cylinder is free. Lift it to inspect the piston.'); }
+  else if (s.phase === 'baseTighten' && s.base.every(v => v <= 0)) { s.phase = 'fitHead'; toast('Cylinder seated and torqued. Refit the head.'); }
+  else if (s.phase === 'headTighten' && s.head.every(v => v <= 0)) {
+    s.phase = 'complete';
+    const firstRebuild = !s.rewarded;
+    if (firstRebuild) { s.rewarded = true; profile.credits += cfg().reward; profile.xp += 125; }
+    toast(firstRebuild ? `Rebuild complete! +${cfg().reward} CR · +125 XP. Time for the dyno.` : 'Reassembly complete. No loose fasteners. Take it back to the dyno.');
+  }
+}
+function serviceAction(action) {
+  stopHold(); const s = state(), c = cfg();
+  if (action === 'lift-head' && s.phase === 'liftHead') { s.phase = 'baseBolts'; toast('Head removed. Now loosen the four base fasteners.'); }
+  else if (action === 'lift-cylinder' && s.phase === 'liftCylinder') { s.phase = 'service'; toast(s.piston ? 'Your fresh piston and gasket are still healthy. Ready to reassemble.' : 'Scored piston and worn rings. Fit fresh parts in your work order.'); }
+  else if (action === 'replace-piston' && s.phase === 'service' && !s.piston) {
+    if (profile.credits < c.pistonPrice) return toast('Not enough credits for this piston kit.', true);
+    profile.credits -= c.pistonPrice; s.piston = true; toast('Fresh piston, rings, wrist pin, and circlips fitted.');
+  }
+  else if (action === 'replace-gasket' && s.phase === 'service' && !s.gasket) {
+    if (profile.credits < c.gasketPrice) return toast('Not enough credits for a fresh gasket.', true);
+    profile.credits -= c.gasketPrice; s.gasket = true; toast('New base gasket fitted. A good seal makes all the difference.');
+  }
+  else if (action === 'fit-cylinder' && s.phase === 'service' && s.piston && s.gasket) { s.phase = 'baseTighten'; toast('Cylinder refitted. Switch to TIGHTEN (R), then hold each green bolt.'); }
+  else if (action === 'fit-head' && s.phase === 'fitHead') { s.phase = 'headTighten'; toast('Cylinder head refitted. Tighten the four head bolts.'); }
+  else return;
+  save(); renderAll();
+}
+
+function reopenEngine() {
+  const s = state();
+  if (s.phase !== 'complete') return;
+  stopHold();
+  s.phase = 'headBolts'; s.head.fill(0); s.base.fill(0); s.tested = false; s.lastDyno = null;
+  direction = 'loosen'; tool = 'socket';
+  save(); renderAll();
+  toast('Engine reopened. Fresh parts, upgrades, and tune kept. Practice is free.');
+}
+
+/* Modal content and performance parts. */
+function modalHeader(eyebrow, title) { return `<header class="modal-header"><div><p class="modal-eyebrow">${eyebrow}</p><h2 id="modal-title">${title}</h2></div><button class="close-button" data-action="close-modal" aria-label="Close dialog">${icon('close')}</button></header>`; }
+function openModal(content, type = 'help') {
+  stopHold();
+  if (!currentModal) previousFocus = document.activeElement;
+  cancelAnimationFrame(dynoFrame); stopEngineSound(); dynoRunning = false;
+  currentModal = type;
+  $('#modal-dialog').className = `modal-dialog${type === 'dyno' ? ' dyno-modal' : ''}`;
+  $('#modal-dialog').innerHTML = content;
+  $('#modal-layer').hidden = false;
+  document.body.style.overflow = 'hidden';
+  $$('.rail-nav .rail-button').forEach(b => b.classList.toggle('active', b.dataset.action === (type === 'inspect' ? 'workshop' : type)));
+  $('#modal-dialog').focus();
+}
+function closeModal() {
+  cancelAnimationFrame(dynoFrame); stopEngineSound(); dynoRunning = false;
+  $('#modal-layer').hidden = true; currentModal = null; document.body.style.overflow = '';
+  $$('.rail-nav .rail-button').forEach(b => b.classList.toggle('active', b.dataset.action === 'workshop'));
+  if (previousFocus?.isConnected) previousFocus.focus();
+}
+function openHelp() {
+  openModal(`${modalHeader('THE WORKSHOP MANUAL', 'A little oil. A lot of possibility.')}<div class="modal-content"><p class="modal-subtitle">Three engines. Your own workbench. Take them apart, put them right, and make them faster. There’s no timer — good work takes time.</p><div class="help-grid"><article class="help-step"><span>01 /</span><h3>Hold it. Don’t click it.</h3><p>With the socket wrench selected, <strong>hold the left mouse button</strong> on an orange bolt. Keep holding until the ring fills. Let go to pause; your progress stays.</p></article><article class="help-step"><span>02 /</span><h3>Lefty loosey. Righty tighty.</h3><p>Use the <strong>LOOSEN / TIGHTEN</strong> buttons above the engine, or press <strong>R</strong> to change direction. Orange bolts loosen. Green bolts tighten.</p></article><article class="help-step"><span>03 /</span><h3>Get your hands dirty.</h3><p>Follow the work order. Remove the head, unbolt the cylinder, and fit a fresh piston and gasket. Refit everything and hold each bolt to torque it.</p></article><article class="help-step"><span>04 /</span><h3>Find your powerband.</h3><p>Fit performance parts from the shop, dial in the fueling and ignition, then run the dyno. Each engine has its own rebuild, parts, tune, and saved progress.</p></article></div><div class="help-shortcuts"><div><kbd>R</kbd> Reverse ratchet</div><div><kbd>1</kbd> Socket <kbd>2</kbd> Inspect</div><div><kbd>3</kbd> Parts <kbd>4</kbd> Dyno</div><div><kbd>Esc</kbd> Back to bench</div></div><div class="help-footer"><p>On a touchscreen, press and hold a bolt. Sound is optional using the speaker icon. This is a simplified game: specifications, torque behavior, and tuning gains are approximate, not real-world service instructions.</p><button class="button-primary" data-action="close-modal">Let’s get wrenching ${icon('arrow')}</button></div></div>`, 'help');
+}
+function partArt(id) {
+  const defs = `<defs><linearGradient id="p-${id}" x2="1" y2="1"><stop stop-color="#d4d8bc"/><stop offset=".4" stop-color="#81916c"/><stop offset=".7" stop-color="#b7c29a"/><stop offset="1" stop-color="#3d5638"/></linearGradient></defs>`;
+  const f = `url(#p-${id})`;
+  const drawings = {
+    exhaust: `<path d="M17 71c15-7 14-18 29-28 12-8 26-7 47-11l34-15 12 8-24 28-30 10-25 2-11 19-17 3-3-10" fill="${f}" stroke="#b7c698" stroke-width="1.3"/><path d="m50 42 13 21m13-28 10 27m11-32 14 25m13-38 13 12" stroke="#465f38" stroke-width="1.5"/><path d="m132 18 13-8 8 8-14 9" fill="#374f30" stroke="#859b68"/><path d="M20 72 9 82" stroke="#9cac7f" stroke-width="9"/>`,
+    reeds: `<path d="m38 32 65-16 32 28-67 23Z" fill="#6c7d52" stroke="#a5b98a"/><path d="m38 32 30 35v21L37 53Z" fill="#3f5534" stroke="#91a575"/><path d="m68 67 67-23v20L68 88Z" fill="${f}" stroke="#b4c696"/><path d="m48 35 52-12 23 20-54 18Z" fill="#223a24" stroke="#7e9c67"/><path d="m59 37 11 15 13-3-9-16Zm24-6 12 15 13-4-12-14Z" fill="#aab787" stroke="#c8d4a6"/><circle cx="45" cy="33" r="2" fill="#e2dbaf"/><circle cx="124" cy="44" r="2" fill="#e2dbaf"/><circle cx="70" cy="80" r="2" fill="#344b28"/>`,
+    cylinder: `<path d="M52 34h63v45H52Z" fill="${f}" stroke="#a9bb85"/><path d="m46 28 14-13h43l19 13v15H46Z" fill="#b7763d" stroke="#e3a862"/><ellipse cx="83" cy="24" rx="23" ry="8" fill="#3d4c2e" stroke="#e8af68"/><ellipse cx="83" cy="24" rx="17" ry="5" fill="#1c2e1c"/><path d="M45 45h76v5H45Zm0 9h76v5H45Zm0 9h76v5H45Zm-2 12h80v8H43Z" fill="${f}" stroke="#667b48"/><path d="M55 17v-7m51 7v-7m-51 74v7m51-7v7" stroke="#c4cea3" stroke-width="3"/>`,
+    fueling: `<path d="m41 22 70-5 18 13-5 48-73 6-12-13Z" fill="#384d2f" stroke="#98ad78" stroke-width="1.5"/><path d="m48 29 59-4 13 9-5 36-62 5Z" fill="${f}" stroke="#a7b98c"/><path d="M56 36h46v29H56Z" fill="#263f28" stroke="#5d7d46"/><path d="m61 42 8 5 7-10 8 23 8-14 7 5" fill="none" stroke="#c5d59c" stroke-width="1.4"/><path d="m61 78 1 12 8-1-1-12m8-1 1 12 8-1-1-12m8-1 1 12 8-1-1-12" fill="#b08b4c" stroke="#dcbd79"/><circle cx="49" cy="27" r="2" fill="#d2d5af"/><circle cx="114" cy="32" r="2" fill="#d2d5af"/>`
+  };
+  return `<svg viewBox="0 0 165 100" aria-hidden="true">${defs}${drawings[id]}</svg>`;
+}
+function partCatalog() {
+  return [
+    { id: 'exhaust', name: 'Factory expansion chamber', desc: 'A freer-flowing pipe. More pull on the pipe, with a sharper top-end hit.', price: 260, gain: 7, category: 'EXHAUST SYSTEM' },
+    { id: 'reeds', name: 'Carbon reed block', desc: 'Crisper throttle response and better breathing through the midrange.', price: 180, gain: 4, category: 'INTAKE SYSTEM' },
+    { id: 'cylinder', name: 'Ported cylinder kit', desc: 'Reworked ports and an anodized head. Built for a broader powerband.', price: 420, gain: 10, category: 'TOP-END UPGRADE' },
+    { id: 'fueling', name: profile.current === 'sx125' ? 'Race-map ignition module' : 'Race carb & ignition kit', desc: 'A matched fueling and ignition package to bring the whole build together.', price: 320, gain: 5, category: 'FUEL & IGNITION' }
+  ];
+}
+function openShop() {
+  const s = state();
+  openModal(`${modalHeader('THE PARTS COUNTER', 'Stock is just the start.')}<div class="modal-content"><div class="modal-summary"><div class="modal-engine-tag">${icon('piston')} ${cfg().name}</div><div class="modal-balance">${icon('coin')} AVAILABLE <strong>${money(profile.credits)} CR</strong></div></div><div class="parts-grid">${partCatalog().map(p => {
+    const installed = s.mods.includes(p.id);
+    return `<article class="part-card"><div class="part-art"><span>${p.category}</span>${partArt(p.id)}<strong class="part-gain">+${p.gain}% POWER</strong></div><div class="part-card-content"><h3>${p.name}</h3><p>${p.desc}</p><button class="${installed ? 'button-secondary part-installed' : 'button-primary'}" data-buy="${p.id}" ${installed ? 'disabled' : ''}>${installed ? `${icon('check')} INSTALLED ON THIS ENGINE` : `${icon('plus')} Fit upgrade · ${p.price} CR`}</button></div></article>`;
+  }).join('')}</div><p class="modal-footnote">All parts are compatible with your selected engine. Purchases are fitted instantly and saved to this build. Power gains stack; engine condition and tune affect the final dyno result.</p></div>`, 'shop');
+}
+function buyPart(id) {
+  const part = partCatalog().find(p => p.id === id);
+  if (!part || state().mods.includes(id)) return;
+  if (profile.credits < part.price) { toast('Not enough credits. Complete another rebuild to earn more.', true); return; }
+  profile.credits -= part.price; state().mods.push(id); state().tested = false; state().lastDyno = null;
+  save(); renderStats(); renderEngine(); renderOrder(); openShop(); toast(`${part.name} fitted. +${part.gain}% estimated power.`);
+}
+function inspectPart(part) {
+  const s = state(), c = cfg();
+  const details = {
+    head: { title: 'Cylinder head', icon: 'piston', text: `The head seals the combustion chamber and holds the spark plug. This ${c.cc} cc single-cylinder uses four workshop fasteners. Remove them evenly before lifting the head.`, status: s.rewarded ? 'SEALED & TORQUED' : 'TOP-END SERVICE DUE', good: s.rewarded },
+    cylinder: { title: 'Cylinder & ports', icon: 'piston', text: `The ${c.cooling.toLowerCase()} cylinder guides the piston and contains the transfer and exhaust ports. Remove the head first, then the four base fasteners. Always fit a fresh base gasket during a rebuild.`, status: s.gasket ? 'FRESH GASKET FITTED' : 'BASE GASKET AGED', good: s.gasket },
+    piston: { title: 'Piston & rings', icon: 'piston', text: s.piston ? 'Fresh piston, rings, wrist pin, and circlips. The rings now seal properly, restoring compression. Refit the cylinder and complete your assembly before testing.' : 'Vertical scoring and worn rings are letting compression escape. A fresh piston kit is the heart of this rebuild. Remove the cylinder to access the service parts.', status: s.piston ? 'NEW PISTON FITTED' : 'SCORING · WORN RINGS', good: s.piston },
+    crankcase: { title: 'Crankcase & clutch', icon: 'wrench', text: 'The crankcase supports the crankshaft, gearbox, and wet clutch. On a two-stroke, the sealed crank chamber also helps move the fresh charge into the cylinder. The lower end is healthy on this engine.', status: 'BOTTOM END HEALTHY', good: true },
+    intake: { title: c.fuel, icon: 'flame', text: `${c.fuel} feeds this engine through a reed-controlled intake. Reed petals open with crankcase vacuum and close to stop blowback. A carbon reed block upgrade improves breathing and response.`, status: s.mods.includes('reeds') ? 'CARBON REEDS INSTALLED' : 'STOCK INTAKE · HEALTHY', good: true },
+    exhaust: { title: 'Exhaust & expansion chamber', icon: 'flame', text: 'A two-stroke expansion chamber uses reflected pressure waves to keep the fresh charge in the cylinder. The performance pipe changes how hard the engine pulls through its powerband.', status: s.mods.includes('exhaust') ? 'FACTORY PIPE INSTALLED' : 'STOCK EXHAUST', good: true },
+    ignition: { title: 'Spark & ignition', icon: 'bolt', text: 'One spark per crankshaft revolution. The ignition timing controls when the fuel charge burns. Try the dyno tuning panel to find this engine’s sweet spot in the simplified simulation.', status: 'SPARK PRESENT', good: true },
+    transmission: { title: `${c.transmission} transmission`, icon: 'wrench', text: `The ${c.transmission} gearbox sends power from the crankshaft through the clutch to the output sprocket. The shift mechanism and bearings are in good shape. Today’s job is all about the top end.`, status: 'GEARBOX HEALTHY', good: true },
+    cooling: { title: 'Liquid cooling circuit', icon: 'gauge', text: 'Coolant carries heat from the cylinder and head to the radiator. Hoses and clamps are healthy. The engine is cold and safe to work on in the garage.', status: 'COOLANT CIRCUIT HEALTHY', good: true }
+  };
+  const d = details[part] || details.crankcase;
+  openModal(`${modalHeader('COMPONENT INSPECTION / ' + c.name, d.title)}<div class="modal-content"><div class="inspect-detail"><div class="inspect-illustration">${icon(d.icon)}</div><div class="inspect-copy"><h3>Know what makes it tick.</h3><p>${d.text}</p><span class="inspect-badge${d.good ? ' good' : ''}">${icon(d.good ? 'check' : 'help')} ${d.status}</span></div></div><div class="inspect-actions"><button class="button-primary" data-action="return-socket">${icon('wrench')} Back to the wrench</button></div></div>`, 'inspect');
+}
+
+/* The dyno is computed from this engine's condition, installed parts, and saved tune. */
+const powerCurve = t => t <= .84 ? Math.pow(Math.sin(t / .84 * Math.PI / 2), 2.4) : 1 - Math.pow((t - .84) / .16, 1.4) * .24;
+const torqueCurve = t => Math.pow(Math.sin(Math.min(t / .73, 1.38) * Math.PI / 2), 1.6) * (.92 + .08 * t);
+function dynoChart() {
+  const max = Math.ceil(Math.max(peakPower(), peakTorque()) * 1.15 / (cfg().hp < 5 ? 1 : 5)) * (cfg().hp < 5 ? 1 : 5);
+  const w = 420, h = 174, left = 47, bottom = 209;
+  const path = (peak, fn) => Array.from({ length: 75 }, (_, i) => {
+    const t = i / 74; return `${i ? 'L' : 'M'}${(left + t * w).toFixed(2)} ${(bottom - fn(t) * peak / max * h).toFixed(2)}`;
+  }).join(' ');
+  const power = path(peakPower(), powerCurve), torque = path(peakTorque(), torqueCurve);
+  return `<div class="chart-header"><span>POWER AT THE CRANK</span><div class="chart-legend"><span><i></i>POWER</span><span><i></i>TORQUE</span></div></div><svg viewBox="0 0 500 250" aria-label="Dyno power and torque graph"><defs><clipPath id="dyno-clip"><rect id="dyno-cliprect" x="47" y="20" width="${state().tested ? 420 : 0}" height="195"/></clipPath><linearGradient id="dyno-area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ff7950" stop-opacity=".14"/><stop offset="1" stop-color="#ff7950" stop-opacity="0"/></linearGradient></defs>${Array.from({ length: 6 }, (_, i) => { const y = bottom - i * h / 5; return `<path d="M47 ${y}h420" stroke="#586d45" stroke-opacity=".23" stroke-width=".7"/><text x="36" y="${y + 3}" text-anchor="end" font-family="Barlow,sans-serif" font-size="8" fill="#6c8659">${(max * i / 5).toFixed(max < 10 ? 1 : 0)}</text>`; }).join('')}${Array.from({ length: 7 }, (_, i) => { const x = left + i * w / 6; return `<path d="M${x} 35v174" stroke="#586d45" stroke-opacity=".18" stroke-width=".7"/><text x="${x}" y="226" text-anchor="middle" font-family="Barlow,sans-serif" font-size="8" fill="#6c8659">${(cfg().rpm * i / 6000).toFixed(1)}</text>`; }).join('')}<text x="468" y="241" text-anchor="end" font-family="Barlow,sans-serif" font-size="7" letter-spacing="1" fill="#6c8659">RPM × 1,000</text><text x="47" y="23" font-family="Barlow,sans-serif" font-size="7" letter-spacing="1" fill="#6c8659">HP / Nm</text><path d="${power}" fill="none" stroke="#ff7950" stroke-opacity=".18" stroke-width="1.5" stroke-dasharray="3 4"/><path d="${torque}" fill="none" stroke="#b5d895" stroke-opacity=".13" stroke-width="1.5" stroke-dasharray="3 4"/><g clip-path="url(#dyno-clip)"><path d="${power}L467 209H47Z" fill="url(#dyno-area)"/><path d="${power}" fill="none" stroke="#ff8655" stroke-width="2.5"/><path d="${torque}" fill="none" stroke="#b5d895" stroke-width="2"/></g><line id="dyno-sweep" x1="47" x2="47" y1="35" y2="209" stroke="#d5ddb3" stroke-width="1" stroke-opacity="0"/></svg><div class="dyno-readout"><div><span>PEAK POWER</span><strong id="dyno-power">${state().tested ? peakPower().toFixed(1) : '—'} <small>hp</small></strong></div><div><span>PEAK TORQUE</span><strong id="dyno-torque">${state().tested ? peakTorque().toFixed(1) : '—'} <small>Nm</small></strong></div><div><span>ENGINE SPEED</span><strong id="dyno-rpm">0 <small>rpm</small></strong></div></div><div class="rpm-bar"><span id="rpm-fill"></span></div>`;
+}
+function openDyno() {
+  const s = state(), available = assembled();
+  openModal(`${modalHeader('THE MOMENT OF TRUTH / ' + cfg().name, 'Let the numbers talk.')}<div class="modal-content">${!available ? `<div class="dyno-warning">${icon('help')} Your engine is open. Finish the rebuild and torque every bolt before starting a dyno run.</div>` : ''}<div class="dyno-layout"><div class="dyno-chart">${dynoChart()}</div><section class="tune-panel"><h3>Find the sweet spot.</h3><p>Small changes. Real differences. Adjust, apply, then test your tune.</p><div class="tune-field"><label for="fuel-slider">${profile.current === 'sx125' ? 'Fuel map' : 'Main jet balance'}<output id="fuel-output">${s.tune.fuel}%</output></label><input id="fuel-slider" type="range" min="90" max="110" value="${s.tune.fuel}" step="1"><div class="range-labels"><span>LEANER</span><span>RICHER</span></div></div><div class="tune-field"><label for="ignition-slider">Ignition advance<output id="ignition-output">${s.tune.ignition}°</output></label><input id="ignition-slider" type="range" min="10" max="24" value="${s.tune.ignition}" step="1"><div class="range-labels"><span>RETARDED</span><span>ADVANCED</span></div></div><button class="button-secondary" id="apply-tune" data-action="apply-tune">${icon('save')} Apply tune</button></section></div><div class="dyno-run-row"><div class="dyno-message" id="dyno-message">${s.tested ? 'Run saved. Fit an upgrade or tweak your tune, then try again.' : available ? 'Engine secured. Extraction on. Ready when you are.' : 'Finish your work order, then come back and make some noise.'}</div><button class="button-primary" id="dyno-run" data-action="run-dyno" ${!available ? 'disabled' : ''}>${icon('gauge')} ${s.tested ? 'RUN AGAIN' : 'START DYNO RUN'}</button></div><p class="modal-footnote">Estimated crankshaft output · ${engineHealth()}% engine condition · ${s.mods.length} performance parts fitted. This is a gameplay simulation, not a real-world tuning guide. ${!profile.sound ? 'Enable sound with the speaker icon for the full garage experience.' : 'Sound enabled. Let it sing.'}</p></div>`, 'dyno');
+}
+function applyTune() {
+  if (dynoRunning) return;
+  state().tune.fuel = Number($('#fuel-slider').value);
+  state().tune.ignition = Number($('#ignition-slider').value);
+  state().tested = false; state().lastDyno = null;
+  save(); renderStats(); renderOrder(); openDyno();
+  toast('Tune saved. Run the dyno to see what changed.');
+}
+function runDyno() {
+  if (dynoRunning || !assembled()) return;
+  dynoRunning = true;
+  const start = performance.now(), duration = 6500, peak = peakPower(), torque = peakTorque();
+  let measuredPower = 0, measuredTorque = 0;
+  $('#dyno-run').disabled = true; $('#dyno-run').innerHTML = `${icon('gauge')} RUNNING…`;
+  $('#apply-tune').disabled = true; $('#fuel-slider').disabled = true; $('#ignition-slider').disabled = true;
+  $('#dyno-message').textContent = 'Roll on. Let the engine climb through the powerband…';
+  $('#dyno-sweep').setAttribute('stroke-opacity', '.5');
+  startEngineSound();
+  function frame(now) {
+    if (currentModal !== 'dyno' || !dynoRunning) return;
+    const t = clamp((now - start) / duration, 0, 1);
+    const rpm = Math.round(1400 + t * (cfg().rpm - 1400));
+    measuredPower = Math.max(measuredPower, peak * powerCurve(t));
+    measuredTorque = Math.max(measuredTorque, torque * torqueCurve(t));
+    $('#dyno-cliprect').setAttribute('width', 420 * t);
+    $('#dyno-sweep').setAttribute('x1', 47 + 420 * t); $('#dyno-sweep').setAttribute('x2', 47 + 420 * t);
+    $('#dyno-power').innerHTML = `${measuredPower.toFixed(1)} <small>hp</small>`;
+    $('#dyno-torque').innerHTML = `${measuredTorque.toFixed(1)} <small>Nm</small>`;
+    $('#dyno-rpm').innerHTML = `${money(rpm)} <small>rpm</small>`;
+    $('#rpm-fill').style.width = `${t * 100}%`;
+    updateEngineSound(rpm);
+    if (t < 1) dynoFrame = requestAnimationFrame(frame);
+    else {
+      dynoRunning = false; stopEngineSound();
+      state().tested = true; state().lastDyno = { power: peak, torque, rpm: Math.round(cfg().rpm * .84) };
+      save(); renderOrder();
+      $('#dyno-power').innerHTML = `${peak.toFixed(1)} <small>hp</small>`;
+      $('#dyno-torque').innerHTML = `${torque.toFixed(1)} <small>Nm</small>`;
+      $('#dyno-rpm').innerHTML = `0 <small>rpm</small>`;
+      $('#rpm-fill').style.width = '0%';
+      $('#dyno-sweep').setAttribute('stroke-opacity', '0');
+      $('#dyno-run').disabled = false; $('#dyno-run').innerHTML = `${icon('gauge')} RUN AGAIN`;
+      $('#apply-tune').disabled = false; $('#fuel-slider').disabled = false; $('#ignition-slider').disabled = false;
+      $('#dyno-message').innerHTML = `<span class="dyno-complete">${peak.toFixed(1)} hp at ${money(Math.round(cfg().rpm * .84))} rpm.</span> ${engineHealth() < 100 ? 'Compression is down. A fresh top end will wake this engine up.' : 'Clean pull. Your rebuild is ready to ride.'}`;
+      toast(`Dyno complete. ${cfg().name}: ${peak.toFixed(1)} hp / ${torque.toFixed(1)} Nm.`);
+    }
+  }
+  dynoFrame = requestAnimationFrame(frame);
+}
+
+/* Small synthesized workshop sounds; no external audio files or autoplay. */
+function audioContext() {
+  if (!profile.sound) return null;
+  try { if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); return audio; } catch (_) { return null; }
+}
+function tickSound(strength = 1) {
+  const a = audioContext(); if (!a) return;
+  const buffer = a.createBuffer(1, Math.floor(a.sampleRate * .025), a.sampleRate);
+  const samples = buffer.getChannelData(0); for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / samples.length, 3);
+  const noise = a.createBufferSource(), gain = a.createGain(), filter = a.createBiquadFilter();
+  noise.buffer = buffer; filter.type = 'highpass'; filter.frequency.value = 1300; gain.gain.value = .065 * strength;
+  noise.connect(filter); filter.connect(gain); gain.connect(a.destination); noise.start(); noise.stop(a.currentTime + .03);
+}
+function startEngineSound() {
+  const a = audioContext(); if (!a) return;
+  stopEngineSound();
+  const osc = a.createOscillator(), second = a.createOscillator(), filter = a.createBiquadFilter(), gain = a.createGain();
+  osc.type = 'sawtooth'; second.type = 'triangle'; osc.frequency.value = 40; second.frequency.value = 80;
+  filter.type = 'lowpass'; filter.frequency.value = 1300; filter.Q.value = 1.2;
+  gain.gain.value = .035; osc.connect(filter); second.connect(filter); filter.connect(gain); gain.connect(a.destination); osc.start(); second.start();
+  engineSound = { osc, second, filter, gain };
+}
+function updateEngineSound(rpm) {
+  if (!engineSound || !audio) return;
+  engineSound.osc.frequency.setTargetAtTime(rpm / 60, audio.currentTime, .06);
+  engineSound.second.frequency.setTargetAtTime(rpm / 30, audio.currentTime, .06);
+  engineSound.filter.frequency.setTargetAtTime(600 + rpm * .14, audio.currentTime, .06);
+}
+function stopEngineSound() {
+  if (!engineSound) return;
+  try { engineSound.gain.gain.setTargetAtTime(0, audio.currentTime, .08); engineSound.osc.stop(audio.currentTime + .3); engineSound.second.stop(audio.currentTime + .3); } catch (_) {}
+  engineSound = null;
+}
+function updateSound() {
+  $('#sound-button').innerHTML = icon(profile.sound ? 'volume' : 'muted');
+  $('#sound-button').title = `Sound ${profile.sound ? 'on' : 'off'}`;
+  $('#sound-button').setAttribute('aria-label', `Turn sound ${profile.sound ? 'off' : 'on'}`);
+}
+function toggleSound() {
+  profile.sound = !profile.sound; save(); updateSound();
+  if (!profile.sound) stopEngineSound(); else { tickSound(); if (dynoRunning) startEngineSound(); }
+  toast(`Workshop sound ${profile.sound ? 'on' : 'off'}.`);
+}
+
+/* Inputs: pointer capture ensures a held bolt stays held, even if the hand moves. */
+$('#engine-svg').addEventListener('pointerdown', event => {
+  if (event.button !== 0 || currentModal) return;
+  const targetBolt = event.target.closest('[data-bolt]');
+  if (targetBolt) {
+    // Expanded touch targets can overlap. Always turn the physically nearest fastener.
+    let bolt = targetBolt, nearest = Infinity;
+    $$('[data-bolt]', $('#engine-svg')).forEach(candidate => {
+      const matrix = candidate.getScreenCTM();
+      if (!matrix) return;
+      const distance = Math.hypot(event.clientX - matrix.e, event.clientY - matrix.f);
+      if (distance < nearest) { nearest = distance; bolt = candidate; }
+    });
+    event.preventDefault(); beginHold(bolt, event.pointerId);
+  }
+});
+document.addEventListener('pointerup', () => stopHold());
+document.addEventListener('pointercancel', () => stopHold());
+window.addEventListener('blur', () => stopHold());
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopHold(); });
+$('#engine-svg').addEventListener('contextmenu', event => event.preventDefault());
+$('#engine-svg').addEventListener('click', event => {
+  if (event.target.closest('[data-bolt]')) return;
+  const part = event.target.closest('[data-part]')?.dataset.part;
+  if (!part) return;
+  if (tool === 'inspect') return inspectPart(part);
+  if (part === 'head' && state().phase === 'liftHead') return serviceAction('lift-head');
+  if (part === 'head' && state().phase === 'fitHead') return serviceAction('fit-head');
+  if (part === 'cylinder' && state().phase === 'liftCylinder') return serviceAction('lift-cylinder');
+  if (part === 'head' && state().phase === 'headBolts') return toast('Loosen all four orange head bolts first. Hold, don’t just click.');
+  if (part === 'piston' && state().phase === 'service') return inspectPart('piston');
+  toast('Select the Inspect tool (2) to learn about this component.');
+});
+document.addEventListener('click', event => {
+  const engine = event.target.closest('[data-engine]'); if (engine) return selectEngine(engine.dataset.engine);
+  const turn = event.target.closest('[data-direction]'); if (turn) return setDirection(turn.dataset.direction);
+  const toolButton = event.target.closest('[data-tool]'); if (toolButton) return setTool(toolButton.dataset.tool);
+  const buy = event.target.closest('[data-buy]'); if (buy && !buy.disabled) return buyPart(buy.dataset.buy);
+  const button = event.target.closest('[data-action]'); if (!button || button.disabled) return;
+  const action = button.dataset.action;
+  if (['lift-head', 'lift-cylinder', 'replace-piston', 'replace-gasket', 'fit-cylinder', 'fit-head'].includes(action)) return serviceAction(action);
+  switch (action) {
+    case 'help': openHelp(); break;
+    case 'shop': openShop(); break;
+    case 'dyno': openDyno(); break;
+    case 'workshop': closeModal(); break;
+    case 'close-modal': closeModal(); break;
+    case 'sound': toggleSound(); break;
+    case 'return-socket': closeModal(); setTool('socket'); break;
+    case 'reopen-engine': reopenEngine(); break;
+    case 'apply-tune': applyTune(); break;
+    case 'run-dyno': runDyno(); break;
+    case 'zoom-in': stopHold(); zoom = clamp(zoom + .1, .8, 1.3); renderEngine(); break;
+    case 'zoom-out': stopHold(); zoom = clamp(zoom - .1, .8, 1.3); renderEngine(); break;
+    case 'zoom-reset': stopHold(); zoom = 1; renderEngine(); break;
+  }
+});
+document.addEventListener('input', event => {
+  if (event.target.id === 'fuel-slider') $('#fuel-output').textContent = `${event.target.value}%`;
+  if (event.target.id === 'ignition-slider') $('#ignition-output').textContent = `${event.target.value}°`;
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') { stopHold(); if (currentModal) closeModal(); return; }
+  if (currentModal) {
+    if (event.key === 'Tab') {
+      const focusable = $$('button:not(:disabled), input:not(:disabled), [tabindex="0"]', $('#modal-dialog'));
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === $('#modal-dialog'))) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    }
+    return;
+  }
+  if (event.target.matches('input,textarea,select') || event.repeat) return;
+  if ((event.key === ' ' || event.key === 'Enter') && event.target.closest('[data-bolt]')) { event.preventDefault(); beginHold(event.target.closest('[data-bolt]')); return; }
+  switch (event.key.toLowerCase()) {
+    case 'r': event.preventDefault(); setDirection(direction === 'loosen' ? 'tighten' : 'loosen'); break;
+    case '1': setTool('socket'); break;
+    case '2': case 'i': setTool('inspect'); break;
+    case '3': openShop(); break;
+    case '4': openDyno(); break;
+    case '?': case 'h': openHelp(); break;
+  }
+});
+document.addEventListener('keyup', event => { if (event.key === ' ' || event.key === 'Enter') stopHold(); });
+
+if (['baseTighten', 'headTighten', 'fitHead'].includes(state().phase)) direction = 'tighten';
+renderAll();
+  </script>
 </body>
 </html>
-
-
-
---------------------------------------------------------------------------------
-FILE: styles.css
---------------------------------------------------------------------------------
-
-:root{--bg:#101214;--surface:#181b1e;--surface-light:#202427;--panel:#1b1e21;--line:#303438;--line-soft:#292d30;--text:#edece7;--muted:#858b90;--dim:#5e666c;--orange:#ff7950;--orange-bright:#ff8c61;--green:#b5d895;--font:'Barlow',Arial,sans-serif;--display:'Barlow Condensed','Arial Narrow',sans-serif;--mono:'DejaVu Sans Mono',Consolas,monospace}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;-webkit-font-smoothing:antialiased}button,a,input{-webkit-tap-highlight-color:transparent}button{font-family:inherit;color:inherit;cursor:pointer}button{border:0;background:none}button:disabled{cursor:not-allowed;opacity:.45}button:focus-visible,a:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--orange);outline-offset:4px}button:not(:disabled){transition:background .18s,color .18s,border-color .18s,transform .18s}button:active:not(:disabled){transform:translateY(1px)}a{color:inherit;text-decoration:none}.icon{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}.svg-library{position:absolute;width:0;height:0;overflow:hidden}.app-shell{display:grid;grid-template-columns:76px minmax(0,1fr);min-height:100vh}.rail{background:#17191c;border-right:1px solid var(--line-soft);display:flex;align-items:center;flex-direction:column;position:sticky;top:0;height:100vh;z-index:20}.rail-logo{width:43px;height:47px;position:relative;display:grid;place-items:center;background:var(--orange);border-radius:4px;color:#1a1c1c;margin:20px 0 28px;box-shadow:0 0 24px #ff795008}.rail-logo .icon{width:26px;height:26px;transform:rotate(-28deg);stroke-width:1.9}.rail-logo>span{font:700 11px var(--display);position:absolute;bottom:2px;right:3px}.rail-nav{display:flex;flex-direction:column;gap:12px;width:100%;align-items:center}.rail-button{width:57px;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#777f84;position:relative;border-radius:5px}.rail-button>span{font-size:8px;font-weight:600;letter-spacing:1px}.rail-button .icon{width:22px;height:22px}.rail-button:hover{background:#ffffff05;color:var(--text)}.rail-button.active{color:var(--orange);background:#ff79500d}.rail-button.active:before{content:'';position:absolute;left:-10px;top:15px;bottom:15px;width:2px;background:var(--orange);border-radius:0 3px 3px 0}.rail-bottom{margin-top:auto;display:flex;align-items:center;flex-direction:column;gap:14px;padding-bottom:21px}.rail-line{width:24px;height:1px;background:var(--line)}.rail-bottom .rail-button{min-height:35px}.rail-build{font-size:10px;color:#555c62;letter-spacing:1px}.app-body{min-width:0}.topbar{height:79px;display:flex;align-items:center;gap:25px;padding:0 30px;border-bottom:1px solid var(--line-soft);background:#151719}.wordmark{font-family:var(--display);font-weight:800;font-size:25px;font-style:italic;line-height:.9;letter-spacing:.6px;white-space:nowrap}.wordmark>span{color:var(--orange)}.wordmark small{display:block;font:500 8px var(--font);font-style:normal;letter-spacing:2.3px;margin-top:7px;color:#8e9292}.header-separator{height:27px;width:1px;background:var(--line)}.breadcrumb{font-size:10px;font-weight:500;letter-spacing:1.4px;display:flex;gap:15px;color:var(--muted)}.breadcrumb span{color:#4b5157}.breadcrumb strong{color:#c1c4c2;font-weight:500}.topbar-right{margin-left:auto;display:flex;align-items:center;gap:27px}.local-save{font-size:9px;letter-spacing:1.3px;color:#7d8486;display:flex;align-items:center;gap:7px}.local-save i,.page-footer i{width:5px;height:5px;border-radius:50%;background:#98b782}.player{display:flex;align-items:center;gap:10px}.player-avatar{display:grid;place-items:center;width:33px;height:33px;background:#2a2e2e;border:1px solid #414641;transform:rotate(-3deg);border-radius:3px;font:600 17px var(--display);color:#c3c8b9}.player strong{font-size:10px;letter-spacing:.8px;font-weight:600;display:block}.player small{font-size:9px;color:#81878a;display:block;letter-spacing:.6px;margin-top:4px}.player small span{padding:0 3px;color:#4f595e}.wallet{background:#242522;border:1px solid #3b3c33;border-radius:5px;padding:10px 13px;display:flex;align-items:center;gap:8px}.wallet .icon{width:18px;height:18px;color:#d8c59a}.wallet strong{font-size:15px;font-weight:600;letter-spacing:.2px}.wallet small{font-size:8px;color:#a49d86;align-self:center;letter-spacing:1px}main{padding:25px 30px 0;max-width:1770px;margin:auto}.page-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:23px}.eyebrow{display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:1.7px;font-weight:600;color:#a6aaa6;margin:0 0 8px}.eyebrow>span{background:var(--orange);height:5px;width:5px;transform:rotate(45deg)}h1{font-family:var(--display);font-size:36px;line-height:1;font-weight:600;letter-spacing:.2px;margin:0}h1>span{color:#929797}.text-button{display:flex;align-items:center;gap:8px;color:#a7adad;font-size:12px;padding:10px 0 10px 10px}.text-button .icon{width:16px;height:16px;color:#7e878a}.text-button:hover{color:var(--orange)}.key,kbd{font:500 9px var(--font);border:1px solid #41474b;background:#ffffff04;padding:3px 5px;line-height:1;border-radius:3px;color:#939b9d;min-width:16px;text-align:center}.text-button .key{margin-lef================================================================================
-  2STROKE - THE HANDS-ON GARAGE  ·  VERSION 1  ·  FULL SOURCE CODE
-  ----------------------------------------------------------------------------
-  Design:   "Industrial Dark Garage" - charcoal surfaces, safety-orange accents,
-            Barlow / Barlow Condensed type, layered panels, sidebar rail nav.
-  Style:    Three files + web fonts.
-
-  HOW TO RUN
-    1. Put index.html, styles.css, game.js and the assets/ folder
-       (fonts.css + the type-*.ttf files) in one directory.
-    2. Open index.html in a browser (or serve the folder with any
-       static file server). Everything is local - no build step.
-
-  HOW TO PLAY
-    - Hold LEFT CLICK on an orange bolt to unscrew it (hold, don't click).
-    - Use the LOOSEN / TIGHTEN ratchet direction change buttons
-      (top-right of the workbench) or press R to flip direction.
-      Orange bolts loosen, green bolts tighten.
-    - Work order: cylinder head -> base bolts -> piston & gasket ->
-      reassemble & torque -> dyno run & tune.
-    - Performance parts shop, fuel/ignition tune, dyno graph, XP & credits,
-      progress saved to localStorage (key: 2stroke-garage-v1).
-    - Engines: SX 125 TBI · SIMSON S51 · SX 85. Each saves its own progress.
-
-  FILES IN THIS DOCUMENT
-    1. index.html   - markup, SVG icon sprite, skeleton
-    2. styles.css   - the complete visual design (v1)
-    3. game.js      - all game logic (state, holds, dyno, audio, save)
-    4. assets/fonts.css - @font-face declarations
-
-  NOTE ON FONTS
-    assets/type-0.ttf ... type-7.ttf are binary TrueType files and cannot be
-    embedded in a text file. They are kept in the workspace under
-    /home/user/assets/ (SIL Open Font License - see assets/OFL.txt).
-    Without them the game still runs, using fallback fonts.
-
-  Generated 2026-11-13 for the 2STROKE project.
-================================================================================
-
-
---------------------------------------------------------------------------------
-FILE: index.html
---------------------------------------------------------------------------------
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#111315">
-  <meta name="description" content="A hands-on 2-stroke engine workshop. Rebuild, modify, and dyno test the SX 125 TBI, Simson S51, and SX 85.">
-  <title>2STROKE — The hands-on garage</title>
-  <link rel="stylesheet" href="assets/fonts.css">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <svg class="svg-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
-    <symbol id="i-wrench" viewBox="0 0 24 24"><path d="m14.4 6.2 3.4 3.4 3.6-3.6a6 6 0 0 1-7.8 7.8l-6.8 6.8a2.4 2.4 0 0 1-3.4-3.4l6.8-6.8A6 6 0 0 1 18 2.6z"/><path d="m5.1 18.9.1-.1"/></symbol>
-    <symbol id="i-piston" viewBox="0 0 24 24"><path d="M6 3h12v9H6zM6 6h12M6 9h12M10 12v6m4-6v6M8 21h8v-3H8zM4 3h16"/><circle cx="12" cy="14" r="1"/></symbol>
-    <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 5v10l9 5 9-5V8M12 13v10M7.5 5.5l9 5"/></symbol>
-    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4.2 18a9 9 0 1 1 15.6 0H4.2ZM12 4v2M5.6 7.6 7 9M18.4 7.6 17 9M3 13h2m14 0h2m-9 0 4-5"/><circle cx="12" cy="14" r="2"/></symbol>
-    <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1Zm0 0v15M5 8h3M5 12h3m8-4h3m-3 4h3"/></symbol>
-    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.3 9a2.8 2.8 0 1 1 4.2 2.5c-1 .6-1.5 1-1.5 2.5m0 3h.01"/></symbol>
-    <symbol id="i-volume" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5V4Zm4 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
-    <symbol id="i-muted" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5V4Zm5 5 6 6m0-6-6 6"/></symbol>
-    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
-    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
-    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></symbol>
-    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
-    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5m-14-11h7m-3.5-3.5v7"/></symbol>
-    <symbol id="i-mouse" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="7"/><path d="M12 2v8M5 10h14"/><path d="M7 8V7a5 5 0 0 1 3-3v4Z" fill="currentColor" stroke="none"/></symbol>
-    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></symbol>
-    <symbol id="i-redo" viewBox="0 0 24 24"><path d="M20 10a8 8 0 1 0-1 8m1-14v6h-6"/></symbol>
-    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 8H9v4h6v4H9m3-10v2m0 8v2"/></symbol>
-    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 10-13h-8l1-7Z"/></symbol>
-    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
-    <symbol id="i-save" viewBox="0 0 24 24"><path d="M4 3h13l4 4v14H3V3h1Zm3 0v6h10V3M7 21v-8h10v8"/></symbol>
-    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M13 2c2 6-4 6-1 11 2-1 3-3 3-5 8 7 5 14-3 14C3 22 1 13 7 7c0 3 1 4 2 5-1-4 3-6 4-10Z"/></symbol>
-    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4m-4 5v2"/></symbol>
-  </defs></svg>
-
-  <div class="app-shell">
-    <aside class="rail" aria-label="Main navigation">
-      <button class="rail-logo" data-action="help" title="2STROKE Garage"><svg class="icon"><use href="#i-piston"/></svg><span>2T</span></button>
-      <nav class="rail-nav">
-        <button class="rail-button active" data-action="workshop" aria-label="Workshop" title="Workshop"><svg class="icon"><use href="#i-wrench"/></svg><span>GARAGE</span></button>
-        <button class="rail-button" data-action="shop" aria-label="Parts shop" title="Performance parts"><svg class="icon"><use href="#i-box"/></svg><span>PARTS</span></button>
-        <button class="rail-button" data-action="dyno" aria-label="Dyno test" title="Dyno & tuning"><svg class="icon"><use href="#i-gauge"/></svg><span>DYNO</span></button>
-        <button class="rail-button" data-action="help" aria-label="Workshop manual" title="Workshop manual"><svg class="icon"><use href="#i-book"/></svg><span>MANUAL</span></button>
-      </nav>
-      <div class="rail-bottom"><span class="rail-line"></span><button class="rail-button" id="sound-button" data-action="sound" aria-label="Turn sound on" title="Sound off"><svg class="icon"><use href="#i-muted"/></svg></button><span class="rail-build">v.01</span></div>
-    </aside>
-
-    <div class="app-body">
-      <header class="topbar">
-        <a class="wordmark" href="./" aria-label="2STROKE Garage home">2STROKE<span>.</span><small>GARAGE SIMULATOR</small></a>
-        <span class="header-separator"></span>
-        <div class="breadcrumb">WORKSHOP <span>/</span> <strong>ENGINE BAY 01</strong></div>
-        <div class="topbar-right">
-          <div class="local-save"><i></i> LOCAL SAVE</div>
-          <div class="player"><span class="player-avatar">M</span><div><strong>THE MECHANIC</strong><small id="player-level">LEVEL 04 <span>·</span> 0 / 375 XP</small></div></div>
-          <div class="wallet"><svg class="icon"><use href="#i-coin"/></svg><strong id="wallet">1,250</strong><small>CR</small></div>
-        </div>
-      </header>
-
-      <main>
-        <section class="page-heading">
-          <div><p class="eyebrow"><span></span> SMALL ENGINES. BIG OBSESSION.</p><h1>Your garage. <span>Your rules.</span></h1></div>
-          <button class="text-button" data-action="help"><svg class="icon"><use href="#i-help"/></svg> How to play <span class="key">?</span></button>
-        </section>
-
-        <section class="engine-switcher" id="engine-switcher" aria-label="Choose an engine"></section>
-
-        <div class="work-layout">
-          <div class="bench-column">
-            <section class="workbench" aria-label="Interactive engine workbench">
-              <div class="bench-toolbar">
-                <div class="bench-label"><span class="live-dot"></span><strong>WORKBENCH 01</strong><span class="bench-divider">/</span><span>ENGINE COLD</span></div>
-                <div class="view-controls"><span>2D SIDE VIEW</span><button class="icon-button" data-action="zoom-out" title="Zoom out" aria-label="Zoom out"><svg class="icon"><use href="#i-minus"/></svg></button><button class="icon-button" data-action="zoom-in" title="Zoom in" aria-label="Zoom in"><svg class="icon"><use href="#i-plus"/></svg></button><button class="icon-button reset-view" data-action="zoom-reset" title="Reset view" aria-label="Reset view"><svg class="icon"><use href="#i-undo"/></svg></button></div>
-              </div>
-              <div class="scene" id="scene">
-                <span class="scene-corner corner-tl"></span><span class="scene-corner corner-tr"></span><span class="scene-corner corner-bl"></span><span class="scene-corner corner-br"></span>
-                <div class="scene-watermark" id="scene-watermark">125</div>
-                <div class="scene-part-label" id="scene-part-label"><span class="label-index">01</span><div><strong>CYLINDER HEAD</strong><small>4 × HEAD BOLTS</small></div></div>
-                <div class="direction-control"><div class="direction-label">RATCHET DIRECTION <span class="key">R</span></div><div class="direction-buttons"><button id="loosen-button" class="active" data-direction="loosen" title="Loosen bolts (R)"><svg class="icon"><use href="#i-undo"/></svg> LOOSEN</button><button id="tighten-button" data-direction="tighten" title="Tighten bolts (R)"><svg class="icon"><use href="#i-redo"/></svg> TIGHTEN</button></div></div>
-                <svg id="engine-svg" class="engine-svg" viewBox="120 95 660 450" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Interactive engine. Hold the left mouse button on an orange bolt to turn it."></svg>
-                <div class="scene-scale"><span></span><span></span><span></span><small>100 mm</small></div>
-                <div class="bolt-tray"><div><svg class="icon"><use href="#i-box"/></svg><span>BOLT TRAY</span><strong id="bolt-count">00</strong></div><div class="tray-bolts" id="tray-bolts"></div></div>
-                <div class="removed-parts" id="removed-parts"></div>
-                <div class="interaction-hint" id="interaction-hint"><span class="mouse-key"><svg class="icon"><use href="#i-mouse"/></svg></span><div><strong id="hint-title">A good rebuild starts with one bolt.</strong><span id="hint-text">Hold left click on an orange bolt to loosen it.</span></div><span class="hint-status" id="hint-status">HOLD, DON'T CLICK</span></div>
-                <div class="hold-progress"><div id="hold-progress-fill"></div></div>
-              </div>
-            </section>
-
-            <section class="toolbox" aria-label="Toolbox">
-              <div class="section-label"><span>YOUR TOOLBOX</span><small>THE RIGHT TOOL. THE RIGHT TURN.</small></div>
-              <div class="tool-grid">
-                <button class="tool active" id="tool-socket" data-tool="socket"><span class="tool-icon"><svg class="icon"><use href="#i-wrench"/></svg></span><div><strong>Socket wrench</strong><small>10 mm · hold to turn</small></div><span class="key">1</span></button>
-                <button class="tool" id="tool-inspect" data-tool="inspect"><span class="tool-icon"><svg class="icon"><use href="#i-search"/></svg></span><div><strong>Inspect</strong><small>Get a closer look</small></div><span class="key">2</span></button>
-                <button class="tool" data-action="shop"><span class="tool-icon"><svg class="icon"><use href="#i-box"/></svg></span><div><strong>Performance parts</strong><small>Build your powerband</small></div><span class="key">3</span></button>
-                <button class="tool" data-action="dyno"><span class="tool-icon"><svg class="icon"><use href="#i-gauge"/></svg></span><div><strong>Dyno & tune</strong><small>Let the numbers talk</small></div><span class="key">4</span></button>
-              </div>
-            </section>
-          </div>
-
-          <aside class="details-column" aria-label="Engine details and work order">
-            <section class="engine-status card">
-              <div class="section-label"><span>ON THE BENCH</span><span class="status-pill" id="engine-build">STOCK</span></div>
-              <div class="engine-title-row"><h2 id="selected-engine-name">SX 125 TBI</h2><span class="two-stroke-badge">2T</span></div>
-              <p class="engine-description" id="engine-description">Liquid cooled · Single cylinder · 6-speed</p>
-              <div class="engine-stats"><div><span>DISPLACEMENT</span><strong id="stat-cc">124.8 <small>cc</small></strong></div><div><span>EST. POWER</span><strong id="stat-power">28.2 <small>hp</small></strong></div><div><span>REDLINE</span><strong id="stat-rpm">11.8 <small>k</small></strong></div></div>
-              <div class="health-label"><span><i></i> ENGINE CONDITION</span><strong id="health-value">62<span>%</span></strong></div><div class="health-meter" id="health-meter"><span></span></div>
-            </section>
-            <section class="work-order card" id="work-order"></section>
-            <button class="upgrade-banner" data-action="shop"><span class="upgrade-icon"><svg class="icon"><use href="#i-bolt"/></svg></span><span><strong>STOCK IS JUST THE START.</strong><small>Explore performance parts</small></span><svg class="icon"><use href="#i-arrow"/></svg></button>
-          </aside>
-        </div>
-        <footer class="page-footer"><span><i></i> YOUR PROGRESS IS SAVED AUTOMATICALLY</span><span><kbd>R</kbd> Change direction <b>·</b> <kbd>1–4</kbd> Tools <b>·</b> <kbd>?</kbd> Help</span><span>BUILT FOR THE TWO-STROKE SOUL.</span></footer>
-      </main>
-    </div>
-  </div>
-  <div class="toast-container" id="toast-container" aria-live="polite"></div>
-  <div class="modal-layer" id="modal-layer" hidden><div class="modal-backdrop" data-action="close-modal"></div><section class="modal-dialog" id="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1"></section></div>
-  <script src="game.js"></script>
-</body>
-</html>
-
-
-
---------------------------------------------------------------------------------
-FILE: styles.css
---------------------------------------------------------------------------------
-
-:root{--bg:#101214;--surface:#181b1e;--surface-light:#202427;--panel:#1b1e21;--line:#303438;--line-soft:#292d30;--text:#edece7;--muted:#858b90;--dim:#5e666c;--orange:#ff7950;--orange-bright:#ff8c61;--green:#b5d895;--font:'Barlow',Arial,sans-serif;--display:'Barlow Condensed','Arial Narrow',sans-serif;--mono:'DejaVu Sans Mono',Consolas,monospace}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;-webkit-font-smoothing:antialiased}button,a,input{-webkit-tap-highlight-color:transparent}button{font-family:inherit;color:inherit;cursor:pointer}button{border:0;background:none}button:disabled{cursor:not-allowed;opacity:.45}button:focus-visible,a:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--orange);outline-offset:4px}button:not(:disabled){transition:background .18s,color .18s,border-color .18s,transform .18s}button:active:not(:disabled){transform:translateY(1px)}a{color:inherit;text-decoration:none}.icon{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}.svg-library{position:absolute;width:0;height:0;overflow:hidden}.app-shell{display:grid;grid-template-columns:76px minmax(0,1fr);min-height:100vh}.rail{background:#17191c;border-right:1px solid var(--line-soft);display:flex;align-items:center;flex-direction:column;position:sticky;top:0;height:100vh;z-index:20}.rail-logo{width:43px;height:47px;position:relative;display:grid;place-items:center;background:var(--orange);border-radius:4px;color:#1a1c1c;margin:20px 0 28px;box-shadow:0 0 24px #ff795008}.rail-logo .icon{width:26px;height:26px;transform:rotate(-28deg);stroke-width:1.9}.rail-logo>span{font:700 11px var(--display);position:absolute;bottom:2px;right:3px}.rail-nav{display:flex;flex-direction:column;gap:12px;width:100%;align-items:center}.rail-button{width:57px;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#777f84;position:relative;border-radius:5px}.rail-button>span{font-size:8px;font-weight:600;letter-spacing:1px}.rail-button .icon{width:22px;height:22px}.rail-button:hover{background:#ffffff05;color:var(--text)}.rail-button.active{color:var(--orange);background:#ff79500d}.rail-button.active:before{content:'';position:absolute;left:-10px;top:15px;bottom:15px;width:2px;background:var(--orange);border-radius:0 3px 3px 0}.rail-bottom{margin-top:auto;display:flex;align-items:center;flex-direction:column;gap:14px;padding-bottom:21px}.rail-line{width:24px;height:1px;background:var(--line)}.rail-bottom .rail-button{min-height:35px}.rail-build{font-size:10px;color:#555c62;letter-spacing:1px}.app-body{min-width:0}.topbar{height:79px;display:flex;align-items:center;gap:25px;padding:0 30px;border-bottom:1px solid var(--line-soft);background:#151719}.wordmark{font-family:var(--display);font-weight:800;font-size:25px;font-style:italic;line-height:.9;letter-spacing:.6px;white-space:nowrap}.wordmark>span{color:var(--orange)}.wordmark small{display:block;font:500 8px var(--font);font-style:normal;letter-spacing:2.3px;margin-top:7px;color:#8e9292}.header-separator{height:27px;width:1px;background:var(--line)}.breadcrumb{font-size:10px;font-weight:500;letter-spacing:1.4px;display:flex;gap:15px;color:var(--muted)}.breadcrumb span{color:#4b5157}.breadcrumb strong{color:#c1c4c2;font-weight:500}.topbar-right{margin-left:auto;display:flex;align-items:center;gap:27px}.local-save{font-size:9px;letter-spacing:1.3px;color:#7d8486;display:flex;align-items:center;gap:7px}.local-save i,.page-footer i{width:5px;height:5px;border-radius:50%;background:#98b782}.player{display:flex;align-items:center;gap:10px}.player-avatar{display:grid;place-items:center;width:33px;height:33px;background:#2a2e2e;border:1px solid #414641;transform:rotate(-3deg);border-radius:3px;font:600 17px var(--display);color:#c3c8b9}.player strong{font-size:10px;letter-spacing:.8px;font-weight:600;display:block}.player small{font-size:9px;color:#81878a;display:block;letter-spacing:.6px;margin-top:4px}.player small span{padding:0 3px;color:#4f595e}.wallet{background:#242522;border:1px solid #3b3c33;border-radius:5px;padding:10px 13px;display:flex;align-items:center;gap:8px}.wallet .icon{width:18px;height:18px;color:#d8c59a}.wallet strong{font-size:15px;font-weight:600;letter-spacing:.2px}.wallet small{font-size:8px;color:#a49d86;align-self:center;letter-spacing:1px}main{padding:25px 30px 0;max-width:1770px;margin:auto}.page-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:23px}.eyebrow{display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:1.7px;font-weight:600;color:#a6aaa6;margin:0 0 8px}.eyebrow>span{background:var(--orange);height:5px;width:5px;transform:rotate(45deg)}h1{font-family:var(--display);font-size:36px;line-height:1;font-weight:600;letter-spacing:.2px;margin:0}h1>span{color:#929797}.text-button{display:flex;align-items:center;gap:8px;color:#a7adad;font-size:12px;padding:10px 0 10px 10px}.text-button .icon{width:16px;height:16px;color:#7e878a}.text-button:hover{color:var(--orange)}.key,kbd{font:500 9px var(--font);border:1px solid #41474b;background:#ffffff04;padding:3px 5px;line-height:1;border-radius:3px;color:#939b9d;min-width:16px;text-align:center}.text-button .key{margin-lef--
