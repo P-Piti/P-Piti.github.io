@@ -662,6 +662,55 @@ body.touch .touch-controls{display:flex}
   .hud-map .hm-badge{display:none}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* ===================== MANUAL WORKBENCH ===================== */
+#screen-bench .bench-wrap { display:grid; grid-template-columns: minmax(0,1.42fr) minmax(300px,.88fr); gap:16px; align-items:start; }
+.bench-stage { position:relative; border:1px solid var(--line); border-radius:14px; overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 0%, #232a2b 0%, #171c1d 55%, #101415 100%); }
+.bench-stage svg.bench-art { display:block; width:100%; height:auto; }
+.bench-badge { position:absolute; top:10px; left:12px; display:flex; gap:6px; align-items:center;
+  font:700 9px/1 ui-monospace,monospace; letter-spacing:.14em; text-transform:uppercase;
+  color:#0d1110; background:var(--lime); padding:5px 8px; border-radius:5px; }
+.bench-temp { position:absolute; top:10px; right:12px; font:700 10px ui-monospace,monospace;
+  color:#cfe6d8; background:#0d1210aa; border:1px solid var(--line); padding:5px 8px; border-radius:5px; }
+.bench-tool-tip { position:absolute; left:12px; bottom:12px; right:12px; font:600 11px/1.45 ui-monospace,monospace;
+  color:#d8e4dc; background:#0b0f0ecc; border-left:3px solid var(--lime); padding:8px 10px; border-radius:4px; }
+.bench-panel { border:1px solid var(--line); border-radius:14px; background:var(--panel); overflow:hidden; }
+.bench-panel-head { padding:12px 14px; border-bottom:1px solid var(--line); background:#0f1413; }
+.bench-panel-head h2 { margin:0 0 3px; font-size:15px; letter-spacing:-.01em; }
+.bench-panel-head p { margin:0; color:var(--muted); font-size:11px; }
+.bench-steps { padding:8px; display:flex; flex-direction:column; gap:4px; max-height:340px; overflow:auto; }
+.bstep { display:grid; grid-template-columns:20px minmax(0,1fr) auto; gap:8px; align-items:center;
+  padding:7px 9px; border-radius:8px; border:1px solid transparent; font-size:11.5px; color:var(--muted); }
+.bstep .bnum { display:grid; place-items:center; width:18px; height:18px; border-radius:50%;
+  font:700 9px ui-monospace,monospace; border:1px solid var(--line); color:var(--muted); }
+.bstep.done { color:#9dbfa9; }
+.bstep.done .bnum { background:var(--lime); color:#0c120f; border-color:var(--lime); }
+.bstep.current { color:#f1f7f2; background:#182120; border-color:#2d3d36; }
+.bstep.current .bnum { background:#ffcf5c; color:#12160f; border-color:#ffcf5c; }
+.bstep .bmeta { font:600 9px ui-monospace,monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); }
+.bstep.current .bmeta { color:#ffcf5c; }
+.bench-actions { padding:10px 12px; border-top:1px solid var(--line); display:flex; gap:8px; flex-wrap:wrap; }
+.bench-actions .btn { flex:1; justify-content:center; }
+.bench-prog { height:5px; background:#0b0f0e; border-top:1px solid var(--line); }
+.bench-prog i { display:block; height:100%; background:linear-gradient(90deg,var(--lime),#8fdcc0); transition:width .18s ease; }
+.bench-timer { display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid var(--line);
+  background:#131a18; font:700 11px ui-monospace,monospace; color:#ffcf5c; }
+.bench-timer .ring { width:26px; height:26px; border-radius:50%; border:3px solid #2b3a34; border-top-color:#ffcf5c;
+  animation:bspin .9s linear infinite; }
+@keyframes bspin { to { transform:rotate(360deg); } }
+.bench-timer.done { color:var(--lime); }
+.bench-timer.done .ring { border-color:var(--lime); animation:none; }
+@media (max-width:860px) { #screen-bench .bench-wrap { grid-template-columns:1fr; } }
+
+/* --------- live canvas overlays for the manual work --------- */
+#benchCv { display:block; width:100%; height:auto; background:#121717; }
+.bench-hotspot { position:absolute; transform:translate(-50%,-50%); padding:4px 9px; border-radius:20px;
+  font:800 10px/1 ui-monospace,monospace; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
+  color:#0d1210; background:var(--lime); border:0; box-shadow:0 0 0 3px #c8f04e33, 0 6px 16px #0008;
+  animation:hspot 1.6s ease-in-out infinite; white-space:nowrap; }
+@keyframes hspot { 0%,100% { transform:translate(-50%,-50%) scale(1); } 50% { transform:translate(-50%,-50%) scale(1.07); } }
+
 </style>
 </head>
 <body>
@@ -725,7 +774,8 @@ body.touch .touch-controls{display:flex}
   <nav class="mainnav" aria-label="Main">
     <button class="navbtn active" data-screen="garage"><svg><use href="#i-bike"/></svg>Garage</button>
     <button class="navbtn" data-screen="maps"><svg><use href="#i-mountain"/></svg>Ride</button>
-    <button class="navbtn" data-screen="store"><svg><use href="#i-cart"/></svg>Parts Store</button>
+    <button class="navbtn" data-screen="bench"><svg><use href="#i-wrench"/></svg>Bench</button>
+    <button class="navbtn" data-screen="store"><svg><use href="#i-wrench"/></svg>Parts</button>
     <button class="navbtn" data-screen="market"><svg><use href="#i-shop"/></svg>Market</button>
   </nav>
   <span class="topspacer"></span>
@@ -799,6 +849,40 @@ body.touch .touch-controls{display:flex}
 </section>
 
 <!-- ================= MAPS ================= -->
+<section class="screen" id="screen-bench">
+  <div class="screen-head">
+    <div>
+      <div class="eyebrow">Workshop · manual labour</div>
+      <h1>The bench<span class="thin">.</span></h1>
+      <p class="screen-sub">No service-all button here. Every job is done by hand, bolt by bolt — drain, wait, refill, torque.
+        <span class="kbd-hint">Click the highlighted part, then follow each step.</span></p>
+    </div>
+    <div class="head-actions">
+      <button class="btn" data-go="garage"><svg><use href="#i-bike"/></svg>Back to garage</button>
+    </div>
+  </div>
+  <div class="bench-wrap">
+    <div class="bench-stage" id="benchStage">
+      <canvas id="benchCv" width="900" height="470"></canvas>
+      <div class="bench-badge" id="benchBadge">Bay 1</div>
+      <div class="bench-temp" id="benchTemp">—</div>
+      <div class="bench-tool-tip" id="benchTip">Pick a part to work on.</div>
+    </div>
+    <div class="bench-panel">
+      <div class="bench-panel-head">
+        <h2 id="benchTitle">Nothing on the stand</h2>
+        <p id="benchSub">Choose a job from the list in the garage, or pick a part on the bike.</p>
+      </div>
+      <div class="bench-prog"><i id="benchProg" style="width:0%"></i></div>
+      <div class="bench-steps" id="benchSteps"></div>
+      <div class="bench-timer" id="benchTimer" style="display:none"><span class="ring"></span><span id="benchTimerTxt">Working…</span></div>
+      <div class="bench-actions" id="benchActions">
+        <button class="btn btn-ghost" data-bench-abort>Leave the bench</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="screen" id="screen-maps">
   <div class="screen-head">
     <div>
@@ -1130,50 +1214,77 @@ function partOption(partKey, optionId) {
 /* ------------------------- bike models ------------------------- */
 const MODELS = [
   { id: "velocita", name: "Velocita 50", sub: "Moped · 49 cc", cls: "moped", style: "moped",
+    engine: { stroke: 2, fuel: "carb", oilFilter: false, valves: 0 },
     cc: 49, hp: 3.1, top: 48, accel: 2.7, price: 880, rep: 0, weight: 76, wheelbase: 1.16, wheel: 0.29,
     paint: { body: "#e8563c", accent: "#f6e8cc", frame: "#2b302d", rim: "#c8cfc6", seat: "#20251f" },
     tire: "street", tagline: "Cheap thrills, cheaper repairs. Everybody starts here." },
   { id: "komar", name: "Komar 2352", sub: "Moped · 49 cc", cls: "moped", style: "moped",
+    engine: { stroke: 2, fuel: "carb", oilFilter: false, valves: 0 },
     cc: 49, hp: 2.6, top: 52, accel: 2.5, price: 990, rep: 0, weight: 68, wheelbase: 1.14, wheel: 0.27,
     paint: { body: "#d9b44a", accent: "#2a2f2b", frame: "#20251f", rim: "#b7bdb4", seat: "#1a1e1a" },
     tire: "enduro", tagline: "A shed-built classic. Slow, loud, and impossible not to love." },
   { id: "puch", name: "Puch Maxi S", sub: "Moped · 49 cc", cls: "moped", style: "moped",
+    engine: { stroke: 2, fuel: "carb", oilFilter: false, valves: 0 },
     cc: 49, hp: 3.4, top: 55, accel: 2.8, price: 1150, rep: 0, weight: 72, wheelbase: 1.18, wheel: 0.28,
     paint: { body: "#e9a13b", accent: "#f2efe2", frame: "#333833", rim: "#cbd0c7", seat: "#242822" },
     tire: "street", tagline: "The orange icon. Wheelie it, thrash it, fix it with a hammer." },
   { id: "simson", name: "Simson S51 Enduro", sub: "Moped enduro · 49 cc", cls: "moped", style: "dual",
+    engine: { stroke: 2, fuel: "carb", oilFilter: false, valves: 0 },
     cc: 49, hp: 3.8, top: 65, accel: 3.1, price: 1650, rep: 1, weight: 82, wheelbase: 1.26, wheel: 0.31,
     paint: { body: "#5f8f6b", accent: "#e9e2c9", frame: "#2a2f2b", rim: "#d2d6cc", seat: "#1d211d" },
     tire: "trail", tagline: "Two-stroke enduro moped: light, bouncy, and above all cheap to fix." },
   { id: "rook", name: "Rook 125 Enduro", sub: "Trail bike · 124 cc", cls: "dirt", style: "dirt",
+    engine: { stroke: 4, fuel: "carb", oilFilter: true, valves: 2 },
     cc: 124, hp: 13, top: 96, accel: 4.6, price: 3100, rep: 2, weight: 108, wheelbase: 1.36, wheel: 0.34,
     paint: { body: "#d94a35", accent: "#f4efe0", frame: "#2b2f2c", rim: "#c9cfc5", seat: "#1b1f1b" },
     tire: "trail", tagline: "The gateway dirtbike. Loves a wheelie, eats chains for breakfast." },
   { id: "hornet", name: "Hornet 250 MX", sub: "Motocross · 249 cc", cls: "dirt", style: "dirt",
+    engine: { stroke: 2, fuel: "carb", oilFilter: false, valves: 0 },
     cc: 249, hp: 34, top: 108, accel: 6.1, price: 4900, rep: 6, weight: 104, wheelbase: 1.42, wheel: 0.35,
     paint: { body: "#f3c531", accent: "#22262a", frame: "#1e2220", rim: "#d3d8cf", seat: "#15181a" },
     tire: "hard", tagline: "Track weapon. All top-end, no manners, brutal on the clutch." },
   { id: "emerald", name: "Emerald 250 Dual", sub: "Dual-sport · 249 cc", cls: "dual", style: "dual",
+    engine: { stroke: 4, fuel: "efi", oilFilter: true, valves: 4 },
     cc: 249, hp: 27, top: 122, accel: 5.3, price: 5600, rep: 8, weight: 138, wheelbase: 1.44, wheel: 0.33,
     paint: { body: "#4f9a7d", accent: "#eef0e4", frame: "#2a2f2b", rim: "#c6cec4", seat: "#191d1a" },
     tire: "dot", tagline: "Commute all week, hit the trails at the weekend. Does both, forgets neither." },
   { id: "kestrel", name: "Kestrel 300 Smoker", sub: "2-stroke enduro · 293 cc", cls: "dirt", style: "dirt",
+    engine: { stroke: 2, fuel: "carb", oilFilter: false, valves: 0 },
     cc: 293, hp: 46, top: 131, accel: 7.0, price: 8400, rep: 12, weight: 112, wheelbase: 1.47, wheel: 0.35,
     paint: { body: "#f0f2e6", accent: "#c9462f", frame: "#2a2e2a", rim: "#cfd5cb", seat: "#1b1f1b" },
     tire: "enduro", tagline: "Expansion chamber, instant power, wheelie lever installed at birth." },
+  { id: "striker250f", name: "Striker 250F EFI", sub: "Motocross · 249 cc 4-stroke EFI", cls: "dirt", style: "dirt",
+    engine: { stroke: 4, fuel: "efi", oilFilter: true, valves: 4 },
+    cc: 249, hp: 39, top: 112, accel: 6.4, price: 6900, rep: 9, weight: 106, wheelbase: 1.44, wheel: 0.35,
+    paint: { body: "#2b7fd4", accent: "#eef3f7", frame: "#20262c", rim: "#d2d8de", seat: "#14181c" },
+    tire: "hard", tagline: "Fuel-injected 250F motocrosser. Crisp throttle, high-strung top end, and electronics to keep clean." },
+  { id: "brawler250", name: "Brawler 250F Carb", sub: "Motocross · 249 cc 4-stroke carb", cls: "dirt", style: "dirt",
+    engine: { stroke: 4, fuel: "carb", oilFilter: true, valves: 4 },
+    cc: 249, hp: 36, top: 110, accel: 6.1, price: 5200, rep: 4, weight: 109, wheelbase: 1.44, wheel: 0.35,
+    paint: { body: "#e0532f", accent: "#f6e9d4", frame: "#26241f", rim: "#cfd3c8", seat: "#191713" },
+    tire: "hard", tagline: "Carbureted 250F. Slightly softer off the bottom, simple to wrench, no electronics to trust." },
+  { id: "wasp125", name: "Wasp 125 Smoker", sub: "Motocross · 124 cc 2-stroke EFI", cls: "dirt", style: "dirt",
+    engine: { stroke: 2, fuel: "efi", oilFilter: false, valves: 0 },
+    cc: 124, hp: 24, top: 98, accel: 5.4, price: 4300, rep: 3, weight: 94, wheelbase: 1.4, wheel: 0.34,
+    paint: { body: "#f2c62e", accent: "#20262a", frame: "#22282a", rim: "#d6dbd2", seat: "#131718" },
+    tire: "hard", tagline: "Fuel-injected 125 two-stroke. Featherweight and frantic — the expansion chamber does the talking." },
   { id: "trail660", name: "Trail 660 ADV", sub: "Adventure · 660 cc", cls: "dual", style: "rally",
+    engine: { stroke: 4, fuel: "efi", oilFilter: true, valves: 4 },
     cc: 660, hp: 48, top: 158, accel: 6.4, price: 7900, rep: 15, weight: 196, wheelbase: 1.51, wheel: 0.34,
     paint: { body: "#d9dee2", accent: "#2c6ea0", frame: "#2c3230", rim: "#b9c1bd", seat: "#1d2220" },
     tire: "enduro", tagline: "A loaded mule that thinks it's a dirtbike. Wind protection and all." },
   { id: "badlands", name: "Badlands 450 Rally", sub: "Rally · 449 cc", cls: "rally", style: "rally",
+    engine: { stroke: 4, fuel: "efi", oilFilter: true, valves: 4 },
     cc: 449, hp: 61, top: 168, accel: 7.6, price: 14500, rep: 26, weight: 148, wheelbase: 1.5, wheel: 0.36,
     paint: { body: "#e6702f", accent: "#f1ece0", frame: "#252a26", rim: "#cfd3c9", seat: "#15191a" },
     tire: "enduro", tagline: "Built for the longest map, the worst weather, the biggest jumps." },
   { id: "zephyr", name: "Zephyr 750 Street", sub: "Street · 749 cc", cls: "street", style: "street",
+    engine: { stroke: 4, fuel: "efi", oilFilter: true, valves: 16 },
     cc: 749, hp: 78, top: 186, accel: 8.2, price: 9800, rep: 20, weight: 190, wheelbase: 1.44, wheel: 0.32,
     paint: { body: "#3d4148", accent: "#c7d4e2", frame: "#1f2426", rim: "#9fa8ad", seat: "#16191b" },
     tire: "street", tagline: "Wet-road scalpel. Street tires only — the mud will simply take it." },
   { id: "sabre", name: "Sabre 1000 RR", sub: "Superbike · 998 cc", cls: "street", style: "street",
+    engine: { stroke: 4, fuel: "efi", oilFilter: true, valves: 16 },
     cc: 998, hp: 138, top: 214, accel: 9.9, price: 16500, rep: 40, weight: 178, wheelbase: 1.42, wheel: 0.32,
     paint: { body: "#b8352c", accent: "#f3f0e6", frame: "#22262a", rim: "#c8cecb", seat: "#14171a" },
     tire: "street", tagline: "Absurd speed, absurd tire bills. Wheelies in fourth gear, if you dare." }
@@ -1500,236 +1611,357 @@ function sellBike(bikeId, mode) {
 /* =====================================================================
    PROCEDURAL BIKE ART (side view, SVG)
    ===================================================================== */
+/* =====================================================================
+   PROCEDURAL BIKE ART (side view, SVG)
+   Every model gets a silhouette that matches the real machine its name
+   points at: step-through mopeds, 2-stroke MX screamers, 4-stroke MX,
+   dual-sport, rally tower, naked street and faired superbike.
+   ===================================================================== */
+
+/* ---- helper: gradient + text defs shared by all art ---- */
+function artDefs(uid, paint) {
+  return `
+    <linearGradient id="${uid}_lamp" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffbe8"/><stop offset=".55" stop-color="#ffe9b4"/><stop offset="1" stop-color="#d7a95d"/>
+    </linearGradient>
+    <linearGradient id="${uid}_body" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="${paint.body}" stop-opacity="1"/>
+      <stop offset=".55" stop-color="${paint.body}"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".42"/>
+    </linearGradient>
+    <linearGradient id="${uid}_metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef2f0"/><stop offset=".45" stop-color="#b6bfbb"/><stop offset="1" stop-color="#6e7873"/>
+    </linearGradient>
+    <linearGradient id="${uid}_pipe" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2d9a4"/><stop offset=".35" stop-color="#b9985f"/><stop offset=".7" stop-color="#8a7550"/><stop offset="1" stop-color="#5b4d35"/>
+    </linearGradient>
+    <linearGradient id="${uid}_seat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${paint.seat}"/><stop offset="1" stop-color="#05070a" stop-opacity=".85"/>
+    </linearGradient>
+    <radialGradient id="${uid}_glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="${paint.accent}" stop-opacity=".22"/><stop offset="1" stop-color="${paint.accent}" stop-opacity="0"/>
+    </radialGradient>`;
+}
+
+/* ---- wheel with optional spoked / cast rim, knobs, disc and hub ---- */
 function wheelArt(cx, cy, r, paint, opts = {}) {
-  const { knobby = false, front = false, alloy = false, disc = false } = opts;
-  let knobs = "";
+  const { knobby = false, alloy = false, disc = false, spoked = true, knobs = 18, tread = "street" } = opts;
+  const dark = "#121513", rimMetal = paint.rim || "#c8cfc6";
+  let knobChunk = "";
   if (knobby) {
-    for (let i = 0; i < 18; i++) {
-      const a = (i / 18) * Math.PI * 2;
-      const x1 = cx + Math.cos(a) * (r + 2), y1 = cy + Math.sin(a) * (r + 2);
-      const x2 = cx + Math.cos(a) * (r + 5.5), y2 = cy + Math.sin(a) * (r + 5.5);
-      knobs += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#15171a" stroke-width="3.4" stroke-linecap="round"/>`;
+    for (let i = 0; i < knobs; i++) {
+      const a = (i / knobs) * Math.PI * 2;
+      const r1 = r + 1.2, r2 = r + 5.8;
+      knobChunk += `<line x1="${(cx + Math.cos(a) * r1).toFixed(1)}" y1="${(cy + Math.sin(a) * r1).toFixed(1)}" x2="${(cx + Math.cos(a) * r2).toFixed(1)}" y2="${(cy + Math.sin(a) * r2).toFixed(1)}" stroke="#0d0f0e" stroke-width="4.2" stroke-linecap="round" transform="rotate(${(a * 57.3).toFixed(0)} ${(cx + Math.cos(a) * r1).toFixed(1)} ${(cy + Math.sin(a) * r1).toFixed(1)})"/>`;
     }
   }
   let spokes = "";
-  const n = alloy ? 6 : 9;
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + 0.2;
-    spokes += `<line x1="${(cx + Math.cos(a) * r * 0.18).toFixed(1)}" y1="${(cy + Math.sin(a) * r * 0.18).toFixed(1)}" x2="${(cx + Math.cos(a) * r * 0.66).toFixed(1)}" y2="${(cy + Math.sin(a) * r * 0.66).toFixed(1)}" stroke="${paint.rim}" stroke-width="${alloy ? 3.4 : 1.7}" stroke-linecap="round" opacity="${alloy ? .95 : .8}"/>`;
+  if (alloy) {
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 + 0.3;
+      const a2 = a + 0.42;
+      const rOut = r * 0.7;
+      spokes += `<path d="M${cx + Math.cos(a) * r * 0.12} ${cy + Math.sin(a) * r * 0.12} L${cx + Math.cos(a) * rOut} ${cy + Math.sin(a) * rOut} L${cx + Math.cos(a2) * rOut} ${cy + Math.sin(a2) * rOut} Z" fill="${rimMetal}" opacity=".92"/>`;
+    }
+  } else if (spoked) {
+    const n = 16;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      spokes += `<line x1="${cx + Math.cos(a) * (r * 0.14)}" y1="${cy + Math.sin(a) * (r * 0.14)}" x2="${cx + Math.cos(a) * (r * 0.78)}" y2="${cy + Math.sin(a) * (r * 0.78)}" stroke="#9aa39c" stroke-width="1.15" opacity=".85"/>`;
+    }
   }
   return `
-    <circle cx="${cx}" cy="${cy}" r="${(r + 3.6).toFixed(1)}" fill="#0a0d0c" opacity=".35"/>
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#15181a" stroke-width="${(r * 0.27).toFixed(1)}"/>
-    <circle cx="${cx}" cy="${cy}" r="${(r * 0.855).toFixed(1)}" fill="none" stroke="#242a26" stroke-width="1.2"/>
-    ${knobs}
-    <circle cx="${cx}" cy="${cy}" r="${(r * 0.64).toFixed(1)}" fill="none" stroke="${paint.rim}" stroke-width="${alloy ? 4 : 2.4}" opacity=".9"/>
+    <circle cx="${cx}" cy="${cy}" r="${(r + 4).toFixed(1)}" fill="#050706aa"/>
+    <circle cx="${cx}" cy="${cy}" r="${(r + 0.8).toFixed(1)}" fill="none" stroke="#0b0d0c" stroke-width="${(r * 0.3).toFixed(1)}"/>
+    <circle cx="${cx}" cy="${cy}" r="${(r * 0.845).toFixed(1)}" fill="none" stroke="#2c3330" stroke-width="1.4" opacity=".9"/>
+    ${knobChunk}
+    <circle cx="${cx}" cy="${cy}" r="${(r * 0.795).toFixed(1)}" fill="none" stroke="${paint.rim}" stroke-width="2.6" opacity=".95"/>
     ${spokes}
-    <circle cx="${cx}" cy="${cy}" r="${(r * 0.16).toFixed(1)}" fill="#3a423c" stroke="${paint.rim}" stroke-width="1.4"/>
-    ${disc ? `<circle cx="${cx}" cy="${cy}" r="${(r * 0.44).toFixed(1)}" fill="none" stroke="#8f9a94" stroke-width="2.6" stroke-dasharray="3 2.4" opacity=".85"/>` : ""}
-    ${front ? `<circle cx="${cx}" cy="${cy}" r="${(r * 0.44).toFixed(1)}" fill="none" stroke="#77837d" stroke-width="1"/>` : ""}`;
+    ${disc ? `<circle cx="${cx}" cy="${cy}" r="${(r * 0.5).toFixed(1)}" fill="none" stroke="#98a39d" stroke-width="2.2" stroke-dasharray="3.4 2.6" opacity=".8"/>
+      <circle cx="${cx}" cy="${cy}" r="${(r * 0.32).toFixed(1)}" fill="none" stroke="#7a8580" stroke-width="1" opacity=".6"/>` : ""}
+    <circle cx="${cx}" cy="${cy}" r="${(r * 0.15).toFixed(1)}" fill="#4a534d" stroke="#2a312d" stroke-width="1.5"/>
+    <circle cx="${cx}" cy="${cy}" r="${(r * 0.09).toFixed(1)}" fill="#1d2320"/>`;
 }
 
 function shadowArt(cy) {
-  return `<ellipse cx="200" cy="${cy + 26}" rx="152" ry="9" fill="#000" opacity=".38"/>
-          <ellipse cx="200" cy="${cy + 26}" rx="96" ry="5" fill="#000" opacity=".3"/>`;
+  return `<ellipse cx="200" cy="${cy + 24}" rx="150" ry="8" fill="#000" opacity=".36"/>
+          <ellipse cx="200" cy="${cy + 23}" rx="96" ry="4.6" fill="#000" opacity=".26"/>`;
 }
 
-function engineArt(x, y, paint, scale = 1, fin = true) {
-  let fins = "";
-  if (fin) for (let i = 0; i < 4; i++) {
-    fins += `<line x1="${x + 4}" y1="${y + 5 + i * 5}" x2="${x + 26}" y2="${y + 5 + i * 5}" stroke="#0e1110" stroke-width="1.6" opacity=".55"/>`;
+/* ---- engine block: finned for air-cooled 2-strokes, cases+clutch cover for 4t ---- */
+function engineArt(x, y, paint, o = {}) {
+  const { scale = 1, fins = true, efi = false, stroke = 4, tilt = 0 } = o;
+  const finLines = [];
+  if (fins) {
+    for (let i = 0; i < 5; i++) finLines.push(`<line x1="3" y1="${4 + i * 5}" x2="30" y2="${4 + i * 5}" stroke="#0b0e0c" stroke-width="1.5" opacity=".55"/>`);
   }
-  return `<g transform="translate(${x} ${y}) scale(${scale})">
-    <rect x="0" y="0" width="34" height="27" rx="4" fill="#2a2f2b" stroke="#171b18" stroke-width="1.6"/>
-    <rect x="5" y="-7" width="22" height="9" rx="2.5" fill="#343a34" stroke="#171b18" stroke-width="1.4"/>
-    ${fins}
-    <circle cx="12" cy="14" r="4.6" fill="#3e463e" stroke="#151816" stroke-width="1.3"/>
-    <circle cx="12" cy="14" r="1.6" fill="#1a1e1a"/>
-    <rect x="25" y="19" width="7" height="7" rx="1.5" fill="#1d211d"/>
+  return `<g transform="translate(${x} ${y}) scale(${scale}) rotate(${tilt})">
+    <path d="M2 1 L30 1 L33 10 L33 24 L24 29 L2 26 Z" fill="#2a302c" stroke="#141815" stroke-width="1.5"/>
+    <rect x="5" y="-8" width="23" height="10" rx="2.4" fill="#353d37" stroke="#141815" stroke-width="1.3"/>
+    ${fins ? `<rect x="3" y="2" width="28" height="27" rx="1.5" fill="#303733" opacity=".9"/>${finLines.join("")}` : ""}
+    <circle cx="12" cy="14" r="5.4" fill="#454e47" stroke="#111513" stroke-width="1.3"/>
+    <circle cx="12" cy="14" r="1.9" fill="#1a1f1b"/>
+    <circle cx="25" cy="19" r="4.2" fill="#3b433d" stroke="#111513" stroke-width="1.1"/>
+    <path d="M24 15.6 L28.4 19 L24 22.4 Z" fill="#252b26"/>
+    <rect x="26" y="24" width="7" height="6" rx="1.4" fill="#1e241f"/>
+    ${efi ? `<g><rect x="-2" y="9" width="4" height="9" rx="1" fill="#5b6a63" stroke="#141815" stroke-width=".8"/>
+      <path d="M0 12 h-5" stroke="#8fa09a" stroke-width="1.4"/>
+      <circle cx="-2" cy="21" r="2.2" fill="#b7c6bf" stroke="#2c3530" stroke-width=".7"/>
+      <path d="M-3.4 21 h2.8 M-2 19.6 v2.8" stroke="#2c3530" stroke-width=".7"/></g>` : ``}
+    ${stroke === 2 ? `<path d="M15 -8 L15 -13 h5" stroke="#4a544c" stroke-width="2" fill="none"/>` : `<path d="M13 -8 L13 -14 h7 l-1 4" stroke="#4a544c" stroke-width="1.7" fill="none" opacity=".8"/>`}
   </g>`;
 }
 
-function exhaustArt(points, thick = 5.4, color = "#9aa4a1") {
+/* ---- exhaust: 2-stroke expansion chamber or 4-stroke header+can ---- */
+function exhaustArt(points, thick = 5.4, kind = "four", o = {}) {
   const d = points.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" ");
-  return `<path d="${d}" fill="none" stroke="#2b302c" stroke-width="${thick + 3.4}" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="${d}" fill="none" stroke="${color}" stroke-width="${thick}" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="${d}" fill="none" stroke="#ffffff" stroke-width="1.1" stroke-linecap="round" opacity=".22"/>`;
+  if (kind === "two") {
+    // expansion chamber: fat middle, thin stinger
+    const [a, b, c, e] = points;
+    return `<path d="${d}" fill="none" stroke="#2a302c" stroke-width="${thick + 3}" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M${a[0]} ${a[1]} Q ${(a[0] + b[0]) / 2} ${a[1] - 9} ${b[0]} ${b[1]} Q ${(b[0] + c[0]) / 2} ${b[1] - 3} ${c[0]} ${c[1]}" fill="none" stroke="url(#PIPE_TMP)" stroke-width="${thick + 1.4}" stroke-linecap="round"/>
+      <path d="${d}" fill="none" stroke="#ffffff" stroke-width="1.2" opacity=".18"/>`;
+  }
+  return `<path d="${d}" fill="none" stroke="#2a302c" stroke-width="${thick + 2.8}" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${d}" fill="none" stroke="#aab3ae" stroke-width="${thick}" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${d}" fill="none" stroke="#ffffff" stroke-width="1.1" stroke-linecap="round" opacity=".22"/>
+    ${o.can !== false ? `<rect x="${points[points.length - 1][0] - 4}" y="${points[points.length - 1][1] - 6}" width="26" height="12" rx="6" fill="#9fa8a2" stroke="#2b302c" stroke-width="1.3"/>
+      <rect x="${points[points.length - 1][0] + 14}" y="${points[points.length - 1][1] - 4}" width="7" height="8" rx="2.5" fill="#6b756f"/>` : ""}`;
 }
 
+/* ---- common small hardware ---- */
+function boltHead(x, y, r = 3) {
+  return `<circle cx="${x}" cy="${y}" r="${r}" fill="#8f9a94" stroke="#4a534d" stroke-width=".8"/><path d="M${x - r * .55} ${y} h${r * 1.1} M${x} ${y - r * .55} v${r * 1.1}" stroke="#4a534d" stroke-width=".7"/>`;
+}
+function brakeDiscFront(x, y, r) {
+  return `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#98a39d" stroke-width="2.2" stroke-dasharray="3.4 2.6" opacity=".8"/>
+    <circle cx="${x}" cy="${y}" r="${r * .62}" fill="none" stroke="#7a8580" stroke-width="1" opacity=".55"/>`;
+}
+function shockArt(x1, y1, x2, y2, color = "#c9a24a") {
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#3a423c" stroke-width="6" stroke-linecap="round"/>
+    <line x1="${mx - 3}" y1="${my - 2}" x2="${mx + 3}" y2="${my + 2}" stroke="${color}" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="${x1}" cy="${y1}" r="2.4" fill="#6b756f"/><circle cx="${x2}" cy="${y2}" r="2.4" fill="#6b756f"/>`;
+}
+function forkArt(x1, y1, x2, y2, gold = false) {
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#7d8781" stroke-width="6.4" stroke-linecap="round"/>
+    <line x1="${x1 + 2}" y1="${y1 - 1}" x2="${x2 + 2}" y2="${y2 - 3}" stroke="${gold ? "#d8b459" : "#c9d1cb"}" stroke-width="2.2" stroke-linecap="round" opacity=".95"/>`;
+}
+
+/* =====================================================================
+   BIKE RENDERER
+   ===================================================================== */
 function bikeSVG(bike, opts = {}) {
   const m = modelById(bike.modelId);
   const p = bike.paint;
   const { w = 400, h = 240, dim = false, idPrefix = "b" } = opts;
   const style = m.style;
-  const uidp = idPrefix + "_" + m.id;
+  const eng = m.engine || { stroke: 4, fuel: "efi", oilFilter: true, valves: 4 };
+  const uid = (idPrefix + "_" + m.id + "_" + String(bike.id || "").slice(-6)).replace(/[^a-zA-Z0-9_]/g, "");
   const isDirt = style === "dirt" || style === "dual" || style === "rally";
-  const R = 34 + m.wheel * 22;
-  const cy = 172, ry = 174;
-  const rear = { x: 106, y: cy }, front = { x: 302, y: cy };
-  const body = p.body, accent = p.accent, frame = p.frame, seat = p.seat;
-  let art = "";
+  const isTwo = eng.stroke === 2;
 
-  /* ground shadow */
-  art += shadowArt(cy);
+  /* --- geometry: wheel size + stance from the model --- */
+  const cy = 176;
+  const R = 30 + m.wheel * 26;
+  const rear = { x: 104 - (m.wheelbase - 1.2) * 14, y: cy };
+  const front = { x: 300 + (m.wheelbase - 1.2) * 20, y: cy };
+  const pivot = { x: 168, y: cy - 26 };
+  const seatY = cy - R * 2.02;
+  const body = p.body, accent = p.accent;
+  const art = [];
+  art.push(shadowArt(cy));
 
-  /* ---------------- wheels ---------------- */
-  art += wheelArt(rear.x, rear.y, R, p, { knobby: isDirt, alloy: style === "street" });
-  art += wheelArt(front.x, front.y, R, p, { knobby: isDirt, front: true, alloy: style === "street", disc: style !== "moped" });
+  /* --- wheels --- */
+  const knobby = isDirt;
+  art.push(wheelArt(rear.x, rear.y, R, p, { knobby, knobs: isTwo ? 16 : 20, alloy: style === "street", disc: style !== "moped" }));
+  art.push(wheelArt(front.x, front.y, R, p, { knobby, knobs: isTwo ? 16 : 20, alloy: style === "street", disc: style !== "moped" }));
 
-  /* ---------------- drivetrain ---------------- */
-  const pivot = { x: 172, y: 152 };
-  art += `<line x1="${rear.x}" y1="${rear.y}" x2="${pivot.x}" y2="${pivot.y}" stroke="#2c322e" stroke-width="7" stroke-linecap="round"/>`;
-  art += `<line x1="${rear.x}" y1="${rear.y}" x2="${pivot.x}" y2="${pivot.y}" stroke="#4a544c" stroke-width="2.6" stroke-linecap="round" opacity=".8"/>`;
-  art += `<circle cx="${rear.x}" cy="${rear.y}" r="${(R * 0.34).toFixed(1)}" fill="none" stroke="#5b645d" stroke-width="2.2" opacity=".8"/>`;
-  art += `<line x1="${rear.x}" y1="${rear.y - R * 0.33}" x2="${pivot.x + 2}" y2="${pivot.y - 9}" stroke="#6a756c" stroke-width="1.8" opacity=".65" stroke-dasharray="2 2"/>`;
+  /* --- swingarm + chain + sprocket --- */
+  art.push(`<line x1="${rear.x}" y1="${rear.y}" x2="${pivot.x}" y2="${pivot.y}" stroke="#2b312d" stroke-width="8" stroke-linecap="round"/>
+    <line x1="${rear.x}" y1="${rear.y}" x2="${pivot.x}" y2="${pivot.y}" stroke="#525d55" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
+    <circle cx="${rear.x}" cy="${rear.y}" r="${(R * 0.36).toFixed(1)}" fill="none" stroke="#5d675f" stroke-width="2.4" opacity=".85"/>
+    <line x1="${rear.x}" y1="${rear.y - R * 0.35}" x2="${pivot.x + 2}" y2="${pivot.y - 10}" stroke="#78847b" stroke-width="1.7" opacity=".7" stroke-dasharray="2 2"/>`);
 
-  /* =====================================================
-     STYLE ART
-     ===================================================== */
+  /* =================================================================
+     MOPED — step-through pressed frame, small wheels, round headlamp
+     ================================================================= */
   if (style === "moped") {
-    /* step-through frame */
-    art += `<path d="M264 128 C 240 152 216 176 186 184" fill="none" stroke="${frame}" stroke-width="8" stroke-linecap="round"/>`;
-    art += `<path d="M258 132 C 236 154 214 174 188 181" fill="none" stroke="#ffffff" stroke-width="1.3" opacity=".14" stroke-linecap="round"/>`;
-    /* rear rack */
-    art += `<path d="M70 140 L128 136" stroke="#3a423c" stroke-width="3.4" stroke-linecap="round"/>
-            <rect x="66" y="128" width="44" height="12" rx="3" fill="${accent}" opacity=".9" stroke="#2c322e" stroke-width="1.2"/>`;
-    /* tank under seat */
-    art += `<path d="M136 140 Q 132 126 152 124 L 196 122 Q 206 122 204 134 L 200 148 Z" fill="${body}" stroke="#1b201c" stroke-width="1.8"/>`;
-    art += `<path d="M146 130 L 196 127" stroke="${accent}" stroke-width="2.6" opacity=".85" stroke-linecap="round"/>`;
-    /* seat */
-    art += `<path d="M104 128 Q 102 116 122 115 L 186 112 Q 198 112 196 124 L 194 130 Z" fill="${seat}" stroke="#121614" stroke-width="1.8"/>`;
-    art += `<path d="M112 120 Q 150 115 188 118" stroke="${accent}" stroke-width="1.6" opacity=".4" fill="none"/>`;
-    /* engine */
-    art += engineArt(172, 148, p, 1.15);
-    /* exhaust */
-    art += exhaustArt([[196, 170], [160, 178], [116, 179], [92, 177]], 4.6, "#aab3ae");
-    art += `<rect x="70" y="170" width="30" height="13" rx="6" fill="#8d9793" stroke="#2b302c" stroke-width="1.5"/>`;
-    /* fenders */
-    art += `<path d="M270 150 A ${R + 12} ${R + 12} 0 0 1 ${front.x + 14} ${front.y - 26}" fill="none" stroke="${body}" stroke-width="5" stroke-linecap="round" opacity=".92"/>`;
-    art += `<path d="M74 152 A ${R + 10} ${R + 10} 0 0 1 ${rear.x + 26} ${rear.y - 30}" fill="none" stroke="${body}" stroke-width="4.4" stroke-linecap="round" opacity=".9"/>`;
-    /* fork + bars */
-    art += `<line x1="268" y1="132" x2="${front.x}" y2="${front.y}" stroke="#6d7671" stroke-width="6" stroke-linecap="round"/>`;
-    art += `<line x1="272" y1="130" x2="${front.x + 4}" y2="${front.y}" stroke="#c3cac4" stroke-width="2" stroke-linecap="round" opacity=".8"/>`;
-    art += `<path d="M262 126 L 250 106 L 232 98" fill="none" stroke="#3a423c" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>`;
-    art += `<line x1="226" y1="96" x2="242" y2="101" stroke="#1d211e" stroke-width="7" stroke-linecap="round"/>`;
-    art += `<line x1="262" y1="120" x2="276" y2="112" stroke="#3a423c" stroke-width="2.6" stroke-linecap="round"/>`;
-    art += `<ellipse cx="279" cy="110" rx="4.4" ry="5.6" fill="${accent}" stroke="#22271f" stroke-width="1.2" transform="rotate(-18 279 110)"/>`;
-    /* headlight */
-    art += `<circle cx="264" cy="134" r="9.6" fill="#20251f" stroke="#121614" stroke-width="1.6"/>
-            <circle cx="264" cy="134" r="6.6" fill="url(#${uidp}_lamp)"/>`;
-    /* mirror */
-    art += `<line x1="246" y1="98" x2="240" y2="84" stroke="#4a544c" stroke-width="2"/><ellipse cx="239" cy="81" rx="5" ry="3.6" fill="#aeb8b2" opacity=".85"/>`;
-    /* small details */
-    art += `<circle cx="150" cy="150" r="3.6" fill="#c9a24a" opacity=".9"/><path d="M186 184 L 196 200" stroke="#2c322e" stroke-width="2.6" stroke-linecap="round"/>`;
+    // pressed-steel step-through spine
+    art.push(`<path d="M${front.x - 34} ${seatY + 8} C ${front.x - 70} ${seatY + 40} ${rear.x + 88} ${seatY + 46} ${rear.x + 30} ${seatY + 30}" fill="none" stroke="${p.frame}" stroke-width="9" stroke-linecap="round"/>`);
+    art.push(`<path d="M${front.x - 36} ${seatY + 6} C ${front.x - 72} ${seatY + 38} ${rear.x + 90} ${seatY + 44} ${rear.x + 32} ${seatY + 28}" fill="none" stroke="#ffffff" stroke-width="1.4" opacity=".12" stroke-linecap="round"/>`);
+    // engine + cylinder (small, forward leaning)
+    art.push(engineArt(rear.x + 74, seatY + 24, p, { scale: 0.92, fins: true, stroke: 2 }));
+    // exhaust
+    art.push(exhaustArt([[rear.x + 106, seatY + 50], [rear.x + 74, seatY + 58], [rear.x + 34, seatY + 56], [rear.x + 18, seatY + 52]], 4.2, "four"));
+    // fuel tank under the seat
+    art.push(`<path d="M${rear.x + 44} ${seatY + 4} Q ${rear.x + 40} ${seatY - 12} ${rear.x + 62} ${seatY - 14} L ${rear.x + 104} ${seatY - 16} Q ${rear.x + 114} ${seatY - 16} ${rear.x + 112} ${seatY - 4} L ${rear.x + 108} ${seatY + 10} Z" fill="url(#${uid}_body)" stroke="#181c19" stroke-width="1.7"/>`);
+    art.push(`<path d="M${rear.x + 54} ${seatY - 9} L ${rear.x + 104} ${seatY - 12}" stroke="${accent}" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>`);
+    // long saddle
+    art.push(`<path d="M${rear.x + 14} ${seatY} Q ${rear.x + 10} ${seatY - 13} ${rear.x + 32} ${seatY - 14} L ${rear.x + 100} ${seatY - 18} Q ${rear.x + 112} ${seatY - 19} ${rear.x + 108} ${seatY - 6} L ${rear.x + 106} ${seatY + 1} Z" fill="url(#${uid}_seat)" stroke="#0d1110" stroke-width="1.5"/>`);
+    // chrome rear rack
+    art.push(`<path d="M${rear.x + 6} ${seatY + 6} L ${rear.x + 56} ${seatY + 1}" stroke="#3d4540" stroke-width="3.2" stroke-linecap="round"/>
+      <rect x="${rear.x + 2}" y="${seatY - 6}" width="44" height="11" rx="2.6" fill="${accent}" opacity=".92" stroke="#2c322e" stroke-width="1.1"/>
+      <path d="M${rear.x + 8} ${seatY - 1} h32" stroke="#ffffff" stroke-width="1" opacity=".28"/>`);
+    // mudguards hugging the wheels
+    art.push(`<path d="M${rear.x + 2} ${cy - R - 6} A ${R + 11} ${R + 11} 0 0 1 ${rear.x + 54} ${cy - R + 4}" fill="none" stroke="${body}" stroke-width="4.6" stroke-linecap="round" opacity=".95"/>`);
+    art.push(`<path d="M${front.x - 48} ${cy - R + 2} A ${R + 12} ${R + 12} 0 0 1 ${front.x + 4} ${cy - R - 8}" fill="none" stroke="${body}" stroke-width="5" stroke-linecap="round" opacity=".95"/>`);
+    // front fork + steering
+    art.push(forkArt(front.x - 12, seatY - 2, front.x, cy - R * 0.4));
+    art.push(`<path d="M${front.x - 16} ${seatY - 4} L ${front.x - 30} ${seatY - 26} L ${front.x - 52} ${seatY - 34}" fill="none" stroke="#39423c" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>`);
+    art.push(`<line x1="${front.x - 60}" y1="${seatY - 37}" x2="${front.x - 40}" y2="${seatY - 31}" stroke="#1d211e" stroke-width="7" stroke-linecap="round"/>`);
+    // round headlamp + little instrument
+    art.push(`<circle cx="${front.x - 16}" cy="${seatY - 8}" r="9.4" fill="#22271f" stroke="#121614" stroke-width="1.6"/>
+      <circle cx="${front.x - 16}" cy="${seatY - 8}" r="6.4" fill="url(#${uid}_lamp)"/>
+      <circle cx="${front.x - 16}" cy="${seatY - 8}" r="2.2" fill="#fff8e4" opacity=".8"/>`);
+    art.push(`<rect x="${front.x - 28}" y="${seatY - 26}" width="11" height="7" rx="1.6" fill="#2c332e" stroke="#151916" stroke-width=".9"/>`);
+    // mirror + kickstart + pedal crank
+    art.push(`<line x1="${front.x - 42}" y1="${seatY - 38}" x2="${front.x - 48}" y2="${seatY - 52}" stroke="#4a544c" stroke-width="2"/><ellipse cx="${front.x - 49}" cy="${seatY - 55}" rx="5" ry="3.4" fill="#aeb8b2" opacity=".85"/>`);
+    art.push(`<path d="M${rear.x + 78} ${seatY + 44} L ${rear.x + 88} ${seatY + 58}" stroke="#5c665f" stroke-width="2.4" stroke-linecap="round"/>`);
+    art.push(`<circle cx="${rear.x + 68}" cy="${seatY + 56}" r="3.4" fill="#6b756f"/>`);
+    art.push(boltHead(rear.x + 116, seatY - 2, 2.4));
   }
 
+  /* =================================================================
+     DIRT / DUAL-SPORT / RALLY — modern off-roader
+     ================================================================= */
   if (isDirt) {
-    /* frame spine + subframe */
-    art += `<path d="M${pivot.x} ${pivot.y} L 258 118" stroke="${frame}" stroke-width="7" stroke-linecap="round"/>`;
-    art += `<path d="M${pivot.x} ${pivot.y} L 196 150 L 240 124" fill="none" stroke="${frame}" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/>`;
-    art += `<path d="M138 122 L 250 112" stroke="${frame}" stroke-width="4.6" stroke-linecap="round"/>`;
-    art += `<path d="M120 128 L 172 152" stroke="${frame}" stroke-width="4.6" stroke-linecap="round"/>`;
-    /* engine + skid plate */
-    art += engineArt(176, 148, p, 1.25);
-    art += `<path d="M170 184 L 216 184 L 212 193 L 174 193 Z" fill="#c9cfc6" opacity=".55" stroke="#2c322e" stroke-width="1.2"/>`;
-    /* exhaust expansion chamber */
-    art += exhaustArt([[198, 152], [222, 156], [240, 168], [280, 168], [300, 158]], 4.4, "#b9c1bb");
-    art += `<circle cx="214" cy="156" r="5.6" fill="#aeb7b1" opacity=".65"/>`;
-    /* tank */
-    art += `<path d="M224 116 Q 228 100 250 100 L 268 102 Q 282 104 280 118 L 276 128 Q 250 132 224 126 Z" fill="${body}" stroke="#181c19" stroke-width="1.8"/>`;
-    art += `<path d="M232 112 Q 250 106 272 110" fill="none" stroke="${accent}" stroke-width="3" stroke-linecap="round" opacity=".9"/>`;
-    /* radiator shroud / side number plate */
-    art += `<path d="M232 128 L 274 124 L 272 146 L 234 148 Z" fill="${accent}" stroke="#181c19" stroke-width="1.6" opacity=".95"/>`;
-    art += `<text x="250" y="142" font-family="ui-monospace,monospace" font-size="11" font-weight="700" fill="#23282433" text-anchor="middle">${m.cc}</text>`;
-    /* seat */
-    art += `<path d="M130 118 Q 128 106 150 104 L 214 100 Q 226 100 224 111 L 222 121 Q 176 126 132 126 Z" fill="${seat}" stroke="#101412" stroke-width="1.6"/>`;
-    art += `<path d="M138 112 Q 174 105 214 106" fill="none" stroke="${accent}" stroke-width="1.4" opacity=".35"/>`;
-    /* rear fender/tail */
-    art += `<path d="M132 118 L 96 128 Q 86 132 88 140 L 120 132 Z" fill="${body}" stroke="#181c19" stroke-width="1.4"/>`;
-    /* front fender high */
-    art += `<path d="M${front.x - 34} ${front.y - 56} Q ${front.x - 2} ${front.y - 74} ${front.x + 36} ${front.y - 50}" fill="none" stroke="${body}" stroke-width="7" stroke-linecap="round"/>`;
-    art += `<path d="M${front.x - 34} ${front.y - 56} Q ${front.x - 2} ${front.y - 74} ${front.x + 36} ${front.y - 50}" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" opacity=".55"/>`;
-    /* fork */
-    art += `<line x1="258" y1="122" x2="${front.x}" y2="${front.y}" stroke="#8b958f" stroke-width="6.4" stroke-linecap="round"/>`;
-    art += `<line x1="262" y1="120" x2="${front.x + 3}" y2="${front.y - 4}" stroke="#d6dcd6" stroke-width="2" stroke-linecap="round"/>`;
-    art += `<path d="M${front.x - 4} ${front.y - 44} L ${front.x + 10} ${front.y - 8}" stroke="${accent}" stroke-width="4" stroke-linecap="round" opacity=".85"/>`;
-    /* number plate front */
-    art += `<path d="M264 116 L 286 110 L 292 128 L 270 134 Z" fill="${accent}" stroke="#181c19" stroke-width="1.4"/>`;
-    /* bars + grips */
-    art += `<path d="M254 112 L 244 92 L 268 88" fill="none" stroke="#3a423c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
-    art += `<line x1="264" y1="88" x2="286" y2="84" stroke="#1d211e" stroke-width="6.6" stroke-linecap="round"/>`;
-    art += `<line x1="240" y1="93" x2="258" y2="90" stroke="#1d211e" stroke-width="6.6" stroke-linecap="round"/>`;
-    art += `<path d="M272 86 L 262 82" stroke="#8d9793" stroke-width="2" stroke-linecap="round"/>`;
-    /* rear shock */
-    art += `<line x1="${pivot.x - 6}" y1="${pivot.y - 4}" x2="152" y2="128" stroke="#c9a24a" stroke-width="4" stroke-linecap="round" opacity=".85"/>`;
-    /* kickstart */
-    art += `<path d="M196 158 L 206 172 L 218 170" fill="none" stroke="#5c665f" stroke-width="2.6" stroke-linecap="round"/>`;
+    /* --- frame: twin-spar ally or steel cradle --- */
+    art.push(`<path d="M${pivot.x} ${pivot.y} L ${front.x - 52} ${seatY + 22}" stroke="${p.frame}" stroke-width="7" stroke-linecap="round"/>`);
+    art.push(`<path d="M${pivot.x} ${pivot.y} L ${pivot.x + 26} ${seatY + 34} L ${front.x - 64} ${seatY + 26}" fill="none" stroke="${p.frame}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`);
+    art.push(`<path d="M${rear.x + 34} ${seatY + 12} L ${front.x - 56} ${seatY + 4}" stroke="${p.frame}" stroke-width="5" stroke-linecap="round"/>`);
+    /* --- engine --- */
+    art.push(engineArt(pivot.x + 6, seatY + 26, p, { scale: isTwo ? 1.24 : 1.34, fins: isTwo, efi: eng.fuel === "efi", stroke: eng.stroke }));
+    /* --- skid plate --- */
+    art.push(`<path d="M${pivot.x - 4} ${seatY + 62} L ${pivot.x + 48} ${seatY + 62} L ${pivot.x + 43} ${seatY + 70} L ${pivot.x + 2} ${seatY + 70} Z" fill="#cdd4ca" opacity=".5" stroke="#2c322e" stroke-width="1"/>`);
+    /* --- exhaust --- */
+    if (isTwo) {
+      art.push(`<path d="M${pivot.x + 22} ${seatY + 28} Q ${pivot.x + 40} ${seatY + 40} ${pivot.x + 66} ${seatY + 44} L ${front.x - 30} ${seatY + 46} L ${front.x - 4} ${seatY + 32}" fill="none" stroke="#2a302c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>`);
+      art.push(`<path d="M${pivot.x + 22} ${seatY + 28} Q ${pivot.x + 40} ${seatY + 40} ${pivot.x + 66} ${seatY + 44} L ${front.x - 30} ${seatY + 46} L ${front.x - 4} ${seatY + 32}" fill="none" stroke="url(#${uid}_pipe)" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>`);
+      art.push(`<path d="M${pivot.x + 40} ${seatY + 34} Q ${pivot.x + 54} ${seatY + 46} ${pivot.x + 72} ${seatY + 46}" fill="none" stroke="#fff" stroke-width="1.3" opacity=".16"/>`);
+    } else {
+      art.push(exhaustArt([[pivot.x + 24, seatY + 40], [pivot.x + 54, seatY + 52], [pivot.x + 96, seatY + 50], [pivot.x + 120, seatY + 40]], 4.6, "four"));
+    }
+    /* --- airbox / side panels --- */
+    art.push(`<path d="M${rear.x + 40} ${seatY - 4} L ${pivot.x + 32} ${seatY + 2} L ${pivot.x + 30} ${seatY + 26} L ${rear.x + 44} ${seatY + 20} Z" fill="${accent}" opacity=".9" stroke="#181c19" stroke-width="1.3"/>`);
+    art.push(`<path d="M${rear.x + 48} ${seatY + 1} h34" stroke="#ffffff" stroke-width="1.2" opacity=".22"/>`);
+    /* --- tank + radiator shrouds --- */
+    art.push(`<path d="M${front.x - 78} ${seatY - 16} Q ${front.x - 72} ${seatY - 34} ${front.x - 40} ${seatY - 34} L ${front.x - 14} ${seatY - 30} Q ${front.x - 6} ${seatY - 26} ${front.x - 10} ${seatY - 10} L ${front.x - 18} ${seatY - 2} Q ${front.x - 48} ${seatY + 2} ${front.x - 78} ${seatY - 16} Z" fill="url(#${uid}_body)" stroke="#181c19" stroke-width="1.7"/>`);
+    art.push(`<path d="M${front.x - 66} ${seatY - 24} Q ${front.x - 34} ${seatY - 32} ${front.x - 16} ${seatY - 24}" fill="none" stroke="${accent}" stroke-width="3.2" stroke-linecap="round" opacity=".9"/>`);
+    art.push(`<path d="M${front.x - 80} ${seatY - 14} L ${front.x - 46} ${seatY - 12} L ${front.x - 48} ${seatY + 12} L ${front.x - 82} ${seatY + 8} Z" fill="${accent}" stroke="#181c19" stroke-width="1.5" opacity=".95"/>`);
+    art.push(`<text x="${front.x - 64}" y="${seatY + 4}" font-family="ui-monospace,monospace" font-size="10.5" font-weight="700" fill="#1b211e" opacity=".45" text-anchor="middle">${m.cc}</text>`);
+    /* --- seat, long and flat --- */
+    art.push(`<path d="M${rear.x + 26} ${seatY - 2} Q ${rear.x + 24} ${seatY - 15} ${rear.x + 48} ${seatY - 17} L ${front.x - 82} ${seatY - 21} Q ${front.x - 72} ${seatY - 21} ${front.x - 74} ${seatY - 8} L ${front.x - 78} ${seatY - 1} Q ${front.x - 110} ${seatY + 3} ${rear.x + 26} ${seatY - 2} Z" fill="url(#${uid}_seat)" stroke="#0c100e" stroke-width="1.4"/>`);
+    art.push(`<path d="M${rear.x + 34} ${seatY - 11} Q ${front.x - 130} ${seatY - 18} ${front.x - 84} ${seatY - 15}" fill="none" stroke="${accent}" stroke-width="1.3" opacity=".32"/>`);
+    /* --- rear mudguard / tail --- */
+    art.push(`<path d="M${rear.x + 28} ${seatY - 2} L ${rear.x - 8} ${seatY + 10} Q ${rear.x - 18} ${seatY + 15} ${rear.x - 14} ${seatY + 22} L ${rear.x + 22} ${seatY + 13} Z" fill="url(#${uid}_body)" stroke="#181c19" stroke-width="1.3"/>`);
+    art.push(`<rect x="${rear.x - 8}" y="${seatY + 16}" width="9" height="5.5" rx="2" fill="#e3564a" opacity=".92"/>`);
+    /* --- high front fender --- */
+    art.push(`<path d="M${front.x - 40} ${cy - R - 30} Q ${front.x - 4} ${cy - R - 50} ${front.x + 42} ${cy - R - 24}" fill="none" stroke="${body}" stroke-width="7.4" stroke-linecap="round"/>`);
+    art.push(`<path d="M${front.x - 40} ${cy - R - 30} Q ${front.x - 4} ${cy - R - 50} ${front.x + 42} ${cy - R - 24}" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" opacity=".6"/>`);
+    /* --- fork + guards --- */
+    art.push(forkArt(front.x - 20, seatY - 6, front.x, cy - R * 0.55, true));
+    art.push(`<path d="M${front.x - 30} ${cy - R - 8} L ${front.x - 14} ${cy - R + 40}" stroke="${accent}" stroke-width="4.6" stroke-linecap="round" opacity=".9"/>`);
+    /* --- triple clamp + bars + grip --- */
+    art.push(`<path d="M${front.x - 22} ${seatY - 8} L ${front.x - 36} ${seatY - 34} L ${front.x - 12} ${seatY - 40}" fill="none" stroke="#39423c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`);
+    art.push(`<line x1="${front.x - 20}" y1="${seatY - 42}" x2="${front.x + 8}" y2="${seatY - 46}" stroke="#1d211e" stroke-width="6.8" stroke-linecap="round"/>`);
+    art.push(`<line x1="${front.x - 44}" y1="${seatY - 38}" x2="${front.x - 20}" y2="${seatY - 41}" stroke="#1d211e" stroke-width="6.8" stroke-linecap="round"/>`);
+    /* --- number plate --- */
+    art.push(`<path d="M${front.x - 26} ${seatY - 24} L ${front.x - 4} ${seatY - 30} L ${front.x + 2} ${seatY - 12} L ${front.x - 22} ${seatY - 7} Z" fill="${accent}" stroke="#181c19" stroke-width="1.3" opacity=".97"/>`);
+    /* --- rear shock + linkage --- */
+    art.push(shockArt(pivot.x - 2, pivot.y - 2, rear.x + 52, seatY + 20));
+    /* --- kickstand --- */
+    art.push(`<line x1="${pivot.x + 34}" y1="${seatY + 58}" x2="${pivot.x + 24}" y2="${seatY + 82}" stroke="#4f5952" stroke-width="2.6" stroke-linecap="round"/>`);
+
+    if (style === "dual") {
+      /* road-legal kit: headlight, tail light, plate, mirrors */
+      art.push(`<path d="M${front.x - 34} ${seatY - 20} L ${front.x - 12} ${seatY - 30} L ${front.x - 2} ${seatY - 12} L ${front.x - 24} ${seatY - 4} Z" fill="${accent}" stroke="#181c19" stroke-width="1.3"/>`);
+      art.push(`<circle cx="${front.x - 16}" cy="${seatY - 17}" r="6.6" fill="#22271f" stroke="#121614" stroke-width="1.2"/><circle cx="${front.x - 16}" cy="${seatY - 17}" r="4.4" fill="url(#${uid}_lamp)"/>`);
+      art.push(`<line x1="${front.x - 30}" y1="${seatY - 46}" x2="${front.x - 40}" y2="${seatY - 60}" stroke="#4a544c" stroke-width="2"/><ellipse cx="${front.x - 41}" cy="${seatY - 63}" rx="4.6" ry="3.1" fill="#aeb8b2" opacity=".85"/>`);
+      art.push(`<rect x="${rear.x - 20}" y="${seatY + 18}" width="18" height="9" rx="2" fill="#20251f" stroke="#121614" stroke-width="1"/>`);
+      art.push(`<rect x="${rear.x - 16}" y="${seatY + 20}" width="10" height="5" rx="1" fill="${accent}" opacity=".7"/>`);
+    }
     if (style === "rally") {
-      /* tall nav tower + windscreen */
-      art += `<path d="M256 106 L 268 66 L 300 72 L 296 112 Z" fill="${accent}" stroke="#181c19" stroke-width="1.6" opacity=".96"/>`;
-      art += `<path d="M268 66 L 280 48 L 306 58 L 300 72 Z" fill="#cfe6ec" opacity=".42" stroke="#8fb0b8" stroke-width="1.2"/>`;
-      art += `<path d="M262 78 L 288 82 L 286 96 L 260 92 Z" fill="#2a3030" opacity=".8"/>`;
-      /* rear rack / pannier */
-      art += `<rect x="96" y="112" width="34" height="17" rx="4" fill="${frame}" stroke="#181c19" stroke-width="1.3"/>
-              <rect x="100" y="115" width="26" height="4" rx="2" fill="${accent}" opacity=".55"/>`;
+      /* rally tower, twin screens, nav gear, pannier */
+      art.push(`<path d="M${front.x - 30} ${seatY - 22} L ${front.x - 22} ${seatY - 96} L ${front.x + 34} ${seatY - 88} L ${front.x + 26} ${seatY - 16} Z" fill="${accent}" opacity=".97" stroke="#181c19" stroke-width="1.5"/>`);
+      art.push(`<path d="M${front.x - 22} ${seatY - 96} L ${front.x - 12} ${seatY - 122} L ${front.x + 40} ${seatY - 108} L ${front.x + 34} ${seatY - 88} Z" fill="#d3e9ee" opacity=".35" stroke="#8fb0b8" stroke-width="1.1"/>`);
+      art.push(`<path d="M${front.x - 20} ${seatY - 72} L ${front.x + 22} ${seatY - 66}" stroke="#2a3030" stroke-width="8" opacity=".55"/>`);
+      art.push(`<rect x="${front.x - 14}" y="${seatY - 90}" width="14" height="9" rx="1.6" fill="#1b2226" stroke="#0d1113" stroke-width=".8"/>`);
+      art.push(`<circle cx="${front.x - 4}" cy="${seatY - 84}" r="3" fill="#6fd6c2" opacity=".8"/>`);
+      art.push(`<line x1="${front.x + 12}" y1="${seatY - 112}" x2="${front.x + 30}" y2="${seatY - 128}" stroke="#30383c" stroke-width="2.2"/>`);
+      art.push(`<rect x="${rear.x - 4}" y="${seatY - 26}" width="42" height="22" rx="4" fill="${p.frame}" stroke="#151a17" stroke-width="1.2"/>
+        <rect x="${rear.x + 2}" y="${seatY - 21}" width="30" height="4" rx="2" fill="${accent}" opacity=".6"/>`);
     }
   }
 
-  if (style === "dual" && true) {
-    /* dual-sport overrides: headlight, mirrors, tail light — drawn on top of dirt art */
-    art += `<path d="M256 112 L 276 104 L 286 120 L 264 126 Z" fill="${accent}" stroke="#181c19" stroke-width="1.4"/>`;
-    art += `<circle cx="276" cy="112" r="7.4" fill="#20251f" stroke="#121614" stroke-width="1.4"/><circle cx="276" cy="112" r="4.8" fill="url(#${uidp}_lamp)"/>`;
-    art += `<line x1="254" y1="92" x2="248" y2="80" stroke="#4a544c" stroke-width="2"/><ellipse cx="247" cy="77" rx="4.6" ry="3.2" fill="#aeb8b2" opacity=".85"/>`;
-    art += `<rect x="96" y="126" width="9" height="6" rx="2" fill="#e3564a" opacity=".9"/>`;
-  }
-
+  /* =================================================================
+     STREET — naked (Zephyr) & faired superbike (Sabre)
+     ================================================================= */
   if (style === "street") {
-    /* sleek tail */
-    art += `<path d="M108 140 Q 108 112 140 106 L 196 100 L 226 108 L 214 122 Q 170 128 140 138 Z" fill="${body}" stroke="#181c19" stroke-width="1.8"/>`;
-    /* seat */
-    art += `<path d="M142 112 Q 176 100 206 104 L 210 112 Q 176 116 146 122 Z" fill="${seat}" stroke="#101412" stroke-width="1.4"/>`;
-    /* tank + fairing */
-    art += `<path d="M214 106 Q 224 92 248 92 L 270 96 Q 282 100 280 112 L 268 130 Q 236 130 214 122 Z" fill="${body}" stroke="#181c19" stroke-width="1.8"/>`;
-    art += `<path d="M244 96 Q 264 98 274 104" fill="none" stroke="${accent}" stroke-width="3.4" stroke-linecap="round" opacity=".9"/>`;
-    /* front fairing + screen */
-    art += `<path d="M266 96 L 296 88 Q 312 96 308 122 L 286 140 L 264 132 Z" fill="${body}" stroke="#181c19" stroke-width="1.8"/>`;
-    art += `<path d="M286 90 L 306 84 L 316 104 L 300 108 Z" fill="#cfe6ec" opacity=".38" stroke="#8fb0b8" stroke-width="1.2"/>`;
-    /* headlight cluster */
-    art += `<path d="M292 108 L 312 112 L 306 128 L 290 124 Z" fill="#20252a" stroke="#121614" stroke-width="1.2"/>`;
-    art += `<path d="M296 112 L 308 115 L 304 124 L 294 121 Z" fill="url(#${uidp}_lamp)"/>`;
-    /* engine + exhaust */
-    art += engineArt(182, 146, p, 1.35);
-    art += exhaustArt([[218, 174], [200, 184], [150, 184], [110, 176]], 5.2, "#b9c2bd");
-    art += `<rect x="130" y="180" width="34" height="15" rx="7" fill="#aab3ae" stroke="#2b302c" stroke-width="1.4"/>`;
-    /* frame spar + swingarm */
-    art += `<path d="M${pivot.x} ${pivot.y} L 238 122 L 264 120" fill="none" stroke="${frame}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`;
-    art += `<line x1="${pivot.x}" y1="${pivot.y}" x2="${rear.x}" y2="${rear.y}" stroke="#3b423d" stroke-width="8" stroke-linecap="round"/>`;
-    /* fork */
-    art += `<line x1="282" y1="126" x2="${front.x}" y2="${front.y}" stroke="#c9a24a" stroke-width="6.4" stroke-linecap="round"/>`;
-    art += `<line x1="286" y1="124" x2="${front.x + 3}" y2="${front.y - 4}" stroke="#efe3b8" stroke-width="2" stroke-linecap="round"/>`;
-    /* fender hugging wheel */
-    art += `<path d="M${front.x - 40} ${front.y - 40} A ${R + 10} ${R + 10} 0 0 1 ${front.x + 36} ${front.y - 30}" fill="none" stroke="${body}" stroke-width="5.4" stroke-linecap="round"/>`;
-    art += `<path d="M266 128 A ${R + 12} ${R + 12} 0 0 1 ${front.x + 20} ${front.y - 26}" fill="none" stroke="${accent}" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>`;
-    /* clip-ons */
-    art += `<path d="M268 100 L 252 92 L 236 96" fill="none" stroke="#3a423c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
-    art += `<line x1="228" y1="95" x2="244" y2="93" stroke="#1d211e" stroke-width="6.2" stroke-linecap="round"/>`;
+    const faired = m.cc > 900;
+    /* --- swingarm --- */
+    art.push(`<line x1="${rear.x}" y1="${rear.y}" x2="${pivot.x}" y2="${pivot.y + 6}" stroke="#3a413c" stroke-width="9" stroke-linecap="round"/>`);
+    art.push(`<line x1="${rear.x}" y1="${rear.y}" x2="${pivot.x}" y2="${pivot.y + 6}" stroke="#626d66" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>`);
+    /* --- frame spars --- */
+    art.push(`<path d="M${pivot.x} ${pivot.y} L ${front.x - 70} ${seatY + 14} L ${front.x - 56} ${seatY + 2}" fill="none" stroke="${p.frame}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`);
+    /* --- engine (big, finned inline four) --- */
+    art.push(engineArt(pivot.x + 4, seatY + 24, p, { scale: 1.42, fins: true, efi: true, stroke: 4 }));
+    if (faired) {
+      art.push(exhaustArt([[pivot.x + 44, seatY + 54], [pivot.x + 20, seatY + 66], [rear.x + 10, seatY + 60]], 5.2, "four", { can: true }));
+    } else {
+      art.push(exhaustArt([[pivot.x + 46, seatY + 52], [pivot.x + 86, seatY + 60], [front.x - 40, seatY + 56]], 4.6, "four"));
+    }
+    /* --- tail unit --- */
+    art.push(`<path d="M${rear.x + 14} ${seatY + 8} Q ${rear.x + 8} ${seatY - 20} ${rear.x + 46} ${seatY - 26} L ${pivot.x + 30} ${seatY - 30} L ${pivot.x + 36} ${seatY - 12} Z" fill="url(#${uid}_body)" stroke="#181c19" stroke-width="1.6"/>`);
+    art.push(`<path d="M${rear.x + 30} ${seatY - 22} L ${pivot.x + 24} ${seatY - 26}" stroke="${accent}" stroke-width="2.2" opacity=".7"/>`);
+    art.push(`<rect x="${rear.x + 2}" y="${seatY - 12}" width="12" height="7" rx="2" fill="#e3564a" opacity=".9"/>`);
+    /* --- seat --- */
+    art.push(`<path d="M${rear.x + 40} ${seatY - 24} Q ${pivot.x + 4} ${seatY - 34} ${pivot.x + 44} ${seatY - 30} L ${front.x - 104} ${seatY - 26} L ${front.x - 108} ${seatY - 14} L ${pivot.x + 36} ${seatY - 18} Z" fill="url(#${uid}_seat)" stroke="#0b0f0d" stroke-width="1.4"/>`);
+    /* --- tank --- */
+    art.push(`<path d="M${front.x - 110} ${seatY - 22} Q ${front.x - 96} ${seatY - 46} ${front.x - 62} ${seatY - 44} L ${front.x - 30} ${seatY - 40} Q ${front.x - 20} ${seatY - 34} ${front.x - 26} ${seatY - 18} L ${front.x - 34} ${seatY - 8} Q ${front.x - 74} ${seatY - 6} ${front.x - 110} ${seatY - 22} Z" fill="url(#${uid}_body)" stroke="#181c19" stroke-width="1.7"/>`);
+    art.push(`<path d="M${front.x - 98} ${seatY - 34} Q ${front.x - 66} ${seatY - 42} ${front.x - 34} ${seatY - 34}" fill="none" stroke="${accent}" stroke-width="3.2" stroke-linecap="round" opacity=".85"/>`);
+    if (faired) {
+      /* full fairing + screen + twin headlights */
+      art.push(`<path d="M${front.x - 34} ${seatY - 40} L ${front.x + 10} ${seatY - 54} Q ${front.x + 34} ${seatY - 44} ${front.x + 32} ${seatY - 6} L ${front.x + 22} ${seatY + 26} L ${front.x - 10} ${seatY + 20} L ${front.x - 30} ${seatY + 2} Z" fill="url(#${uid}_body)" stroke="#181c19" stroke-width="1.8"/>`);
+      art.push(`<path d="M${front.x - 20} ${seatY - 52} L ${front.x + 14} ${seatY - 64} L ${front.x + 36} ${seatY - 32} L ${front.x + 14} ${seatY - 26} Z" fill="#cfe6ec" opacity=".34" stroke="#8fb0b8" stroke-width="1.1"/>`);
+      art.push(`<path d="M${front.x + 4} ${seatY - 18} L ${front.x + 30} ${seatY - 12} L ${front.x + 24} ${seatY + 6} L ${front.x - 2} ${seatY - 1} Z" fill="#1b2225" stroke="#0f1416" stroke-width="1"/>`);
+      art.push(`<path d="M${front.x + 8} ${seatY - 15} L ${front.x + 25} ${seatY - 11} L ${front.x + 21} ${seatY + 1} L ${front.x + 4} ${seatY - 3} Z" fill="url(#${uid}_lamp)"/>`);
+      art.push(`<path d="M${front.x - 26} ${seatY - 30} L ${front.x - 6} ${seatY - 34}" stroke="${accent}" stroke-width="3.4" opacity=".8" stroke-linecap="round"/>`);
+      art.push(`<path d="M${front.x - 14} ${cy - R - 4} Q ${front.x + 4} ${cy - R - 18} ${front.x + 30} ${cy - R - 2}" fill="none" stroke="${body}" stroke-width="5.4" stroke-linecap="round"/>`);
+    } else {
+      /* naked: round headlamp, small fly screen, exposed engine */
+      art.push(`<circle cx="${front.x - 10}" cy="${seatY - 22}" r="12" fill="#23282b" stroke="#12171a" stroke-width="1.6"/>
+        <circle cx="${front.x - 10}" cy="${seatY - 22}" r="8.6" fill="url(#${uid}_lamp)"/>
+        <circle cx="${front.x - 10}" cy="${seatY - 22}" r="3" fill="#fffaf0" opacity=".85"/>`);
+      art.push(`<path d="M${front.x - 22} ${seatY - 34} L ${front.x - 6} ${seatY - 46} L ${front.x + 8} ${seatY - 32}" fill="none" stroke="${p.frame}" stroke-width="2.4"/>`);
+      art.push(`<path d="M${front.x - 34} ${seatY - 8} L ${front.x - 4} ${seatY - 6}" stroke="#8b958f" stroke-width="3"/>`);
+    }
+    /* --- fork + radial caliper --- */
+    art.push(forkArt(front.x + 2, seatY - 6, front.x, cy - R * 0.55, true));
+    art.push(`<rect x="${front.x - 22}" y="${cy - R * 0.62}" width="13" height="7" rx="2" fill="#c9a24a" opacity=".9"/>`);
+    /* --- bars / clip-ons --- */
+    if (faired) {
+      art.push(`<path d="M${front.x - 26} ${seatY - 44} L ${front.x - 44} ${seatY - 52}" stroke="#39423c" stroke-width="3.6" stroke-linecap="round"/>`);
+      art.push(`<line x1="${front.x - 56}" y1="${seatY - 54}" x2="${front.x - 40}" y2="${seatY - 51}" stroke="#1d211e" stroke-width="6" stroke-linecap="round"/>`);
+    } else {
+      art.push(`<path d="M${front.x - 24} ${seatY - 40} L ${front.x - 44} ${seatY - 48} L ${front.x - 58} ${seatY - 44}" fill="none" stroke="#39423c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`);
+      art.push(`<line x1="${front.x - 68}" y1="${seatY - 45}" x2="${front.x - 50}" y2="${seatY - 42}" stroke="#1d211e" stroke-width="6.6" stroke-linecap="round"/>`);
+      art.push(`<line x1="${front.x - 30}" y1="${seatY - 50}" x2="${front.x - 44}" y2="${seatY - 63}" stroke="#4a544c" stroke-width="2"/><ellipse cx="${front.x - 45}" cy="${seatY - 66}" rx="4.4" ry="3" fill="#aeb8b2" opacity=".8"/>`);
+    }
+    /* --- shocks / linkage --- */
+    art.push(shockArt(pivot.x - 6, pivot.y + 2, rear.x + 54, seatY + 14, "#8fa0a8"));
   }
 
-  /* ---------------- common details ---------------- */
-  /* kickstand hint */
-  art += `<line x1="150" y1="176" x2="138" y2="198" stroke="#525b55" stroke-width="2.6" stroke-linecap="round"/>`;
+  /* --- common details on top --- */
+  art.push(`<line x1="${pivot.x + 30}" y1="${seatY + 56}" x2="${pivot.x + 20}" y2="${seatY + 80}" stroke="#4a534d" stroke-width="2.4" stroke-linecap="round"/>`);
+  art.push(boltHead(rear.x + 8, cy - R * 0.5, 2.6));
+  art.push(boltHead(front.x - 6, cy - R * 0.5, 2.6));
 
-  /* ---------------- view / render ---------------- */
-  const lampGradient = `<linearGradient id="${uidp}_lamp" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fff9e2"/><stop offset=".6" stop-color="#ffe6ae"/><stop offset="1" stop-color="#d9a860"/>
-    </linearGradient>`;
-  const bgFade = `<linearGradient id="${uidp}_fade" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${p.accent}" stop-opacity=".05"/><stop offset="1" stop-color="${p.accent}" stop-opacity="0"/>
-    </linearGradient>`;
-  return `<svg viewBox="0 0 400 240" width="${w}" height="${h}" role="img" aria-label="${esc(m.name)}" preserveAspectRatio="xMidYMid meet" ${dim ? 'style="opacity:.6;filter:saturate(.6)"' : ""}>
-    <defs>${lampGradient}${bgFade}</defs>
-    <rect x="0" y="0" width="400" height="240" fill="url(#${uidp}_fade)"/>
-    ${art}
+  const isDim = dim ? 'style="opacity:.55;filter:saturate(.5)"' : "";
+  return `<svg viewBox="0 0 400 240" width="${w}" height="${h}" role="img" aria-label="${esc(m.name)}" preserveAspectRatio="xMidYMid meet" ${isDim}>
+    <defs>${artDefs(uid, p).replace(/PIPE_TMP/g, uid + "_pipe")}</defs>
+    <rect x="0" y="0" width="400" height="240" fill="url(#${uid}_glow)"/>
+    ${art.join("")}
   </svg>`;
 }
 
@@ -1791,6 +2023,7 @@ function updateTopbar() {
 }
 
 function navigate(screen, opts = {}) {
+  if (screen !== "bench") bench = null;
   closeAllModals();
   activeScreen = screen;
   $$(".screen").forEach(s => s.classList.toggle("active", s.id === "screen-" + screen));
@@ -2015,8 +2248,8 @@ function openFitModal(partKey) {
         <span class="fo-meta">${tireMeta}</span>
       </span>
       <span class="fo-buy">
-        ${isCur ? `<strong>${Math.round(cond * 100)}%</strong><span>condition</span>` : `<strong>${money(cost)}</strong><span>fitted price</span>`}
-        ${!isCur && afford ? `<em>buy + fit</em>` : ""}
+        ${isCur ? `<strong>${Math.round(cond * 100)}%</strong><span>condition</span>` : `<strong>${money(cost)}</strong><span>part + sundries</span>`}
+        ${!isCur && afford ? `<em>book the bench →</em>` : ""}
         ${!isCur && !afford ? `<em style="color:var(--red)">need ${money(cost - state.cash)} more</em>` : ""}
       </span>
     </button>`;
@@ -2034,6 +2267,7 @@ function openFitModal(partKey) {
         <span class="fs-cond"><b style="color:${condColor(cond)}">${Math.round(cond * 100)}%</b><span>condition</span></span>
       </div>
       <div class="fit-options">${rows}</div>
+      <div class="result-note" style="margin-top:12px">${ic("i-wrench", 15)}Choosing a part books the bench. You do the work yourself — drain, wait, torque, refill, check — step by step. The part and shop sundries are charged when you start.</div>
     </div>`, { size: "narrow" });
 }
 
@@ -2054,30 +2288,902 @@ function openServiceAllModal() {
   if (!bike) { toast("Buy a bike first.", "bad"); return; }
   const q = serviceQuote(bike);
   if (!q.items.length) {
-    openModal(`<div class="modal-head"><div><div class="eyebrow">Workshop</div><h2>Nothing to do</h2>
+    openModal(`<div class="modal-head"><div><div class="eyebrow">Workshop</div><h2>Nothing due</h2>
       <p>Every part on the ${esc(modelById(bike.modelId).name)} is above 62%.</p></div>
       <button class="modal-close" data-close>${ic("i-close", 14)}</button></div>
-      <div class="modal-body"><div class="result-note">${ic("i-check", 15)}The bike is healthy. Save the cash for tires — you'll need them.</div></div>
+      <div class="modal-body"><div class="result-note">${ic("i-check", 15)}The bike is healthy. Nothing needs the bench today — but you can still book any job from its part card.</div></div>
       <div class="modal-foot"><button class="btn btn-primary" data-close>Back to the garage</button></div>`, { size: "narrow" });
     return;
   }
   openModal(`
-    <div class="modal-head"><div><div class="eyebrow">Workshop · full service</div><h2>Refresh worn parts</h2>
-      <p>Every part below 62% gets replaced with the same type currently fitted. Fluids and filters included.</p></div>
+    <div class="modal-head"><div><div class="eyebrow">Workshop · jobs due</div><h2>Pick a job</h2>
+      <p>Worn parts below 62%. There is no full-service button any more — every job is manual work on the bench.</p></div>
       <button class="modal-close" data-close>${ic("i-close", 14)}</button></div>
     <div class="modal-body">
-      <div class="damage-list" style="max-height:300px;overflow:auto">
-        ${q.items.map(({ p, opt, cond, cost }) => `<div class="dmg" style="grid-template-columns:18px minmax(0,1fr) 90px 56px">
+      <div class="damage-list" style="max-height:320px;overflow:auto">
+        ${q.items.map(({ p, opt, cond, cost }) => `<button class="dmg" data-bench-start="${p.key}:${opt.id}" style="grid-template-columns:18px minmax(0,1fr) 96px 58px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);cursor:pointer">
           ${ic(p.icon, 14)}<b>${esc(opt.name)}</b>
           <span class="mono" style="font-size:9px;color:${condColor(cond)};text-align:right">${Math.round(cond * 100)}% → 100%</span>
-          <span style="color:#efdbac">${money(cost)}</span></div>`).join("")}
+          <span style="color:#efdbac">${money(cost)}</span></button>`).join("")}
       </div>
-      <div class="result-note" style="margin-top:14px">${ic("i-wrench", 15)}Total ${money(q.total)} (including labor) · cash after ${money(state.cash - q.total)}. Replacing the front tire also fits a matching rear if one is worn.
-      ${state.cash < q.total ? `<b style="color:var(--red)"> You're ${money(q.total - state.cash)} short — replace priority parts in the parts store instead.</b>` : ""}</div>
+      <div class="result-note" style="margin-top:14px">${ic("i-info", 15)}The part price is charged when you start the job. Sundries — oil, cleaner, gaskets — are included.</div>
     </div>
-    <div class="modal-foot"><button class="btn btn-ghost" data-close>Cancel</button>
-      <button class="btn btn-primary" data-service-all ${state.cash < q.total ? "disabled" : ""}>${ic("i-wrench", 15)}Service all for ${money(q.total)}</button>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>Later</button>
+      <button class="btn btn-primary" data-go="bench">${ic("i-wrench", 15)}Open the bench</button>
     </div>`, { size: "wide" });
+}
+
+/* =====================================================================
+   MANUAL WORKBENCH — procedures
+   Every repair is a real sequence of physical steps. Nothing is a
+   one-click purchase: you buy the part, then you carry out the work,
+   clicking the actual fastener / opening / cover in order, and the
+   timed steps (draining oil, letting RTV skin, bleeding a line) run in
+   real time while the bench draws what's happening.
+   ===================================================================== */
+
+/* a job is { key, partKey, optId, title, bay, part, steps } */
+function jobPartPrice(key, optId) {
+  const def = partDef(key);
+  return optId === null || optId === undefined ? optionFor(selectedBike(), key).price : partOption(key, optId).price;
+}
+
+/* small helpers that keep the procedure tables readable */
+const S = (id, label, kind, extra = {}) => ({ id, label, kind, ...extra });
+/* kinds:
+   spot   – click a highlighted fastener/cover on the bike
+   hold   – press and hold a wrench action
+   drain  – timed pour (oil, coolant, brake fluid)
+   wait   – plain timed pause (torque settle, RTV skin, bleed hold)
+   pour   – timed fill
+   clean  – scrub/wash sub-step
+   check  – confirm a measurement (feel a chain, sight the oil level)
+   spin   – turn the wheel / run the engine to circulate
+*/
+
+function buildJobSteps(key, optId, bike) {
+  const model = modelById(bike.modelId);
+  const eng = model.engine || { stroke: 4, fuel: "carb", oilFilter: true, valves: 2 };
+  const def = partDef(key);
+  const isTire = !!def.isTire;
+  const front = key === "tire_front";
+  const wheelWord = front ? "front" : "rear";
+
+  if (isTire) {
+    const tubeless = def ? true : true;
+    return {
+      title: `Change the ${wheelWord} tire`,
+      bay: "wheel",
+      steps: [
+        S("axle", `Loosen the ${wheelWord} axle nut`, "spot", { at: front ? "frontAxle" : "rearAxle", tool: "22 mm socket" }),
+        S("lift", `Lift the ${wheelWord} off the ground`, "hold", { hold: 1.2, tool: "paddock stand" }),
+        S("pullwheel", `Slide the ${wheelWord} wheel out`, "wait", { secs: 3 }),
+        S("bead", "Break the tyre bead off the rim", "hold", { hold: 2.0, tool: "tyre lever" }),
+        S("levers", "Walk the old tyre off the rim", "hold", { hold: 2.4, tool: "two levers" }),
+        S("cleanrim", "Clean the bead seat and inspect the rim strip", "clean", { hold: 1.4, tool: "rag + solvent" }),
+        S("soap", "Soap the new bead and set it onto the rim", "hold", { hold: 2.0, tool: "soapy brush" }),
+        S("seat", "Seat the bead with a quick burst of air", "hold", { hold: 1.6, tool: "compressor" }),
+        S("balance", "Spin the wheel and check the balance mark", "spin", { hold: 2.2 }),
+        S("torque", `Torque the axle to ${front ? 65 : 85} Nm`, "hold", { hold: 1.8, tool: "torque wrench" }),
+        S("pump", "Set the cold pressure and wipe the rim down", "check", { hold: 1.0, tool: "pressure gauge" })
+      ]
+    };
+  }
+
+  if (key === "oil") {
+    const steps = [
+      S("warm", "Run the engine for a minute so the oil flows", "spin", { hold: 2.4, tool: "idle" }),
+      S("undercowl", "Pull the sump guard to reach the drain plug", "spot", { at: "sump", tool: "8 mm socket" }),
+      S("tray", "Slide the drain tray under the engine", "spot", { at: "tray", tool: "drain tray" }),
+      S("drainbolt", "Undo the drain bolt", "hold", { hold: 1.6, tool: "17 mm socket" }),
+      S("drain", "Let the old oil pour out completely", "drain", { secs: 14, fill: "oil" }),
+      S("washer", "Fit a fresh crush washer and refit the drain bolt", "spot", { at: "drainbolt", tool: "17 mm socket" }),
+      S("torque", "Torque the drain bolt to 25 Nm", "hold", { hold: 1.4, tool: "torque wrench" })
+    ];
+    if (eng.oilFilter) {
+      steps.push(
+        S("filtercover", "Unbolt the oil filter cover", "spot", { at: "oilfilter", tool: "10 mm socket" }),
+        S("filterout", "Draw the old filter out of the case", "hold", { hold: 1.6, tool: "filter pliers" }),
+        S("filterin", "Oil the new filter's O-ring and seat it", "spot", { at: "oilfilter", tool: "new filter" }),
+        S("filtercap", "Refit the cover and torque to 10 Nm", "hold", { hold: 1.5, tool: "10 mm socket" })
+      );
+    } else {
+      steps.push(
+        S("strainer", "Pull the oil strainer and clean the mesh", "clean", { hold: 2.0, tool: "parts brush" }),
+        S("strainerfit", "Refit the strainer and its cap", "spot", { at: "oilfilter", tool: "cap" })
+      );
+    }
+    steps.push(
+      S("fillbolt", "Unscrew the oil fill bolt", "spot", { at: "fill", tool: "hex key" }),
+      S("pour", "Fill the engine with fresh oil", "pour", { secs: 6, fill: "oil", amount: eng.stroke === 2 ? "0.7 L" : "1.6 L" }),
+      S("fillscrew", "Screw the fill bolt back in", "spot", { at: "fill", tool: "hex key" }),
+      S("sight", "Check the sight glass on level ground", "check", { hold: 1.2, tool: "sight glass" }),
+      S("run", "Idle it for a minute, then re-check for leaks", "spin", { hold: 2.6, tool: "idle" })
+    );
+    if (eng.stroke === 2) {
+      const at = steps.findIndex(x => x.id === "torque") + 1;
+      steps.splice(at, 0, S("premix", "Top up the 2T oil tank — this engine pre-mixes its fuel", "pour", { secs: 4, fill: "oil", amount: "0.9 L" }));
+    }
+    return { title: "Oil and filter change", bay: "engine", steps };
+  }
+
+  if (key === "air_filter") {
+    return {
+      title: "Service the air filter",
+      bay: "intake",
+      steps: [
+        S("seat", "Lift the seat to reach the airbox", "spot", { at: "seat", tool: "seat latch" }),
+        S("cover", "Unscrew the airbox cover", "hold", { hold: 1.4, tool: "screwdriver" }),
+        S("element", "Draw the dirty element out", "spot", { at: "airbox", tool: "gloves" }),
+        S("tap", "Tap the loose dust out of the element", "clean", { hold: 1.8, tool: "palm" }),
+        S("wash", "Wash it in cleaner and let the foam dry", "wait", { secs: 5 }),
+        S("oilfoam", "Work fresh filter oil into the foam", "hold", { hold: 1.8, tool: "filter oil" }),
+        S("seatbox", "Seat the element squarely in the airbox", "spot", { at: "airbox", tool: "gloves" }),
+        S("closebox", "Close the cover — no gaps round the seal", "hold", { hold: 1.3, tool: "screwdriver" }),
+        S("seatdown", "Click the seat back down", "spot", { at: "seat", tool: "seat latch" }),
+        S("blip", "Blip the throttle to check it breathes cleanly", "spin", { hold: 1.8, tool: "throttle" })
+      ]
+    };
+  }
+
+  if (key === "spark_plug") {
+    return {
+      title: "Change the spark plug",
+      bay: "engine",
+      steps: [
+        S("cap", "Pull the plug cap off", "spot", { at: "plugcap", tool: "fingers" }),
+        S("blow", "Blow the dirt out of the plug well", "hold", { hold: 1.4, tool: "air line" }),
+        S("undo", "Unscrew the old plug", "hold", { hold: 1.8, tool: "plug spanner" }),
+        S("inspect", "Read the old plug's colour — it tells you the mixture", "check", { hold: 1.4, tool: "eye" }),
+        S("gap", "Set the gap on the new plug", "hold", { hold: 1.5, tool: "feeler gauge" }),
+        S("hand", "Wind the new plug in by hand until it seats", "spot", { at: "plug", tool: "plug spanner" }),
+        S("torque", "Torque to 18 Nm — no more", "hold", { hold: 1.3, tool: "torque wrench" }),
+        S("recap", "Push the cap back on until it clicks", "spot", { at: "plugcap", tool: "fingers" }),
+        S("start", "Start it and listen for a clean idle", "spin", { hold: 2.2, tool: "starter" })
+      ]
+    };
+  }
+
+  if (key === "chain") {
+    return {
+      title: "Fit a new drive chain",
+      bay: "wheel",
+      steps: [
+        S("slack", "Measure the slack on the old chain", "check", { hold: 1.2, tool: "ruler" }),
+        S("split", "Grind the rivet head off the master link", "hold", { hold: 2.0, tool: "grinder" }),
+        S("split2", "Press the link out and drop the old chain", "hold", { hold: 1.6, tool: "chain breaker" }),
+        S("clean", "Clean the sprocket teeth and the chain run", "clean", { hold: 2.0, tool: "brush + solvent" }),
+        S("count", "Count the links against the new chain", "check", { hold: 1.2, tool: "new chain" }),
+        S("thread", "Thread the new chain over the front sprocket", "spot", { at: "frontSprocket", tool: "fingers" }),
+        S("route", "Route it over the rear sprocket", "spot", { at: "rearSprocket", tool: "fingers" }),
+        S("rivet", "Press and rivet the master link", "hold", { hold: 2.2, tool: "rivet tool" }),
+        S("adjust", "Set the chain slack and check alignment", "hold", { hold: 1.8, tool: "adjuster" }),
+        S("lube", "Lube it, spin it and wipe the excess", "spin", { hold: 2.0, tool: "chain wax" }),
+        S("torqueaxle", "Torque the rear axle to 85 Nm", "hold", { hold: 1.6, tool: "torque wrench" })
+      ]
+    };
+  }
+
+  if (key === "sprockets") {
+    return {
+      title: "Replace the sprockets",
+      bay: "wheel",
+      steps: [
+        S("up", "Put it on the stand and pull the rear wheel", "hold", { hold: 1.8, tool: "paddock stand" }),
+        S("nuts", "Crack the six rear sprocket nuts", "hold", { hold: 2.0, tool: "14 mm socket" }),
+        S("swap", "Swap the sprocket and refit the nuts", "spot", { at: "rearSprocket", tool: "14 mm socket" }),
+        S("cover", "Pull the front sprocket cover", "spot", { at: "frontSprocket", tool: "8 mm socket" }),
+        S("frontnut", "Undo the front sprocket nut", "hold", { hold: 2.0, tool: "30 mm socket" }),
+        S("frontnew", "Fit the new front sprocket and tab washer", "spot", { at: "frontSprocket", tool: "30 mm socket" }),
+        S("back", "Refit the wheel and set the chain slack", "hold", { hold: 1.8, tool: "adjuster" }),
+        S("spin", "Spin the wheel and watch the chain run true", "spin", { hold: 2.0 }),
+        S("torque", "Torque the rear axle and roll it off the stand", "hold", { hold: 1.6, tool: "torque wrench" })
+      ]
+    };
+  }
+
+  if (key === "brake_pads") {
+    return {
+      title: "Fit new brake pads",
+      bay: "wheel",
+      steps: [
+        S("pins", "Pull the pad retaining pins and the R-clip", "spot", { at: "caliper", tool: "punch + pliers" }),
+        S("padsout", "Slide the old pads out of the caliper", "spot", { at: "caliper", tool: "fingers" }),
+        S("pistons", "Push the pistons back into the caliper", "hold", { hold: 2.0, tool: "piston tool" }),
+        S("clean", "Clean the caliper and check the dust seals", "clean", { hold: 1.8, tool: "brake cleaner" }),
+        S("paste", "Wipe a film of copper paste on the pad backs", "hold", { hold: 1.2, tool: "copper paste" }),
+        S("newpads", "Drop the new pads in with the spring", "spot", { at: "caliper", tool: "new pads" }),
+        S("refitpins", "Refit the pins and the R-clip", "spot", { at: "caliper", tool: "punch + pliers" }),
+        S("pump", "Pump the lever until the pads bite", "hold", { hold: 2.2, tool: "brake lever" }),
+        S("bed", "Bed them in: twenty easy stops from 50 kph", "spin", { hold: 2.4 })
+      ]
+    };
+  }
+
+  if (key === "brake_fluid") {
+    return {
+      title: "Bleed the brake fluid",
+      bay: "wheel",
+      steps: [
+        S("lid", "Unbolt the master cylinder lid", "spot", { at: "mc", tool: "screwdriver" }),
+        S("suck", "Draw the old fluid out of the reservoir", "hold", { hold: 1.8, tool: "syringe" }),
+        S("fresh", "Top up with fresh fluid", "pour", { secs: 4, fill: "brake", amount: "0.25 L" }),
+        S("hose", "Push the bleed hose onto the caliper nipple", "spot", { at: "nipple", tool: "8 mm spanner" }),
+        S("bleed1", "Pump and hold the lever, crack the nipple", "hold", { hold: 2.4, tool: "8 mm spanner" }),
+        S("bubble", "Watch the bubbles until the stream runs clear", "wait", { secs: 5 }),
+        S("bleed2", "Repeat the bleed until the lever feels firm", "hold", { hold: 2.4, tool: "8 mm spanner" }),
+        S("torque", "Close the nipple and torque to 9 Nm", "hold", { hold: 1.4, tool: "torque wrench" }),
+        S("level", "Set the lever reach and check the fluid level", "check", { hold: 1.2, tool: "eye" })
+      ]
+    };
+  }
+
+  if (key === "fluid_coolant") {
+    return {
+      title: "Change the coolant",
+      bay: "engine",
+      steps: [
+        S("cap", "Never open the cap hot — let it cool", "wait", { secs: 3 }),
+        S("drainplug", "Undo the water pump drain plug", "spot", { at: "coolantdrain", tool: "8 mm socket" }),
+        S("drain", "Let the coolant drain into the tray", "drain", { secs: 10, fill: "coolant" }),
+        S("flush", "Flush the system with clean water", "pour", { secs: 4, fill: "coolant", amount: "flush" }),
+        S("plugback", "Refit the drain plug with a new washer", "spot", { at: "coolantdrain", tool: "8 mm socket" }),
+        S("fillcap", "Fill through the radiator cap", "pour", { secs: 6, fill: "coolant", amount: "1.2 L" }),
+        S("squeeze", "Squeeze the hoses to burp the air out", "hold", { hold: 2.2, tool: "hands" }),
+        S("run", "Run it to temperature with the cap off", "spin", { hold: 2.6 }),
+        S("topup", "Top up and cap it once the fan cuts in", "check", { hold: 1.4, tool: "eye" })
+      ]
+    };
+  }
+
+  if (key === "fork_seals") {
+    return {
+      title: "Replace the fork seals",
+      bay: "front",
+      steps: [
+        S("clamp", "Clamp the fork leg in the vice", "hold", { hold: 1.6, tool: "soft jaws" }),
+        S("caps", "Crack the fork cap loose before you strip it", "hold", { hold: 1.8, tool: "24 mm spanner" }),
+        S("legs", "Slide the fork leg out of the triple clamps", "hold", { hold: 2.0, tool: "fingers" }),
+        S("dust", "Pry out the dust seal and the circlip", "spot", { at: "forkseal", tool: "seal pick" }),
+        S("separate", "Separate the slider from the stanchion", "hold", { hold: 2.4, tool: "slide hammer" }),
+        S("oilout", "Drain the fork oil into a measure", "drain", { secs: 8, fill: "forkoil" }),
+        S("newseals", "Drive in the new seal and dust wiper", "hold", { hold: 2.2, tool: "seal driver" }),
+        S("oilin", "Refill with the specified fork oil", "pour", { secs: 5, fill: "forkoil", amount: "0.45 L" }),
+        S("airgap", "Set the air gap with the leg compressed", "check", { hold: 1.6, tool: "ruler" }),
+        S("rebuild", "Slide the leg back into the clamps", "hold", { hold: 2.0, tool: "fingers" }),
+        S("bounce", "Bounce the front end and check for weeping", "spin", { hold: 2.0 })
+      ]
+    };
+  }
+
+  if (key === "grips") {
+    return {
+      title: "Fit new grips",
+      bay: "controls",
+      steps: [
+        S("ends", "Cut the old grip ends off", "hold", { hold: 1.6, tool: "knife" }),
+        S("peel", "Peel the old grips off the bars", "spot", { at: "grip", tool: "fingers" }),
+        S("clean", "Clean the bar and the throttle tube", "clean", { hold: 1.4, tool: "solvent" }),
+        S("glue", "Wet the inside of the new grip with grip glue", "hold", { hold: 1.3, tool: "grip glue" }),
+        S("slide", "Slide it on and clock the grip mark right", "spot", { at: "grip", tool: "hands" }),
+        S("wire", "Safety-wire the grip ends", "hold", { hold: 2.0, tool: "safety wire" }),
+        S("throttle", "Check the throttle snaps shut both ways", "check", { hold: 1.6, tool: "throttle" })
+      ]
+    };
+  }
+
+  if (key === "throttle") {
+    return {
+      title: "Fit a new throttle cable",
+      bay: "controls",
+      steps: [
+        S("slack", "Back the adjuster off to free the cable", "hold", { hold: 1.4, tool: "12 mm spanner" }),
+        S("housing", "Split the throttle housing", "spot", { at: "grip", tool: "screwdriver" }),
+        S("barrel", "Free the cable barrel from the tube", "hold", { hold: 1.4, tool: "fingers" }),
+        S("routeold", "Follow the old cable down and out", "hold", { hold: 1.8, tool: "fingers" }),
+        S("carbrtop", "Pop off the carburettor slide cap", "spot", { at: "carbtop", tool: "8 mm socket" }),
+        S("newcable", "Thread the new cable down the frame", "hold", { hold: 2.0, tool: "new cable" }),
+        S("slide", "Hook the cable into the slide and the carb top", "spot", { at: "carbtop", tool: "fingers" }),
+        S("adjust", "Set 2 mm of free play at the bar", "hold", { hold: 1.6, tool: "12 mm spanner" }),
+        S("snap", "Turn the bars lock to lock — it must not rev", "check", { hold: 1.8, tool: "ears" })
+      ]
+    };
+  }
+
+  if (key === "engine_top") {
+    const steps = [
+      S("drain", "Drain the oil before you open the engine", "drain", { secs: 8, fill: "oil" }),
+      S("plugs", "Pull the plug cap and the breathers", "spot", { at: "plugcap", tool: "fingers" }),
+      S("cover", "Unbolt the cam cover", "spot", { at: "head", tool: "10 mm socket" }),
+      S("timing", "Set the engine to TDC before you disturb the cam", "hold", { hold: 2.0, tool: "12 mm spanner" }),
+      S("cam", "Lift the camshaft out with the chain tied back", "hold", { hold: 2.2, tool: "fingers" }),
+      S("headbolts", "Crack the head bolts in a cross pattern", "hold", { hold: 2.4, tool: "14 mm socket" }),
+      S("head", "Lift the head and cylinder off the studs", "spot", { at: "head", tool: "dead blow mallet" }),
+      S("piston", "Pull the piston pin and lift the old piston", "hold", { hold: 2.0, tool: "piston pin tool" }),
+      S("hone", "Deglaze the cylinder and check the bore", "clean", { hold: 2.2, tool: "hone + measure" })
+    ];
+    if (eng.stroke === 2) {
+      steps.push(
+        S("rings", "Check the ring end gap on the new piston", "check", { hold: 1.8, tool: "feeler gauge" }),
+        S("ringfit", "Fit the new rings and piston", "hold", { hold: 2.2, tool: "ring compressor" }),
+        S("base", "Fit a new base gasket and drop the cylinder", "spot", { at: "head", tool: "gasket" }),
+        S("torque", "Torque the head in stages", "hold", { hold: 2.2, tool: "torque wrench" })
+      );
+    } else {
+      steps.push(
+        S("valves", "Lap the new valves into the seats", "hold", { hold: 2.4, tool: "lapping stick" }),
+        S("shims", "Measure and set the valve clearances", "check", { hold: 2.2, tool: "feeler + shims" }),
+        S("ringfit", "Fit the new piston and rings", "hold", { hold: 2.2, tool: "ring compressor" }),
+        S("base", "Drop the cylinder and head with a new gasket", "spot", { at: "head", tool: "gasket" }),
+        S("torque", "Torque the head in stages", "hold", { hold: 2.4, tool: "torque wrench" }),
+        S("camchain", "Re-time the cam and refit the chain", "hold", { hold: 2.6, tool: "cam sprocket" })
+      );
+    }
+    steps.push(
+      S("oil", "Refill the oil it lost on the bench", "pour", { secs: 5, fill: "oil", amount: eng.stroke === 2 ? "0.7 L" : "1.6 L" }),
+      S("torquecheck", "Run through every fastener you touched", "check", { hold: 1.8, tool: "torque wrench" }),
+      S("start", "Start it up and listen carefully", "spin", { hold: 2.8, tool: "starter" })
+    );
+    return { title: "Rebuild the top end", bay: "engine", steps };
+  }
+
+  if (key === "engine_bottom") {
+    return {
+      title: "Rebuild the bottom end",
+      bay: "engine",
+      steps: [
+        S("strip", "Strip it to the bare cases", "hold", { hold: 2.4, tool: "varied" }),
+        S("drain", "Drain every fluid first", "drain", { secs: 8, fill: "oil" }),
+        S("flywheel", "Hold the flywheel and crack the rotor nut", "hold", { hold: 2.4, tool: "rotor holder" }),
+        S("split", "Split the crankcases on the jig", "hold", { hold: 2.6, tool: "case splitter" }),
+        S("bearings", "Press the old crank bearings out", "hold", { hold: 2.4, tool: "press" }),
+        S("measure", "Check the crank runout on V-blocks", "check", { hold: 2.0, tool: "dial gauge" }),
+        S("newcrank", "Fit the new crank and bearings", "hold", { hold: 2.6, tool: "press" }),
+        S("casebond", "Reseal the cases — clean faces, fresh bond", "clean", { hold: 2.2, tool: "sealant" }),
+        S("close", "Close the cases and torque the perimeter", "hold", { hold: 2.6, tool: "torque wrench" }),
+        S("rotate", "Spin the crank — it must turn free", "spin", { hold: 2.2 }),
+        S("oil", "Prime the oil system", "pour", { secs: 5, fill: "oil", amount: "1.6 L" }),
+        S("start", "First start — watch the oil light", "spin", { hold: 2.8, tool: "starter" })
+      ]
+    };
+  }
+
+  const fallbackTitles = { exhaust: "Fit the exhaust", seals: "Replace the engine seals" };
+  return {
+    title: fallbackTitles[key] || `Replace the ${def.short.toLowerCase()}`,
+    bay: def.cat === "engine" ? "engine" : "controls",
+    steps: [
+      S("access", "Remove what's in the way", "spot", { at: "sump", tool: "8 mm socket" }),
+      S("undo", `Free the old ${def.short.toLowerCase()}`, "hold", { hold: 2.0 }),
+      S("clean", "Clean the mating faces", "clean", { hold: 1.6 }),
+      S("new", `Fit the new ${def.short.toLowerCase()}`, "spot", { at: "sump", tool: "fingers" }),
+      S("torque", "Torque it down in the right sequence", "hold", { hold: 1.8, tool: "torque wrench" }),
+      S("check", "Start it and check your work", "spin", { hold: 2.2 })
+    ]
+  };
+}
+
+
+/* ---- modifications are manual too ---- */
+function buildModSteps(kind, bike) {
+  if (kind === "tune") {
+    return {
+      title: "Dyno tune", bay: "engine",
+      steps: [
+        S("warm", "Warm it to operating temperature", "spin", { hold: 2.2, tool: "idle" }),
+        S("straps", "Strap it down on the dyno", "spot", { at: "sump", tool: "ratchet straps" }),
+        S("probe", "Fit the lambda probe into the header", "spot", { at: "plug", tool: "wideband" }),
+        S("baseline", "Take a baseline pull", "hold", { hold: 2.2, tool: "dyno" }),
+        S("map", "Load a map and pull again", "hold", { hold: 2.5, tool: "laptop" }),
+        S("match", "Correct the fuelling until the curve is clean", "hold", { hold: 2.5, tool: "laptop" }),
+        S("cool", "Let it cool and re-check the plugs", "check", { hold: 1.6, tool: "eye" }),
+        S("strapsoff", "Off the dyno, wipe it down", "spot", { at: "sump", tool: "ratchet straps" })
+      ]
+    };
+  }
+  if (kind === "exhaust") {
+    return {
+      title: "Fit the exhaust", bay: "engine",
+      steps: [
+        S("scrub", "Soak the header nuts in penetrant", "clean", { hold: 1.8, tool: "penetrant" }),
+        S("clamp", "Undo the silencer clamp and hanger bolt", "hold", { hold: 2.0, tool: "12 mm socket" }),
+        S("silencer", "Work the silencer off the link pipe", "spot", { at: "sump", tool: "fingers" }),
+        S("flange", "Crack the header flange nuts", "hold", { hold: 2.0, tool: "12 mm socket" }),
+        S("gasket", "Pull the header and scrape the old gasket", "clean", { hold: 2.0, tool: "gasket scraper" }),
+        S("newgasket", "Fit a fresh copper gasket", "spot", { at: "sump", tool: "gasket" }),
+        S("pipe", "Hang the new header and nip the nuts", "hold", { hold: 2.2, tool: "12 mm socket" }),
+        S("hang", "Bolt up the silencer and its heat shield", "hold", { hold: 1.8, tool: "12 mm socket" }),
+        S("leak", "Run it and listen for a leak at the flange", "spin", { hold: 2.2, tool: "ears" })
+      ]
+    };
+  }
+  return {
+    title: "Paint the bodywork", bay: "controls",
+    steps: [
+      S("strip", "Unbolt the panels you're painting", "hold", { hold: 2.0, tool: "4 mm socket" }),
+      S("wash", "Wash off the road grime", "clean", { hold: 1.8, tool: "bucket" }),
+      S("scuff", "Scuff every panel with grey Scotch", "hold", { hold: 2.2, tool: "Scotch-Brite" }),
+      S("tack", "Tack-cloth the dust off", "clean", { hold: 1.4, tool: "tack cloth" }),
+      S("primer", "Lay the primer in thin coats", "hold", { hold: 2.4, tool: "rattle can" }),
+      S("flash", "Let the primer flash off", "wait", { secs: 4 }),
+      S("colour", "Build the colour in three passes", "hold", { hold: 2.4, tool: "rattle can" }),
+      S("clear", "Clear-coat it while it's still tacky", "hold", { hold: 2.2, tool: "clear coat" }),
+      S("cure", "Hang the panels to cure", "wait", { secs: 5 }),
+      S("fit", "Refit the panels carefully", "spot", { at: "seat", tool: "4 mm socket" })
+    ]
+  };
+}
+function modCost(kind, bike) {
+  const model = modelById(bike.modelId);
+  return kind === "tune" ? Math.round(model.price * 0.16)
+    : kind === "exhaust" ? Math.round(model.price * 0.11)
+    : Math.round(model.price * 0.045);
+}
+function startModJob(kind) {
+  const bike = selectedBike();
+  if (!bike) { toast("Buy a bike first.", "bad"); return; }
+  if (kind === "tune" && bike.mods.tune) { toast("This one is already dialled in.", "bad"); return; }
+  if (kind === "exhaust" && bike.mods.exhaust) { toast("Already running that pipe.", "bad"); return; }
+  const cost = modCost(kind, bike);
+  if (state.cash < cost) { toast(`Need ${money(cost - state.cash)} more.`, "bad"); return; }
+  state.cash -= cost; state.stats.spent += cost; save();
+  const spec = buildModSteps(kind, bike);
+  bench = {
+    bikeId: bike.id, partKey: "__mod_" + kind, optId: null, modKind: kind,
+    model: modelById(bike.modelId),
+    def: { name: kind === "tune" ? "Dyno tune" : kind === "exhaust" ? "Exhaust" : "Paint", group: "Modification", cat: "engine", short: kind },
+    title: spec.title, bay: spec.bay,
+    steps: spec.steps.map((x, i) => ({ ...x, done: false, idx: i })),
+    cur: 0, timer: 0, timerMax: 0, holdProgress: 0, holding: false, flash: 0, pour: 0, spinner: 0,
+    started: performance.now(), finished: false
+  };
+  benchScreen();
+  navigate("bench");
+  requestAnimationFrame(benchFrame);
+}
+
+/* ---- apply a finished job to the bike ---- */
+function applyJob(job) {
+  const bike = bikeById(job.bikeId);
+  if (!bike) return false;
+  if (job.modKind) {
+    if (job.modKind === "tune") bike.mods.tune = true;
+    else if (job.modKind === "exhaust") bike.mods.exhaust = true;
+  } else {
+    bike.parts[job.partKey] = { id: job.optId, wear: 0 };
+  }
+  state.stats.wrench = (state.stats.wrench || 0) + 1;
+  save();
+  return true;
+}
+
+/* =====================================================================
+   THE BENCH — runtime
+   Draws the working bike, throws hotspots on the part you must touch,
+   and walks the player through the step list. Timed steps run in real
+   seconds; hold steps need the mouse held down while a bar fills.
+   ===================================================================== */
+let bench = null;
+
+const BENCH_BAYS = {
+  engine: { label: "Engine bay", tip: "Drain tray is under the sump. Keep the parts tray close." },
+  intake: { label: "Intake bay", tip: "Never run a foam filter dry — oil it, then fit it." },
+  wheel:  { label: "Wheel bay", tip: "Torque the axle with the bike off the stand." },
+  front:  { label: "Front end", tip: "Crack the fork caps while the leg is still clamped." },
+  controls: { label: "Controls bench", tip: "If the throttle doesn't snap shut, stop." }
+};
+
+function benchBike() { return selectedBike(); }
+
+function openBench(partKey, optId, opts = {}) {
+  const bike = benchBike();
+  if (!bike) { toast("Buy a bike first.", "bad"); return; }
+  const model = modelById(bike.modelId);
+  const def = partDef(partKey);
+  if (!partKey || !partDef(partKey)) return;
+  if (String(partKey).startsWith("__mod_")) return; // mods go through startModJob
+  if (opts.pay !== false) {
+    const price = jobPartPrice(partKey, optId);
+    const labor = Math.round((SERVICE_LABOR[def.cat] || 14) * 0.55);
+    const total = price + labor;
+    if (total > 0 && state.cash < total) {
+      toast(`You need ${money(total - state.cash)} more for the ${def.short.toLowerCase()} and shop sundries.`, "bad");
+      return;
+    }
+    state.cash -= total;
+    state.stats.spent += total;
+    save();
+  }
+  const spec = buildJobSteps(partKey, optId, bike);
+  bench = {
+    bikeId: bike.id,
+    partKey, optId,
+    model, def,
+    title: spec.title,
+    bay: spec.bay,
+    steps: spec.steps.map((s, i) => ({ ...s, done: false, idx: i })),
+    cur: 0,
+    timer: 0,
+    timerMax: 0,
+    holdProgress: 0,
+    holding: false,
+    flash: 0,
+    pour: 0,
+    spinner: 0,
+    started: performance.now(),
+    finished: false
+  };
+  benchScreen();
+  navigate("bench");
+  requestAnimationFrame(benchFrame);
+}
+
+function benchScreen() {
+  const stage = $("#benchStage");
+  if (!stage) return;
+  const cv = $("#benchCv");
+  /* size the canvas to its container for crisp drawing */
+  const w = Math.max(420, stage.clientWidth || 900);
+  cv.width = Math.round(w);
+  cv.height = Math.round(w * 0.56);
+  $("#benchBadge").textContent = BENCH_BAYS[bench.bay].label;
+  $("#benchTitle").textContent = bench.title;
+  $("#benchSub").textContent = `${modelById(bench.bikeId ? bikeById(bench.bikeId).modelId : "velocita").name} · ${bench.def.group}`;
+  renderBenchSteps();
+  renderBenchActions();
+}
+function renderBenchSteps() {
+  const host = $("#benchSteps");
+  if (!host || !bench) return;
+  host.innerHTML = bench.steps.map((s, i) => {
+    const cls = s.done ? "done" : (i === bench.cur ? "current" : "");
+    const meta = s.kind === "drain" ? `drain · ${s.secs}s`
+      : s.kind === "pour" ? `fill · ${s.secs}s`
+      : s.kind === "wait" ? `wait · ${s.secs}s`
+      : s.kind === "hold" ? (s.tool || "hold")
+      : s.kind === "clean" ? (s.tool || "clean")
+      : s.kind === "spin" ? (s.tool || "run")
+      : s.kind === "check" ? (s.tool || "check")
+      : (s.tool || "click");
+    return `<div class="bstep ${cls}">
+      <span class="bnum">${s.done ? "✓" : i + 1}</span>
+      <span>${esc(s.label)}</span>
+      <span class="bmeta">${cls === "current" ? esc(meta) : ""}</span>
+    </div>`;
+  }).join("");
+  const host2 = $("#benchSteps");
+  if (host2) { const c = host2.querySelector(".bstep.current"); if (c && c.scrollIntoView) { try { c.scrollIntoView({ block: "nearest" }); } catch (e) { } } }
+  const pctDone = bench.steps.filter(s => s.done).length / bench.steps.length;
+  $("#benchProg").style.width = Math.round(pctDone * 100) + "%";
+}
+function renderBenchActions() {
+  const host = $("#benchActions");
+  if (!host || !bench) return;
+  const s = bench.steps[bench.cur];
+  if (bench.finished) {
+    host.innerHTML = `<button class="btn btn-primary" data-bench-leave>${ic("i-check", 14)}Job done — back to the garage</button>`;
+    return;
+  }
+  if (!s) { host.innerHTML = `<button class="btn btn-primary" data-bench-leave>Finish</button>`; return; }
+  const holdable = ["hold", "clean", "spin", "check"].includes(s.kind);
+  const auto = ["drain", "pour", "wait"].includes(s.kind);
+  if (holdable) {
+    host.innerHTML = `<button class="btn btn-primary" data-bench-hold="${s.id}">${ic("i-wrench", 14)}${esc(s.label)}</button>
+      <button class="btn btn-ghost" data-bench-abort>Walk away</button>`;
+  } else if (auto) {
+    host.innerHTML = `<button class="btn btn-ghost" data-bench-abort>Walk away</button>`;
+  } else {
+    host.innerHTML = `<span class="tiny dim" style="flex:1;align-self:center">Click the highlighted ${esc(s.tool || "part")} on the bike.</span>
+      <button class="btn btn-ghost" data-bench-abort>Walk away</button>`;
+  }
+}
+
+function benchStepDone() {
+  const s = bench.steps[bench.cur];
+  if (!s) return;
+  s.done = true;
+  bench.flash = 1;
+  bench.cur++;
+  bench.holdProgress = 0;
+  bench.timer = 0; bench.timerMax = 0;
+  $("#benchTimer").style.display = "none";
+  if (bench.cur >= bench.steps.length) {
+    bench.finished = true;
+    const applied = (bench.optId !== null || bench.modKind)
+      ? applyJob({ bikeId: bench.bikeId, partKey: bench.partKey, optId: bench.optId, modKind: bench.modKind })
+      : false;
+    if (applied) toast(`${bench.def.name} done — by hand, in your own bay.`, "gold");
+    renderGarage();
+    const q = $("#benchSteps"); if (q) q.scrollTop = q.scrollHeight;
+    renderBenchSteps(); renderBenchActions();
+    const t = $("#benchTip"); if (t) t.textContent = "Job complete. Every bolt checked by hand.";
+    return;
+  }
+  renderBenchSteps(); renderBenchActions();
+  const tip = $("#benchTip");
+  if (tip) tip.textContent = bench.steps[bench.cur].label + ".";
+}
+
+function benchBeginTimed() {
+  const s = bench.steps[bench.cur];
+  if (!s || !["drain", "pour", "wait"].includes(s.kind)) return;
+  bench.timerMax = s.secs;
+  bench.timer = s.secs;
+  $("#benchTimer").style.display = "flex";
+  $("#benchTimer").classList.remove("done");
+  $("#benchTimerTxt").textContent = s.kind === "drain" ? `Draining… ${s.secs}s` : s.kind === "pour" ? `Filling… ${s.secs}s` : `Waiting… ${s.secs}s`;
+}
+
+function benchFrame(now) {
+  if (!bench) return;
+  const cv = $("#benchCv");
+  if (!cv) return;
+  const dt = Math.min(0.05, (now - (bench.last || now)) / 1000);
+  bench.last = now;
+  bench.spinner += dt * 6;
+  benchTickForTest(dt);
+  drawBench(cv.getContext("2d"), cv.width, cv.height);
+  drawBenchHotspot();
+  requestAnimationFrame(benchFrame);
+}
+
+/* one tick of bench logic — split out so it can be driven by tests */
+function benchTickForTest(dt) {
+  if (!bench) return;
+  const s = bench.steps[bench.cur];
+  if (bench.flash > 0) bench.flash = Math.max(0, bench.flash - dt * 2.4);
+
+  /* timed steps */
+  if (s && ["drain", "pour", "wait"].includes(s.kind) && bench.timer > 0) {
+    bench.timer -= dt;
+    const pct = 1 - bench.timer / bench.timerMax;
+    if (s.kind === "drain" || s.kind === "pour") bench.pour = clamp(pct, 0, 1);
+    $("#benchTimerTxt").textContent =
+      s.kind === "drain" ? `Draining… ${Math.ceil(bench.timer)}s`
+      : s.kind === "pour" ? `Filling… ${Math.ceil(bench.timer)}s`
+      : `Waiting… ${Math.ceil(bench.timer)}s`;
+    if (bench.timer <= 0) {
+      bench.pour = 0;
+      $("#benchTimer").classList.add("done");
+      benchStepDone();
+    }
+  }
+  /* hold steps */
+  if (s && ["hold", "clean", "spin", "check"].includes(s.kind)) {
+    if (bench.holding) {
+      bench.holdProgress = clamp(bench.holdProgress + dt / (s.hold || 1.8), 0, 1);
+      if (bench.holdProgress >= 1) {
+        bench.holding = false;
+        benchStepDone();
+      }
+    } else {
+      bench.holdProgress = Math.max(0, bench.holdProgress - dt * 0.8);
+    }
+  }
+}
+
+/* ---------- draw the bike on the stand, from the side ---------- */
+function drawBench(g, W, H) {
+  g.clearRect(0, 0, W, H);
+  const bike = bench ? bikeById(bench.bikeId) : null;
+  if (!bike) return;
+  const m = modelById(bike.modelId);
+  const p = m.paint;
+  const eng = m.engine || { stroke: 4, fuel: "efi", oilFilter: true, valves: 2 };
+  const style = m.style;
+  const isDirt = style === "dirt" || style === "dual" || style === "rally";
+
+  /* ---------------- workshop ---------------- */
+  const lg = g.createLinearGradient(0, 0, 0, H);
+  lg.addColorStop(0, "#3a4241"); lg.addColorStop(0.55, "#262d2c"); lg.addColorStop(1, "#161b1a");
+  g.fillStyle = lg; g.fillRect(0, 0, W, H);
+  /* pegboard */
+  g.save(); g.globalAlpha = 0.15; g.fillStyle = "#0a0e0d";
+  for (let yy = H * 0.09; yy < H * 0.66; yy += 26) {
+    for (let xx = 12 + (Math.round(yy / 26) % 2) * 13; xx < W; xx += 26) {
+      g.beginPath(); g.arc(xx, yy, 2.1, 0, 7); g.fill();
+    }
+  }
+  g.restore();
+  /* wall / floor */
+  const floorY = H * 0.72;
+  const fl = g.createLinearGradient(0, floorY, 0, H);
+  fl.addColorStop(0, "#202725"); fl.addColorStop(1, "#0b0f0e");
+  g.fillStyle = fl; g.fillRect(0, floorY, W, H - floorY);
+  g.strokeStyle = "rgba(200,240,220,.12)"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, floorY); g.lineTo(W, floorY); g.stroke();
+  /* bay markings on the floor */
+  g.save(); g.globalAlpha = 0.10; g.fillStyle = "#c8f04e";
+  for (let x = -H; x < W + H; x += 62) {
+    g.beginPath(); g.moveTo(x, H); g.lineTo(x + 26, H); g.lineTo(x + 26 + H * 0.28, floorY); g.lineTo(x + H * 0.28, floorY); g.closePath(); g.fill();
+  }
+  g.restore();
+  /* wall signage: bay number + a tool board */
+  g.save();
+  g.globalAlpha = 0.5;
+  g.fillStyle = "#c8f04e";
+  g.font = `800 ${Math.round(H * 0.045)}px ui-monospace,monospace`;
+  g.fillText("BAY " + (bench && bench.bay === "wheel" ? "02" : bench && bench.bay === "controls" ? "03" : "01"), 18, H * 0.11);
+  g.globalAlpha = 0.30; g.fillStyle = "#9fb4ab";
+  g.font = `700 ${Math.round(H * 0.022)}px ui-monospace,monospace`;
+  g.fillText((m.name || "").toUpperCase() + "  ·  " + (eng.stroke === 2 ? "2-STROKE" : "4-STROKE"), 18, H * 0.11 + H * 0.045);
+  g.restore();
+  /* hanging tool silhouettes */
+  g.save(); g.globalAlpha = 0.18; g.fillStyle = "#0a0f0d";
+  const tools = [[0.74, 0.10, 0.05], [0.80, 0.13, 0.035], [0.86, 0.09, 0.06], [0.92, 0.12, 0.04]];
+  tools.forEach(([fx, fy, fw]) => {
+    const tx = W * fx, ty = H * fy;
+    g.fillRect(tx, ty, Math.max(2, W * 0.005), H * fw * 2.4);
+    g.beginPath(); g.arc(tx + W * 0.0025, ty + H * fw * 2.4, H * fw * 0.42, 0, 7); g.fill();
+  });
+  g.restore();
+  /* task lamp from above */
+  const lamp = g.createRadialGradient(W * 0.48, -H * 0.3, 10, W * 0.48, -H * 0.3, H * 1.8);
+  lamp.addColorStop(0, "rgba(226,246,234,.34)");
+  lamp.addColorStop(0.45, "rgba(200,230,214,.10)");
+  lamp.addColorStop(1, "#00000000");
+  g.fillStyle = lamp; g.fillRect(0, 0, W, H);
+
+  /* ---------------- the machine, drawn by the ride renderer ---------------- */
+  const G0 = benchGeom(W, H, m);
+  const wheelR = G0.wheelR;
+  /* the stand it sits on */
+  g.strokeStyle = "#4b5754"; g.lineWidth = Math.max(3, wheelR * 0.075); g.lineCap = "round";
+  g.beginPath(); g.moveTo(G0.rearX - wheelR * 0.55, G0.ay + 2); g.lineTo(G0.rearX, G0.wheelCY + wheelR * 0.4); g.lineTo(G0.rearX + wheelR * 0.5, G0.ay + 2); g.stroke();
+  g.fillStyle = "rgba(0,0,0,.35)";
+  g.beginPath(); g.ellipse(G0.ax, G0.ay + 3, wheelR * 2.1, wheelR * 0.16, 0, 0, 7); g.fill();
+
+  const rr = { model: m, bike, pitch: 0, lean: 0, tuck: 0, ended: false, wheelSpin: (bench.spinner || 0) * 0.6 };
+  drawRider(g, rr, G0.ax, G0.ay, G0.scale, 0, { noRider: true });
+
+  /* headlamp glow so the machine reads against the wall */
+  if (m.style !== "moped") {
+    g.fillStyle = "rgba(255,233,180,.10)";
+    g.beginPath(); g.arc(G0.headX + wheelR * 0.3, G0.headY - wheelR * 0.2, wheelR * 0.5, 0, 7); g.fill();
+  }
+
+  /* ---- procedure overlays ---- */
+  if (!bench) return;
+  const s2 = bench.steps[bench.cur];
+  const t = performance.now() / 1000;
+
+  /* oil draining / filling from the sump */
+  if (s2 && (s2.kind === "drain" || s2.kind === "pour") && bench.timer > 0 && bench.timer < bench.timerMax) {
+    const plugX = G0.engX + wheelR * 0.48, plugY = G0.engY + wheelR * 0.74;
+    if (s2.kind === "drain") {
+      g.fillStyle = "rgba(20,16,8,.55)";
+      g.beginPath(); g.ellipse(plugX, G0.ay + wheelR * 0.12, wheelR * 0.62, wheelR * 0.14, 0, 0, 7); g.fill();
+      g.strokeStyle = "#c9a24a"; g.lineWidth = Math.max(1.6, wheelR * 0.045); g.globalAlpha = 0.9;
+      g.beginPath(); g.moveTo(plugX, plugY); g.lineTo(plugX + Math.sin(t * 9) * wheelR * 0.02, plugY + wheelR * 0.55); g.stroke();
+      for (let i = 0; i < 6; i++) {
+        const ph = (t * 1.7 + i * 0.31) % 1;
+        g.fillStyle = "#8a6524"; g.globalAlpha = 0.9 * (1 - ph * 0.55);
+        g.beginPath(); g.ellipse(plugX + Math.sin((t + i) * 2.4) * 2.5, plugY + wheelR * 0.5 + ph * wheelR * 0.45, 1.7, 3.6, 0, 0, 7); g.fill();
+      }
+      g.globalAlpha = 1;
+    } else {
+      const fillX = G0.engX + wheelR * 0.44, fillY = G0.engY - wheelR * 0.8;
+      g.strokeStyle = "#c8b06a"; g.lineWidth = Math.max(2, wheelR * 0.06); g.lineCap = "round";
+      g.beginPath(); g.moveTo(fillX - wheelR * 0.12, fillY - wheelR * 0.62); g.lineTo(fillX, fillY); g.stroke();
+      for (let i = 0; i < 4; i++) {
+        const ph = (t * 1.9 + i * 0.28) % 1;
+        g.fillStyle = "#8a6524"; g.globalAlpha = 0.9 * (1 - ph);
+        g.beginPath(); g.ellipse(fillX, fillY + ph * wheelR * 0.42, 1.9, 3.1, 0, 0, 7); g.fill();
+      }
+      g.globalAlpha = 1;
+    }
+  }
+
+  /* bracket light + framing */
+  const hv = g.createRadialGradient(G0.ax, H * 0.42, H * 0.22, G0.ax, H * 0.42, H * 1.0);
+  hv.addColorStop(0, "#00000000"); hv.addColorStop(1, "#00000070");
+  g.fillStyle = hv; g.fillRect(0, 0, W, H);
+
+  /* highlight the fastener you must touch next */
+  if (s2 && s2.at) {
+    const pt = benchAnchor(s2.at, G0);
+    if (pt) {
+      const rr = wheelR * 0.52 + Math.sin(t * 4) * wheelR * 0.05;
+      const gr = g.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, rr * 2);
+      gr.addColorStop(0, bench.flash > 0 ? "#c8f04e77" : "#c8f04e3a");
+      gr.addColorStop(1, "#c8f04e00");
+      g.fillStyle = gr; g.beginPath(); g.arc(pt.x, pt.y, rr * 2, 0, 7); g.fill();
+      g.strokeStyle = bench.flash > 0 ? "#e8ffa0" : "#c8f04e"; g.lineWidth = 2.4;
+      g.setLineDash([7, 5]); g.lineDashOffset = -t * 24;
+      g.beginPath(); g.arc(pt.x, pt.y, rr, 0, 7); g.stroke();
+      g.setLineDash([]);
+    }
+  }
+
+  /* hold-progress ring on whatever you're working on */
+  if (bench.holdProgress > 0 && s2) {
+    const pt = benchAnchor(s2.at || "sump", G0);
+    if (pt) {
+      g.strokeStyle = "#c8f04e"; g.lineWidth = 5; g.lineCap = "round";
+      g.beginPath(); g.arc(pt.x, pt.y, wheelR * 0.8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * bench.holdProgress); g.stroke();
+    }
+  }
+
+  /* finished stamp */
+  if (bench.finished) {
+    g.save(); g.translate(W / 2, H * 0.42); g.rotate(-0.06);
+    g.strokeStyle = "#c8f04e"; g.lineWidth = 5; g.globalAlpha = 0.92;
+    g.strokeRect(-W * 0.19, -H * 0.11, W * 0.38, H * 0.22);
+    g.fillStyle = "#c8f04e"; g.font = `800 ${Math.round(H * 0.09)}px ui-monospace,monospace`;
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText("JOB DONE", 0, 0);
+    g.restore();
+  }
+}
+
+/* map a step's `at` anchor to a point on the bench drawing */
+function benchAnchor(at, G) {
+  const { wheelR: R, headX, headY, wheelCY, seatY, engX, engY, frontX, rearX, pivotAX, pivotAY, baseY, ay } = G;
+  const A = {
+    frontAxle:   { x: frontX, y: wheelCY },
+    rearAxle:    { x: rearX, y: wheelCY },
+    sump:        { x: engX + R * 0.5, y: engY + R * 0.78 },
+    tray:        { x: engX + R * 0.5, y: ay + R * 0.16 },
+    drainbolt:   { x: engX + R * 0.48, y: engY + R * 0.74 },
+    oilfilter:   { x: engX + R * 0.92, y: engY + R * 0.5 },
+    fill:        { x: engX + R * 0.44, y: engY - R * 0.8 },
+    head:        { x: engX + R * 0.44, y: engY - R * 0.82 },
+    plug:        { x: engX + R * 0.46, y: engY - R * 0.62 },
+    plugcap:     { x: engX + R * 0.46, y: engY - R * 0.9 },
+    seat:        { x: rearX + R * 1.12, y: seatY - R * 0.18 },
+    airbox:      { x: rearX + R * 0.55, y: seatY + R * 0.04 },
+    frontSprocket: { x: pivotAX, y: pivotAY },
+    rearSprocket:  { x: rearX, y: wheelCY },
+    caliper:     { x: frontX - R * 0.2, y: wheelCY - R * 0.42 },
+    mc:          { x: headX - R * 0.44, y: seatY - R * 0.62 },
+    nipple:      { x: frontX - R * 0.16, y: wheelCY - R * 0.18 },
+    coolantdrain: { x: engX + R * 0.18, y: engY + R * 0.68 },
+    forkseal:    { x: frontX, y: wheelCY - R * 0.78 },
+    grip:        { x: headX - R * 0.46, y: seatY - R * 2.3 },
+    carbtop:     { x: engX - R * 0.02, y: engY - R * 0.55 }
+  };
+  return A[at] || null;
+}
+
+/* hotspot dom buttons float over the canvas so they are keyboard + touch friendly */
+/* One source of truth for the bench drawing's geometry. It mirrors the
+   ride-scene renderer exactly, so the bench shows the same machine. */
+function benchGeom(W, H, m) {
+  const R0 = (m.wheel || 0.3) * 44;
+  /* scale the ride bike up until it fills the bench frame */
+  const s = Math.min((H * 0.80) / (R0 * 3.5), (W * 0.86) / (R0 * 3.9));
+  const wheelR = R0 * s;
+  const cx = W * 0.5, baseY = H * 0.855;
+  const ax = cx, ay = baseY;
+  const rearX = ax - wheelR * 1.62, frontX = ax + wheelR * 1.68;
+  const wheelCY = ay - wheelR;
+  const seatY = ay - wheelR * 2.02;
+  const pivotAX = ax - wheelR * 0.34, pivotAY = ay - wheelR * 1.12;
+  const headX = ax + wheelR * 0.86, headY = ay - wheelR * 1.58;
+  const engX = pivotAX - wheelR * 0.42, engY = seatY + wheelR * 0.52;
+  return { W, H, scale: s, wheelR, cx, baseY, ax, ay, rearX, frontX, wheelCY, seatY, pivotAX, pivotAY, headX, headY, engX, engY };
+}
+
+function drawBenchHotspot() {
+  const stage = $("#benchStage");
+  if (!stage || !bench) return;
+  const cv = $("#benchCv");
+  const s = bench.steps[bench.cur];
+  stage.querySelectorAll(".bench-hotspot").forEach(e => e.remove());
+  if (!s || !s.at || bench.finished) return;
+  const bike = bikeById(bench.bikeId);
+  const m = modelById(bike.modelId);
+  const G0 = benchGeom(cv.width, cv.height, m);
+  const pt = benchAnchor(s.at, G0);
+  if (!pt) return;
+  const b = document.createElement("button");
+  b.className = "bench-hotspot";
+  b.textContent = s.tool || "here";
+  b.style.left = (pt.x / cv.width * 100) + "%";
+  b.style.top = (pt.y / cv.height * 100) + "%";
+  b.type = "button";
+  b.dataset.benchSpot = s.id;
+  stage.appendChild(b);
 }
 
 /* =====================================================================
@@ -2427,7 +3533,7 @@ function renderStore() {
         </div>
         <div class="t-life"><b>${opt.life}</b><span>km life</span></div>
         <div class="t-price">${fitted ? `<span style="color:var(--lime)">${Math.round(cond * 100)}%</span>` : `${money(opt.price)}<span> +${SERVICE_LABOR[p.cat]}</span>`}</div>
-        <button class="btn btn-xs ${fitted ? "" : "btn-primary"}" data-store-buy="${p.key}:${opt.id}" ${!bike || (fitted && cond > 0.99) ? "disabled" : ""} ${bike && !afford && !fitted ? "data-poor=1" : ""}>${fitted && cond > 0.99 ? "New" : fitted ? "Renew" : "Buy"}</button>
+        <button class="btn btn-xs ${fitted ? "" : "btn-primary"}" data-store-buy="${p.key}:${opt.id}" ${!bike || (fitted && cond > 0.99) ? "disabled" : ""} ${bike && !afford && !fitted ? "data-poor=1" : ""}>${fitted && cond > 0.99 ? "Fitted" : fitted ? "Renew" : "Book job"}</button>
       </div>`;
     }).join("");
     return `<article class="card part-card">
@@ -2727,6 +3833,7 @@ function makeRide(map, bike) {
     soundOn: state.sound, front, rear, baseGrip: grip,
     wearPerPart: {}, lastHud: 0, msgTimer: 0,
     camera: 0, sky: null, far: null, mid: null, groundTex: null,
+    bikeX: 0, groundY: 0, roadY: 0, roadH: 0, seedWave: Math.random() * 900, wheelLift: 0, bounce: 0,
     wheelSpin: 0, flash: 0, engineHealthPenalty: 0
   };
 }
@@ -2776,16 +3883,27 @@ function startRide(mapId) {
 }
 
 function generateBands(r) {
+  r.bands = [];
+  r.bandGenTo = 0;
+  r.bandSeed = hashSeed(r.map.id + r.bike.id + (Date.now() % 977));
+  extendBands(r, 900);
+}
+/* grow the hazard bands ahead of the rider; called every few seconds */
+function extendBands(r, aheadMetres) {
   const map = r.map;
   const kinds = HAZARDS[map.id] || ["hard"];
-  const rng = mulberry(hashSeed(map.id + r.bike.id + Date.now() % 97));
-  let x = 60;
-  const total = map.goal * 1000 * 2.4;
-  while (x < total) {
-    x += 90 + rng() * 320;
-    const len = 40 + rng() * 150;
+  const rng = mulberry((r.bandSeed + Math.round(r.bandGenTo)) >>> 0);
+  let x = r.bandGenTo;
+  const target = (r.dist || 0) + aheadMetres;
+  while (x < target) {
+    x += 70 + rng() * 260;
+    const len = 35 + rng() * 150;
     r.bands.push({ x, len, kind: kinds[Math.floor(rng() * kinds.length)] });
   }
+  r.bandGenTo = Math.max(x, target);
+  // prune everything well behind the rider
+  const cut = (r.dist || 0) - 400;
+  if (r.bands.length > 60) r.bands = r.bands.filter(b => b.x + b.len > cut);
 }
 
 function resizeRideCanvas() {
@@ -2798,6 +3916,7 @@ function resizeRideCanvas() {
   if (ride) {
     ride.W = w; ride.H = h; ride.dpr = dpr;
     buildScenery(ride);
+    if (ride.bands) extendBands(ride, 900);
   }
 }
 
@@ -2806,7 +3925,7 @@ function buildScenery(r) {
   const pal = r.map.palette;
   const dpr = r.dpr || 1;
   const make = (w, h) => { const c = document.createElement("canvas"); c.width = Math.max(2, Math.round(w * dpr)); c.height = Math.max(2, Math.round(h * dpr)); return c; };
-  const horizon = Math.round(H * 0.66);
+  const horizon = Math.round(H * 0.50);
 
   /* sky */
   const sky = make(W, horizon + 4);
@@ -2859,7 +3978,6 @@ function buildScenery(r) {
 
   r.sky = sky; r.far = far; r.mid = mid; r.groundTex = gt; r.horizon = horizon;
   r.pattern = null;
-  r.props = buildProps(r.map);
 }
 
 const PROP_SETS = {
@@ -2872,18 +3990,26 @@ const PROP_SETS = {
   frost: ["tree", "tree", "post", "rock"],
   caldera: ["rock", "rock", "post", "rock"]
 };
-function buildProps(map) {
-  const rng = mulberry(hashSeed(map.id + "props"));
+/* Deterministic roadside scenery. Nothing is stored: a given world metre
+   always grows the same prop, so the world scrolls forever in either
+   direction without popping or memory growth. */
+function propAt(map, index) {
+  const rng = mulberry(hashSeed(map.id + "prop" + index));
   const types = PROP_SETS[map.id] || ["rock"];
+  const r1 = rng(), r2 = rng(), r3 = rng(), r4 = rng(), r5 = rng();
+  return {
+    x: index * 11 + r1 * 9,                       // ~11 m apart
+    type: types[Math.floor(r2 * types.length)],
+    off: (r3 < 0.55 ? 1 : -1) * (0.9 + r4 * 1.5),  // >0 = behind the road
+    size: (0.55 + r5 * 0.8) * (r4 < 0.3 ? 1.55 : 1)
+  };
+}
+function propsInRange(r, x0, x1) {
   const out = [];
-  let x = 8;
-  while (x < 1600) {
-    x += 14 + rng() * 46;
-    out.push({
-      x, type: types[Math.floor(rng() * types.length)],
-      off: (rng() < 0.5 ? -1 : 1) * (0.85 + rng() * 0.9),
-      size: 0.7 + rng() * 0.7
-    });
+  const i0 = Math.floor(x0 / 11) - 2, i1 = Math.ceil(x1 / 11) + 2;
+  for (let i = i0; i <= i1; i++) {
+    const p = propAt(r.map, i);
+    if (p.x >= x0 && p.x <= x1) out.push(p);
   }
   return out;
 }
@@ -2901,6 +4027,19 @@ function drawRidge(g, w, h, color, rough, seed) {
     g.lineTo(x, y);
   }
   g.lineTo(w, h); g.closePath(); g.fill();
+  /* dissolve the base into the horizon haze */
+  const fade = g.createLinearGradient(0, h * 0.34, 0, h);
+  fade.addColorStop(0, color);
+  fade.addColorStop(0.45, color + "99");
+  fade.addColorStop(1, color + "00");
+  g.globalCompositeOperation = "destination-out";
+  const cut = g.createLinearGradient(0, h * 0.34, 0, h);
+  cut.addColorStop(0, "#0000");
+  cut.addColorStop(0.5, "#0006");
+  cut.addColorStop(1, "#ffff");
+  g.fillStyle = cut;
+  g.fillRect(0, h * 0.34, w, h * 0.66);
+  g.globalCompositeOperation = "source-over";
   // snow/ash caps for frost & caldera
   if (color === "#31465c" || color === "#3a2326") {
     g.globalAlpha = 0.22; g.fillStyle = "#e8f2ff";
@@ -2996,7 +4135,7 @@ function updateRide(dt) {
   /* -------- distance -------- */
   r.dist += r.speed * dt;
   if (r.speed * 3.6 > (r.topSpeed || 0)) r.topSpeed = r.speed * 3.6;
-  r.wheelSpin += r.speed * dt / 0.55;
+  r.wheelSpin += r.speed * dt / 0.42;
 
   /* -------- gears & rpm -------- */
   const speedRatio = clamp(r.speed / Math.max(4, maxSpeed), 0, 1.02);
@@ -3136,16 +4275,19 @@ function updateRide(dt) {
     const rate = (r.speed * 1.6) * (hazard ? 2 : 1) * (r.pitch > 8 ? 0.4 : 1);
     if (Math.random() < rate * dt) {
       r.particles.push({
-        x: 0, y: 0, vx: -r.speed * rnd(.1, .4), vy: -rnd(10, 60),
+        x: -r.speed * rnd(.5, 1.6) - 18, y: rnd(-4, 6), vx: -rnd(60, 220) - r.speed * 6, vy: -rnd(8, 52),
         life: rnd(.3, .9), size: rnd(1.4, 4.2), color: hazard ? hazard.color : r.map.palette.dust
       });
     }
   }
   if (r.temp > 116 && Math.random() < dt * 8) {
-    r.particles.push({ x: 0, y: -14, vx: rnd(-10, 10), vy: -rnd(20, 50), life: rnd(.5, 1.1), size: rnd(2, 5), color: "#c9cfc8", steam: true });
+    r.particles.push({ x: 6, y: -58, vx: rnd(-40, -8), vy: -rnd(18, 46), life: rnd(.5, 1.1), size: rnd(2, 5), color: "#c9cfc8", steam: true });
   }
+  const rumble = hazard ? hazard.shake * Math.min(1, r.speed / 22) : 0.05 * Math.min(1, r.speed / 30);
+  r.bounce = (r.bounce || 0) + (Math.random() - 0.5) * rumble * 2.2;
+  r.bounce *= 1 - Math.min(1, dt * 9);
   r.shake = Math.max(0, r.shake - dt * 2.2) + (hazard ? hazard.shake * (r.speed / 30) * dt * 8 : 0) + (r.pitch > 70 ? 0.12 : 0);
-  r.particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 120 * dt; p.life -= dt; });
+  r.particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 130 * dt; p.life -= dt; });
   r.particles = r.particles.filter(p => p.life > 0).slice(-160);
   r.flash = Math.max(0, r.flash - dt * 2);
 
@@ -3171,6 +4313,13 @@ function bandAt(r, dist) {
     if (dist >= b.x && dist <= b.x + b.len) return b;
   }
   return null;
+}
+/* every band currently visible on screen, nearest-first */
+function visibleBands(r, pad = 600) {
+  return r.bands.filter(b => {
+    const x0 = screenX(r, b.x), x1 = screenX(r, b.x + b.len);
+    return x1 > -pad && x0 < r.W + pad;
+  });
 }
 
 function applyLiveWear(r, dt) {
@@ -3396,8 +4545,18 @@ function showResultModal(r, result, reason) {
 /* =====================================================================
    RIDE RENDERER
    ===================================================================== */
-function projY(r, d) { const t = 1 / (1 + Math.max(0, d) * 0.14); return r.horizon + (r.H * 0.995 - r.horizon) * t; }
-function projW(r, d) { const t = 1 / (1 + Math.max(0, d) * 0.14); return lerp(r.W * 0.035, r.W * 1.55, t); }
+/* Side-scrolling world helpers.
+   x() maps a world metre to a screen pixel with the player fixed at
+   BIKE_FRAC of the viewport; things ahead are to the RIGHT and scroll LEFT. */
+const BIKE_FRAC = 0.34;
+const PX_PER_M = 26;                 // horizontal scale: metres of road per pixel
+function screenX(r, worldMetres) { return r.bikeX + (worldMetres - r.dist) * PX_PER_M; }
+function groundYAt(r, worldMetres) {
+  // gentle undulation so the horizon isn't a dead straight line
+  const d = worldMetres - r.dist;
+  const h = r.map.id === "salt" ? 0 : Math.sin((worldMetres + r.seedWave) * 0.018) * 5 + Math.sin((worldMetres + 40) * 0.007) * 8;
+  return r.groundY + (d < 0 ? h : h * 0.7);
+}
 
 function drawRide() {
   const r = ride;
@@ -3408,152 +4567,290 @@ function drawRide() {
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.clearRect(0, 0, W, H);
 
-  const shakeX = (Math.random() - 0.5) * r.shake * 6;
-  const shakeY = (Math.random() - 0.5) * r.shake * 4;
+  const pal = r.map.palette;
+  r.bikeX = Math.round(W * BIKE_FRAC);
+  r.groundY = Math.round(H * 0.80 + (r.bounce || 0));
+  const horizon = r.horizon;
+
+  const shakeX = (Math.random() - 0.5) * r.shake * 5;
+  const shakeY = (Math.random() - 0.5) * r.shake * 3;
   g.save();
   g.translate(shakeX, shakeY);
 
-  /* ---- sky ---- */
-  if (r.sky) g.drawImage(r.sky, 0, 0, W, r.horizon + 4);
-  else { g.fillStyle = r.map.palette.sky2; g.fillRect(0, 0, W, H); }
+  /* ---------------- SKY ---------------- */
+  if (r.sky) g.drawImage(r.sky, 0, 0, W, horizon + 4);
+  else { g.fillStyle = pal.sky2; g.fillRect(0, 0, W, H); }
 
-  /* ---- parallax ridges ---- */
-  const farW = W * 1.4;
-  const farOff = -((r.dist * 0.9) % farW);
-  const midOff = -((r.dist * 2.1) % farW);
-  if (r.far) { g.drawImage(r.far, farOff, r.horizon - (r.far.height / dpr) * 0.92, farW, (r.far.height / dpr)); g.drawImage(r.far, farOff + farW, r.horizon - (r.far.height / dpr) * 0.92, farW, (r.far.height / dpr)); }
-  if (r.mid) { g.drawImage(r.mid, midOff, r.horizon - (r.mid.height / dpr) * 0.86, farW, (r.mid.height / dpr)); g.drawImage(r.mid, midOff + farW, r.horizon - (r.mid.height / dpr) * 0.86, farW, (r.mid.height / dpr)); }
+  /* ---------------- PARALLAX MOUNTAINS (scroll left as you accelerate) ---------------- */
+  const farW = Math.max(2, r.far.width / dpr);
+  const midW = Math.max(2, r.mid.width / dpr);
+  const farShift = (r.dist * PX_PER_M * 0.06) % farW;
+  const midShift = (r.dist * PX_PER_M * 0.16) % midW;
+  if (r.far) {
+    const farH = r.far.height / dpr;
+    for (let i = -1; i < Math.ceil(W / farW) + 1; i++) {
+      g.drawImage(r.far, i * farW - farShift, horizon - farH + 4, farW, farH);
+    }
+  }
+  if (r.mid) {
+    const midH = r.mid.height / dpr;
+    for (let i = -1; i < Math.ceil(W / midW) + 1; i++) {
+      g.drawImage(r.mid, i * midW - midShift, horizon - midH + 8, midW, midH);
+    }
+  }
 
-  /* ---- ground base ---- */
-  g.fillStyle = r.map.palette.ground;
-  g.fillRect(0, r.horizon, W, H - r.horizon);
+  /* horizon haze band */
+  const haze = g.createLinearGradient(0, horizon - 34, 0, horizon + 34);
+  haze.addColorStop(0, pal.horizon + "00");
+  haze.addColorStop(0.5, pal.horizon + "66");
+  haze.addColorStop(1, pal.horizon + "00");
+  g.fillStyle = haze; g.fillRect(0, horizon - 34, W, 68);
 
-  /* ---- scroll texture on the ground ---- */
+  /* ---------------- GROUND ---------------- */
+  /* Three depth planes, like a proper side-scroller:
+       far plane  horizon .. roadY   (recedes, hazy)
+       road       roadY .. roadEnd   (the surface the bike is on)
+       foreground roadEnd .. H       (rushes past, dark and blurred)      */
+  r.roadY = r.groundY;
+  const roadH = Math.max(54, H * 0.14);
+  r.roadH = roadH;
+  const roadEnd = r.roadY + roadH;
+
+  /* far plane */
+  const farGround = g.createLinearGradient(0, horizon, 0, r.roadY);
+  farGround.addColorStop(0, pal.horizon);
+  farGround.addColorStop(0.28, pal.ground2);
+  farGround.addColorStop(1, pal.ground);
+  g.fillStyle = farGround;
+  g.fillRect(0, horizon, W, r.roadY - horizon);
+
+  /* far-plane texture, slow parallax (distance illusion) */
   if (r.groundTex) {
     if (!r.pattern) r.pattern = g.createPattern(r.groundTex, "repeat");
     g.save();
-    g.beginPath(); g.rect(0, r.horizon, W, H - r.horizon); g.clip();
-    g.globalAlpha = 0.55;
-    g.translate(0, (r.dist * 26) % 256);
+    g.beginPath(); g.rect(0, horizon, W, r.roadY - horizon); g.clip();
+    const offFar = (-(r.dist * PX_PER_M * 0.28) % 256 + 256) % 256;
+    g.globalAlpha = 0.28;
     g.fillStyle = r.pattern;
-    g.fillRect(0, r.horizon - 256, W, H - r.horizon + 512);
+    g.fillRect(offFar - 256, horizon, W + 512, r.roadY - horizon);
+    g.globalAlpha = 0.5;
+    const fog = g.createLinearGradient(0, horizon, 0, r.roadY);
+    fog.addColorStop(0, pal.horizon + "dd");
+    fog.addColorStop(0.5, pal.horizon + "55");
+    fog.addColorStop(1, pal.horizon + "00");
+    g.fillStyle = fog; g.fillRect(0, horizon, W, r.roadY - horizon);
+    g.restore();
+    g.globalAlpha = 1;
+  }
+
+  /* the actual trail / tarmac surface */
+  const roadGrad = g.createLinearGradient(0, r.roadY, 0, roadEnd);
+  roadGrad.addColorStop(0, pal.dark);
+  roadGrad.addColorStop(0.18, pal.ground2);
+  roadGrad.addColorStop(1, pal.ground);
+  g.fillStyle = roadGrad;
+  g.fillRect(0, r.roadY, W, roadH);
+
+  /* road texture scrolls right→left — this is the main speed cue */
+  if (r.groundTex) {
+    g.save();
+    g.beginPath(); g.rect(0, r.roadY, W, roadH); g.clip();
+    const off = (-(r.dist * PX_PER_M) % 256 + 256) % 256;
+    g.globalAlpha = 0.55;
+    g.fillStyle = r.pattern;
+    g.fillRect(off - 256, r.roadY, W + 512, roadH);
+    g.globalAlpha = 1;
     g.restore();
   }
 
-  /* ---- horizon haze ---- */
-  const haze = g.createLinearGradient(0, r.horizon - 40, 0, r.horizon + 70);
-  haze.addColorStop(0, r.map.palette.horizon + "00");
-  haze.addColorStop(0.5, r.map.palette.horizon + "55");
-  haze.addColorStop(1, r.map.palette.horizon + "00");
-  g.fillStyle = haze; g.fillRect(0, r.horizon - 40, W, 110);
+  /* soft shoulder where the trail meets the verge */
+  const shoulder = g.createLinearGradient(0, r.roadY - 10, 0, r.roadY + 10);
+  shoulder.addColorStop(0, pal.ground2 + "00");
+  shoulder.addColorStop(0.5, pal.dark + "aa");
+  shoulder.addColorStop(1, pal.dark + "00");
+  g.fillStyle = shoulder; g.fillRect(0, r.roadY - 10, W, 20);
 
-  /* ---- road ribbon ---- */
-  const bikeX = W * 0.36;
-  // perspective road: near width huge, far narrow
-  const poly = (d0, d1, fillStyle) => {
-    const y0 = projY(r, d0), y1 = projY(r, d1);
-    const w0 = projW(r, d0), w1 = projW(r, d1);
-    g.fillStyle = fillStyle;
-    g.beginPath();
-    g.moveTo(bikeX - w0 / 2, y0); g.lineTo(bikeX + w0 / 2, y0);
-    g.lineTo(bikeX + w1 / 2, y1); g.lineTo(bikeX - w1 / 2, y1);
-    g.closePath(); g.fill();
-  };
-  poly(-4, 160, r.map.palette.ground2);
-  /* road surface / trail groove */
-  const roadAlpha = r.map.id === "city" || r.map.id === "salt" ? 0.35 : 0.16;
-  g.globalAlpha = roadAlpha;
-  poly(-4, 150, r.map.palette.dark);
+  /* centre line for tarmac maps, ruts for dirt */
+  const tarmac = r.map.id === "city" || r.map.id === "salt";
+  if (tarmac) {
+    g.strokeStyle = pal.dust; g.globalAlpha = 0.3; g.lineWidth = 3;
+    g.setLineDash([36, 28]);
+    g.lineDashOffset = (r.dist * PX_PER_M) % 64;
+    g.beginPath(); g.moveTo(0, r.roadY + roadH * 0.5); g.lineTo(W, r.roadY + roadH * 0.5); g.stroke();
+    g.setLineDash([]);
+    g.globalAlpha = 1;
+  } else {
+    /* loose grit streaks, only in the top half of the surface */
+    g.globalAlpha = 0.2; g.lineWidth = 1.4;
+    const rutOff = (-(r.dist * PX_PER_M) % 74 + 74) % 74;
+    for (let x = -74; x < W + 74; x += 74) {
+      g.strokeStyle = pal.dark;
+      g.beginPath();
+      g.moveTo(x - rutOff, r.roadY + 4);
+      g.lineTo(x - rutOff - 9, r.roadY + roadH * 0.34);
+      g.stroke();
+    }
+    /* pebbles scattered along the surface */
+    g.globalAlpha = 0.16; g.fillStyle = pal.dust;
+    const pb = (-(r.dist * PX_PER_M * 1.4) % 38 + 38) % 38;
+    for (let x = -38; x < W + 38; x += 38) {
+      const y = r.roadY + 6 + ((x * 13) % Math.max(8, roadH - 12));
+      g.beginPath(); g.ellipse(x - pb, y, 2.3, 1.2, 0, 0, 7); g.fill();
+    }
+    g.globalAlpha = 1;
+  }
+
+  /* foreground: the verge rushing past below the trail */
+  const fgGrad = g.createLinearGradient(0, roadEnd - 24, 0, H);
+  fgGrad.addColorStop(0, pal.ground + "00");
+  fgGrad.addColorStop(0.28, pal.ground2 + "cc");
+  fgGrad.addColorStop(1, pal.dark);
+  g.fillStyle = fgGrad;
+  g.fillRect(0, roadEnd - 24, W, H - roadEnd + 24);
+  /* blurred grass / grit tufts streaming past at speed */
+  const tuft = (-(r.dist * PX_PER_M * 2.4) % 64 + 64) % 64;
+  g.globalAlpha = 0.3;
+  for (let x = -64; x < W + 64; x += 64) {
+    const bx = x - tuft, by = roadEnd + 10;
+    g.strokeStyle = pal.dark; g.lineWidth = Math.max(1.4, H / 420); g.lineCap = "round";
+    for (let i = 0; i < 3; i++) {
+      g.beginPath();
+      g.moveTo(bx + i * 4, by + 2);
+      g.quadraticCurveTo(bx + i * 4 - 3, by - 9, bx + i * 4 - 8, by - 13);
+      g.stroke();
+    }
+  }
   g.globalAlpha = 1;
 
-  /* ---- terrain bands ---- */
-  for (const b of r.bands) {
-    const rd = b.x - r.dist;
-    if (rd > 150 || rd + b.len < -3) continue;
-    const d0 = Math.max(-3, rd), d1 = Math.min(150, rd + b.len);
-    if (d1 <= d0) continue;
+  /* ---------------- TERRAIN BANDS (scroll right→left under the bike) ---------------- */
+  for (const b of visibleBands(r).sort((a, c2) => a.x - c2.x)) {
+    const x0 = screenX(r, b.x), x1 = screenX(r, b.x + b.len);
+    if (x1 < -20 || x0 > W + 20) continue;
     const info = HAZARD_INFO[b.kind];
-    g.globalAlpha = 0.55;
-    poly(d0, d1, info.color);
+    const bw = Math.max(2, x1 - x0);
+    /* the patch of surface itself */
+    g.globalAlpha = 0.72;
+    g.fillStyle = info.color;
+    g.fillRect(x0, r.roadY, bw, roadH * 0.72);
     g.globalAlpha = 1;
-    // warn chevrons at the near edge of the band
-    if (rd > 0 && rd < 46) {
-      const y = projY(r, rd), w = projW(r, rd);
-      g.globalAlpha = clamp(1 - rd / 46, 0, 1) * 0.85;
-      g.fillStyle = info.color;
-      for (let i = -3; i <= 3; i++) {
-        g.fillRect(bikeX + (i / 3) * w * 0.35 - 5, y - 3, 10, 4);
-      }
+    /* clods / stones / ruts along the top of the patch */
+    g.fillStyle = "rgba(0,0,0,.3)";
+    const startX = Math.max(x0, -14), endX = Math.min(x1, W + 14);
+    for (let x = startX; x < endX; x += 11) {
+      const hh = 2 + ((Math.floor(x * 7) % 5) + 5) % 5;
+      g.fillRect(x, r.roadY - hh, 8, hh);
+    }
+    /* a hazard flag at each edge so the rider sees it coming */
+    if (x0 > -10 && x0 < W) {
+      g.globalAlpha = 0.95;
+      g.fillStyle = "#20261f";
+      g.fillRect(x0 - 1, r.roadY - 34, 2, 34);
+      g.fillStyle = info.grip < 0.68 ? "#ff5d55" : "#ffcf5c";
+      g.beginPath();
+      g.moveTo(x0 + 1, r.roadY - 34); g.lineTo(x0 + 22, r.roadY - 28); g.lineTo(x0 + 1, r.roadY - 22);
+      g.closePath(); g.fill();
       g.globalAlpha = 1;
     }
   }
 
-  /* ---- props scrolling past ---- */
-  if (r.props) {
-    for (const p of r.props) {
-      const rd = p.x - r.dist;
-      if (rd < -6 || rd > 120) continue;
-      const y = projY(r, rd);
-      const t = 1 / (1 + Math.max(0, rd) * 0.14);
-      const scale = 0.1 + t * 1.1;
-      const size = p.size * scale * (H / 640);
-      const x = bikeX + p.off * projW(r, rd) * 0.62;
-      g.globalAlpha = clamp(1 - rd / 130, 0, 1);
-      drawProp(g, r, p, x, y, size);
-      g.globalAlpha = 1;
+  /* ---------------- ROADSIDE PROPS ---------------- */
+  const viewM0 = r.dist - (r.bikeX + 120) / PX_PER_M;
+  const viewM1 = r.dist + (W - r.bikeX + 120) / PX_PER_M;
+  /* draw the far side first, then the near side, so near things overlap */
+  const visProps = propsInRange(r, viewM0, viewM1);
+  visProps.sort((a, b) => b.off - a.off);
+  for (const p of visProps) {
+    const x = screenX(r, p.x);
+    const behind = p.off > 0;
+    /* behind the trail: sit them on the far plane near its bottom edge;
+       in front: put them below the trail, bigger and cropped by the frame */
+    const size = p.size * (H / 620) * (behind ? 1.05 : 1.55);
+    const y = behind ? r.roadY - 6 + (p.off - 1) * 5 : roadEnd + (Math.abs(p.off) - 1) * 26;
+    g.globalAlpha = behind ? 0.9 : 1;
+    drawProp(g, r, p, x, y, size * (behind ? 1 : 1.25));
+  }
+  g.globalAlpha = 1;
+
+  /* ---------------- SPEED LINES / MOTION STREAKS ---------------- */
+  if (r.speed > 10) {
+    g.strokeStyle = pal.dust;
+    g.globalAlpha = clamp((r.speed - 10) / 45, 0, 0.3);
+    g.lineWidth = 1.6;
+    for (let i = 0; i < 14; i++) {
+      const yy = horizon + 24 + ((i * 61 + r.t * 620) % (H - horizon - 30));
+      const len = 40 + (yy - horizon) * 0.5 + r.speed * 2.2;
+      const sx2 = ((i * 173 - r.dist * PX_PER_M * 2.6) % (W + 320) + W + 320) % (W + 320) - 160;
+      g.beginPath(); g.moveTo(sx2, yy); g.lineTo(sx2 + len, yy); g.stroke();
     }
+    g.globalAlpha = 1;
   }
 
-  /* ---- dust / particles ---- */
+  /* ---------------- DUST PARTICLES (behind wheel, blowing back) ---------------- */
   if (r.particles) {
     for (const p of r.particles) {
-      g.globalAlpha = clamp(p.life, 0, 1) * 0.75;
+      g.globalAlpha = clamp(p.life, 0, 1) * 0.8;
       g.fillStyle = p.color;
       g.beginPath();
-      g.arc(bikeX + p.x + (r.pitch * 0.2), H * 0.86 + p.y, p.size * (p.steam ? 2.4 : 1.4), 0, 7);
+      g.arc(r.bikeX + p.x, r.groundY + p.y - 4, p.size * (p.steam ? 2.4 : 1.5), 0, 7);
       g.fill();
     }
     g.globalAlpha = 1;
   }
 
-  /* ---- bike + rider ---- */
-  drawRider(g, r, bikeX, H * 0.865, (H / 640) * (r.model.cls === "moped" ? 1.05 : 1), shakeX);
+  /* ---------------- BIKE + RIDER ---------------- */
+  drawRider(g, r, r.bikeX, r.groundY, (H / 620) * 3.55, shakeX);
 
-  /* ---- speed lines ---- */
-  if (r.speed > 12) {
-    g.strokeStyle = r.map.palette.dust;
-    g.globalAlpha = clamp((r.speed - 12) / 40, 0, 0.35);
-    g.lineWidth = 1.2;
-    for (let i = 0; i < 9; i++) {
-      const yy = r.horizon + ((i * 57 + r.t * 900) % (H - r.horizon));
-      const len = 26 + (yy - r.horizon) * 0.4;
-      g.beginPath(); g.moveTo(bikeX + 30, yy); g.lineTo(bikeX + 30 + len, yy); g.stroke();
+  /* ---------------- WEATHER OVERLAYS ---------------- */
+  if (r.map.weather === "rain") {
+    g.strokeStyle = "#cfe9ef"; g.globalAlpha = 0.35; g.lineWidth = 1.2;
+    for (let i = 0; i < 90; i++) {
+      const x = ((i * 137 + r.t * -260) % (W + 40) + W + 40) % (W + 40);
+      const y = ((i * 89 + r.t * 900) % (H + 40)) - 20;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x - 7, y + 19); g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
+  if (r.map.weather === "snow") {
+    g.fillStyle = "#eef6ff"; g.globalAlpha = 0.75;
+    for (let i = 0; i < 70; i++) {
+      const x = ((i * 151 + r.t * -90) % (W + 30) + W + 30) % (W + 30);
+      const y = ((i * 73 + r.t * 60) % (H + 30)) - 15;
+      g.beginPath(); g.arc(x, y, 0.8 + (i % 3) * 0.6, 0, 7); g.fill();
+    }
+    g.globalAlpha = 1;
+  }
+  if (r.map.weather === "dust" || r.map.weather === "ash") {
+    for (let i = 0; i < 46; i++) {
+      const x = ((i * 197 + r.t * -170) % (W + 60) + W + 60) % (W + 60);
+      const y = ((i * 113 + r.t * 22) % (H + 40)) - 20;
+      g.fillStyle = i % 5 === 0 ? pal.accent : pal.dust;
+      g.globalAlpha = 0.10 + (i % 4) * 0.045;
+      g.beginPath(); g.arc(x, y, 1.4 + (i % 4), 0, 7); g.fill();
     }
     g.globalAlpha = 1;
   }
 
-  /* ---- vignette ---- */
-  const vg = g.createRadialGradient(W * 0.45, H * 0.5, H * 0.28, W * 0.45, H * 0.5, H * 1.05);
-  vg.addColorStop(0, "#00000000"); vg.addColorStop(1, "#000000aa");
+  /* ---------------- VIGNETTE ---------------- */
+  const vg = g.createRadialGradient(W * 0.5, H * 0.5, H * 0.3, W * 0.5, H * 0.5, H * 1.05);
+  vg.addColorStop(0, "#00000000"); vg.addColorStop(1, "#00000099");
   g.fillStyle = vg; g.fillRect(0, 0, W, H);
 
-  /* ---- warnings ---- */
+  /* ---------------- WARNINGS ---------------- */
   if (r.temp > 112) {
-    g.fillStyle = "#ff3b30"; g.globalAlpha = 0.06 + Math.sin(r.t * 10) * 0.04;
+    g.fillStyle = "#ff3b30"; g.globalAlpha = 0.05 + Math.sin(r.t * 10) * 0.035;
     g.fillRect(0, 0, W, H); g.globalAlpha = 1;
   }
   if (r.overheat > 0.5) {
     g.fillStyle = "#ff3b30";
-    g.font = `700 ${Math.round(H * 0.03)}px ui-monospace,monospace`;
+    g.font = `800 ${Math.round(H * 0.032)}px ui-monospace,monospace`;
     g.textAlign = "center";
     g.globalAlpha = 0.65 + Math.sin(r.t * 12) * 0.3;
-    g.fillText("ENGINE OVERHEATING", W / 2, H * 0.2);
+    g.fillText("ENGINE OVERHEATING", W / 2, H * 0.19);
     g.globalAlpha = 1;
   }
   if (r.map.id === "frost") {
-    // breath fog
     g.fillStyle = "#cfe6f5"; g.globalAlpha = 0.05 + Math.sin(r.t) * 0.02;
-    g.beginPath(); g.ellipse(bikeX + 10, H * 0.8, 40, 24, 0, 0, 7); g.fill(); g.globalAlpha = 1;
+    g.beginPath(); g.ellipse(r.bikeX + 40, r.groundY - 70, 40, 22, 0, 0, 7); g.fill(); g.globalAlpha = 1;
   }
   g.restore();
 }
@@ -3568,10 +4865,35 @@ function drawProp(g, r, p, x, y, s) {
     g.moveTo(x, y - 44 * s); g.lineTo(x - 26 * s, y - 6 * s); g.lineTo(x + 26 * s, y - 6 * s); g.closePath(); g.fill();
     g.fillStyle = "#141d16"; g.fillRect(x - 1.6 * s, y - 4 * s, 3.2 * s, 9 * s);
   } else if (p.type === "rock") {
-    g.fillStyle = pal.dark; g.beginPath();
-    g.moveTo(x - 16 * s, y); g.lineTo(x - 8 * s, y - 14 * s); g.lineTo(x + 6 * s, y - 11 * s); g.lineTo(x + 15 * s, y); g.closePath(); g.fill();
-    g.fillStyle = pal.mid; g.beginPath();
-    g.moveTo(x - 8 * s, y - 14 * s); g.lineTo(x + 6 * s, y - 11 * s); g.lineTo(x - 6 * s, y - 1 * s); g.closePath(); g.fill();
+    /* layered boulder with a lit face and a cast shadow */
+    const h = 15 * s, w = 17 * s;
+    g.fillStyle = "rgba(0,0,0,.35)";
+    g.beginPath(); g.ellipse(x + w * 0.2, y + 1, w * 1.15, h * 0.16, 0, 0, 7); g.fill();
+    g.fillStyle = pal.dark;
+    g.beginPath();
+    g.moveTo(x - w, y);
+    g.lineTo(x - w * 0.72, y - h * 0.62);
+    g.lineTo(x - w * 0.2, y - h);
+    g.lineTo(x + w * 0.42, y - h * 0.78);
+    g.lineTo(x + w * 0.86, y - h * 0.34);
+    g.lineTo(x + w, y);
+    g.closePath(); g.fill();
+    g.fillStyle = pal.mid; g.globalAlpha = 0.85;
+    g.beginPath();
+    g.moveTo(x - w * 0.72, y - h * 0.62);
+    g.lineTo(x - w * 0.2, y - h);
+    g.lineTo(x + w * 0.42, y - h * 0.78);
+    g.lineTo(x + w * 0.1, y - h * 0.42);
+    g.closePath(); g.fill();
+    g.globalAlpha = 0.5; g.fillStyle = pal.dust;
+    g.beginPath();
+    g.moveTo(x - w * 0.2, y - h);
+    g.lineTo(x + w * 0.1, y - h * 0.42);
+    g.lineTo(x - w * 0.5, y - h * 0.3);
+    g.closePath(); g.fill();
+    g.globalAlpha = 1;
+    g.strokeStyle = "rgba(0,0,0,.3)"; g.lineWidth = Math.max(0.6, s * 0.6);
+    g.beginPath(); g.moveTo(x + w * 0.1, y - h * 0.42); g.lineTo(x - w * 0.1, y); g.stroke();
   } else if (p.type === "lamp") {
     g.strokeStyle = "#20262a"; g.lineWidth = 2.4 * s;
     g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - 96 * s); g.lineTo(x + 16 * s, y - 96 * s); g.stroke();
@@ -3579,10 +4901,35 @@ function drawProp(g, r, p, x, y, s) {
     g.beginPath(); g.arc(x + 18 * s, y - 94 * s, 3.4 * s, 0, 7); g.fill();
     g.globalAlpha = 0.14; g.beginPath(); g.arc(x + 18 * s, y - 94 * s, 18 * s, 0, 7); g.fill();
   } else if (p.type === "cactus") {
-    g.fillStyle = "#3d5a3a";
-    g.fillRect(x - 3 * s, y - 40 * s, 6 * s, 40 * s);
-    g.fillRect(x - 14 * s, y - 28 * s, 5 * s, 16 * s);
-    g.fillRect(x - 14 * s, y - 30 * s, 13 * s, 5 * s);
+    const H0 = 46 * s, tw = 7 * s;
+    g.fillStyle = "rgba(0,0,0,.28)";
+    g.beginPath(); g.ellipse(x + tw * 0.4, y + 1, tw * 2.0, tw * 0.4, 0, 0, 7); g.fill();
+    g.strokeStyle = "#3d5a3a"; g.lineCap = "round";
+    /* trunk */
+    g.lineWidth = tw;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - H0); g.stroke();
+    /* arms */
+    g.lineWidth = tw * 0.72;
+    g.beginPath();
+    g.moveTo(x - tw * 0.2, y - H0 * 0.52);
+    g.lineTo(x - tw * 1.7, y - H0 * 0.52);
+    g.lineTo(x - tw * 1.7, y - H0 * 0.76);
+    g.stroke();
+    g.beginPath();
+    g.moveTo(x + tw * 0.2, y - H0 * 0.66);
+    g.lineTo(x + tw * 1.5, y - H0 * 0.66);
+    g.lineTo(x + tw * 1.5, y - H0 * 0.9);
+    g.stroke();
+    /* sunlit edge */
+    g.strokeStyle = "rgba(150,190,130,.45)"; g.lineWidth = Math.max(1, tw * 0.22);
+    g.beginPath(); g.moveTo(x + tw * 0.26, y - tw * 0.4); g.lineTo(x + tw * 0.26, y - H0 + tw * 0.3); g.stroke();
+    /* spines */
+    g.strokeStyle = "rgba(40,64,40,.7)"; g.lineWidth = Math.max(0.7, s * 0.5);
+    for (let i = 1; i < 8; i++) {
+      const yy = y - H0 * (i / 8);
+      g.beginPath(); g.moveTo(x - tw * 0.4, yy); g.lineTo(x - tw * 0.75, yy + s); g.stroke();
+      g.beginPath(); g.moveTo(x + tw * 0.4, yy); g.lineTo(x + tw * 0.8, yy - s); g.stroke();
+    }
   } else if (p.type === "flag") {
     g.strokeStyle = "#2a2a26"; g.lineWidth = 1.6 * s;
     g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - 44 * s); g.stroke();
@@ -3594,169 +4941,615 @@ function drawProp(g, r, p, x, y, s) {
   }
 }
 
-/* rider + bike silhouette in side view, canvas drawn so it can animate */
-function drawRider(g, r, x, y, s, shake) {
+/* =====================================================================
+   RIDE-SCENE BIKE + RIDER (canvas, side view, animates live)
+   Everything is built off one wheel radius R so the machine stays in
+   proportion: axle height = R, seat = 2.05R, bars = 2.2R. The chassis
+   is drawn first as a connected skeleton, then bodywork hangs off it,
+   so no panel ever floats away from the bike.
+   ===================================================================== */
+/* lighten (amt>0) or darken (amt<0) a #rrggbb colour */
+function shade(hex, amt) {
+  const h = String(hex || "#888888").replace("#", "");
+  const full = h.length === 3 ? h.split("").map(c => c + c).join("") : h.slice(0, 6);
+  const n = parseInt(full, 16);
+  let rr = (n >> 16) & 255, gg = (n >> 8) & 255, bb = n & 255;
+  const f = v => Math.max(0, Math.min(255, Math.round(amt >= 0 ? v + (255 - v) * amt : v * (1 + amt))));
+  return "#" + [f(rr), f(gg), f(bb)].map(v => v.toString(16).padStart(2, "0")).join("");
+}
+function drawRider(g, r, x, y, s, shake, opts) {
   const m = r.model;
-  const pitch = r.pitch * Math.PI / 180;
-  const wheelR = (m.wheel || 0.3) * 46 * s;
-  const lean = r.lean * 3;
-  const bob = Math.sin(r.t * 14) * (r.speed > 2 ? 0.5 : 0) + (r.shake ? (Math.random() - 0.5) * r.shake : 0);
+  const eng = m.engine || { stroke: 4, fuel: "efi", oilFilter: true, valves: 2 };
   const p = r.bike.paint;
-  g.save();
-  g.translate(x, y + bob);
-  g.rotate(-pitch * 0.72 + (r.ended ? 0.22 : 0));
-  g.translate(-x, -y);
-  g.translate(x + lean * 0.4, y);
+  const R = (m.wheel || 0.3) * 44 * s;
+  const style = m.style;
+  const isDirt = style === "dirt" || style === "dual" || style === "rally";
+  const isTwo = eng.stroke === 2;
+  const faired = style === "street" && m.cc > 900;
+  const lean = r.lean * 2.4;
+  const pitch = (r.pitch || 0) * Math.PI / 180;
 
-  const groundY = 0;
-  // shadow
-  g.fillStyle = "#000"; g.globalAlpha = 0.35;
-  g.beginPath(); g.ellipse(0, 6, wheelR * 2.1, wheelR * 0.22, 0, 0, 7); g.fill();
+  g.save();
+  const pivotX = x - R * 1.55, pivotY = y;
+  g.translate(pivotX, pivotY);
+  g.rotate(-pitch * 0.9 + (r.ended ? 0.2 : 0));
+  g.translate(-pivotX, -pivotY);
+  g.translate(x + lean, y);
+
+  /* ---------- contact shadow ---------- */
+  g.fillStyle = "#000"; g.globalAlpha = 0.34;
+  g.beginPath(); g.ellipse(0, 2, R * 2.4, R * 0.17, 0, 0, 7); g.fill();
   g.globalAlpha = 1;
 
-  const wheel = (wx) => {
-    g.save(); g.translate(wx, groundY - wheelR);
-    g.rotate(r.wheelSpin);
-    g.strokeStyle = "#141816"; g.lineWidth = 5.2 * s;
-    g.beginPath(); g.arc(0, 0, wheelR, 0, 7); g.stroke();
-    g.strokeStyle = "#c3cbc2"; g.lineWidth = 2.2 * s;
-    g.beginPath(); g.arc(0, 0, wheelR * 0.58, 0, 7); g.stroke();
-    g.strokeStyle = "#9aa39c"; g.lineWidth = 1.5 * s;
-    for (let i = 0; i < 6; i++) {
-      const a = i * Math.PI / 3;
-      g.beginPath(); g.moveTo(Math.cos(a) * wheelR * 0.2, Math.sin(a) * wheelR * 0.2);
-      g.lineTo(Math.cos(a) * wheelR * 0.56, Math.sin(a) * wheelR * 0.56); g.stroke();
-    }
-    g.fillStyle = "#5a635c"; g.beginPath(); g.arc(0, 0, wheelR * 0.2, 0, 7); g.fill();
-    if (m.style !== "moped") {
-      g.strokeStyle = "#8b948e"; g.lineWidth = 1.6 * s; g.setLineDash([2, 3]);
-      g.beginPath(); g.arc(0, 0, wheelR * 0.42, 0, 7); g.stroke(); g.setLineDash([]);
-    }
-    // knobs / tread
-    g.strokeStyle = "#222927"; g.lineWidth = 2 * s;
-    for (let i = 0; i < (m.cls === "street" ? 10 : 14); i++) {
-      const a = i * (Math.PI * 2 / (m.cls === "street" ? 10 : 14));
-      g.beginPath();
-      g.moveTo(Math.cos(a) * (wheelR + 1 * s), Math.sin(a) * (wheelR + 1 * s));
-      g.lineTo(Math.cos(a) * (wheelR + (m.cls === "street" ? 2 : 3.4) * s), Math.sin(a) * (wheelR + (m.cls === "street" ? 2 : 3.4) * s));
-      g.stroke();
-    }
-    g.restore();
+  /* ---------- geometry ---------- */
+  const axleY = -R;
+  const rearX = -R * 1.62, frontX = R * 1.68;
+  const seatY = -R * 2.02;
+  const pivot = { x: -R * 0.34, y: -R * 1.12 };
+  const head = { x: R * 0.86, y: -R * 1.58 };
+  const barY = isDirt ? -R * 2.34 : -R * 2.02;
+  const barX = head.x + R * 0.12;
+
+  const poly = (pts, fill, stroke, lw) => {
+    g.beginPath();
+    g.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]);
+    g.closePath();
+    if (fill) { g.fillStyle = fill; g.fill(); }
+    if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || Math.max(1, R * 0.028); g.stroke(); }
+  };
+  const rrect = (x0, y0, w, h, rad, fill) => {
+    g.beginPath();
+    if (g.roundRect) g.roundRect(x0, y0, w, h, rad);
+    else g.rect(x0, y0, w, h);
+    g.fillStyle = fill; g.fill();
+  };
+  const line = (pts, color, lw, cap) => {
+    g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]);
+    g.strokeStyle = color; g.lineWidth = lw; g.lineCap = cap || "round"; g.lineJoin = "round"; g.stroke();
   };
 
-  const rearW = -wheelR * 1.75, frontW = wheelR * 1.85;
-  wheel(rearW);
-  wheel(frontW);
+  /* ================= WHEELS ================= */
+  const wheel = (wx, front) => {
+    g.save(); g.translate(wx, axleY); g.rotate(r.wheelSpin);
+    /* tyre */
+    g.strokeStyle = "#0c0f0e"; g.lineWidth = R * 0.34;
+    g.beginPath(); g.arc(0, 0, R * 0.83, 0, 7); g.stroke();
+    /* knobs */
+    if (isDirt) {
+      g.strokeStyle = "#070908"; g.lineWidth = Math.max(1.4, R * 0.075); g.lineCap = "butt";
+      const n = 18;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        const c = Math.cos(a), sn = Math.sin(a);
+        g.beginPath();
+        g.moveTo(c * R * 0.94, sn * R * 0.94);
+        g.lineTo(c * R * 1.05, sn * R * 1.05);
+        g.stroke();
+      }
+    }
+    /* rim */
+    g.strokeStyle = p.rim; g.lineWidth = Math.max(1.8, R * 0.075);
+    g.beginPath(); g.arc(0, 0, R * 0.7, 0, 7); g.stroke();
+    /* spokes or cast */
+    if (style === "street") {
+      g.fillStyle = p.rim;
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2;
+        g.beginPath();
+        g.moveTo(Math.cos(a) * R * 0.16, Math.sin(a) * R * 0.16);
+        g.lineTo(Math.cos(a) * R * 0.64, Math.sin(a) * R * 0.64);
+        g.lineTo(Math.cos(a + 0.34) * R * 0.64, Math.sin(a + 0.34) * R * 0.64);
+        g.closePath(); g.fill();
+      }
+    } else {
+      g.strokeStyle = "#9fa9a2"; g.lineWidth = Math.max(1, R * 0.028);
+      const n = 16;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        g.beginPath();
+        g.moveTo(Math.cos(a) * R * 0.12, Math.sin(a) * R * 0.12);
+        g.lineTo(Math.cos(a) * R * 0.68, Math.sin(a) * R * 0.68);
+        g.stroke();
+      }
+    }
+    /* brake disc */
+    g.strokeStyle = "#8e9993"; g.lineWidth = Math.max(1.2, R * 0.055);
+    g.setLineDash([R * 0.12, R * 0.09]);
+    g.beginPath(); g.arc(0, 0, R * 0.45, 0, 7); g.stroke();
+    g.setLineDash([]);
+    /* hub */
+    g.fillStyle = "#485049"; g.beginPath(); g.arc(0, 0, R * 0.13, 0, 7); g.fill();
+    g.fillStyle = "#1b211e"; g.beginPath(); g.arc(0, 0, R * 0.055, 0, 7); g.fill();
+    g.restore();
+    /* caliper (not rotating) */
+    g.fillStyle = "#b89a3f";
+    rrect(wx - R * 0.22, axleY - R * 0.42, R * 0.16, R * 0.26, R * 0.05, "#b89a3f");
+    g.fillStyle = "#2b2f2b";
+    rrect(wx - R * 0.2, axleY - R * 0.38, R * 0.05, R * 0.18, R * 0.02, "#2b2f2b");
+  };
+  wheel(rearX, false);
+  wheel(frontX, true);
 
-  const isDirt = m.style === "dirt" || m.style === "dual" || m.style === "rally";
-  const seatY = groundY - wheelR * 2.0;
+  /* ================= CHAIN + SWINGARM ================= */
+  line([[rearX, axleY], [pivot.x, pivot.y]], "#252b27", R * 0.15);
+  line([[rearX, axleY], [pivot.x, pivot.y]], "#3d453f", R * 0.07);
+  /* sprocket */
+  g.strokeStyle = "#525b54"; g.lineWidth = Math.max(1.5, R * 0.05);
+  g.beginPath(); g.arc(rearX, axleY, R * 0.19, 0, 7); g.stroke();
+  /* chain run top + bottom */
+  g.strokeStyle = "#767f78"; g.lineWidth = Math.max(1.2, R * 0.03);
+  g.setLineDash([R * 0.07, R * 0.045]);
+  g.beginPath(); g.moveTo(rearX, axleY - R * 0.2); g.lineTo(pivot.x + R * 0.16, pivot.y - R * 0.14); g.stroke();
+  g.beginPath(); g.moveTo(rearX, axleY + R * 0.2); g.lineTo(pivot.x + R * 0.16, pivot.y + R * 0.12); g.stroke();
+  g.setLineDash([]);
 
-  /* swingarm + frame */
-  g.strokeStyle = p.frame; g.lineWidth = 5 * s; g.lineCap = "round";
-  g.beginPath(); g.moveTo(rearW, groundY - wheelR); g.lineTo(rearW + wheelR * 1.1, seatY + wheelR * 0.55); g.stroke();
-  g.lineWidth = 4.4 * s;
-  g.beginPath();
-  g.moveTo(rearW + wheelR * 1.1, seatY + wheelR * 0.55);
-  g.lineTo(frontW - wheelR * 0.5, seatY + wheelR * 0.1);
-  g.stroke();
-
-  /* engine block */
-  g.fillStyle = "#2b312c";
-  g.beginPath();
-  g.roundRect ? g.roundRect(rearW + wheelR * 1.2, seatY + wheelR * 0.45, wheelR * 1.1, wheelR * 0.82, 4 * s) : g.rect(rearW + wheelR * 1.2, seatY + wheelR * 0.45, wheelR * 1.1, wheelR * 0.82);
-  g.fill();
-  g.fillStyle = "#3b433c";
-  g.fillRect(rearW + wheelR * 1.35, seatY + wheelR * 0.5, wheelR * 0.55, wheelR * 0.2);
-
-  /* tank / body */
-  g.fillStyle = p.body;
-  g.beginPath();
-  if (isDirt) {
-    g.moveTo(rearW + wheelR * 1.5, seatY + wheelR * 0.1);
-    g.quadraticCurveTo(frontW - wheelR * 0.7, seatY - wheelR * 0.9, frontW - wheelR * 0.15, seatY - wheelR * 0.5);
-    g.lineTo(frontW - wheelR * 0.3, seatY + wheelR * 0.2);
-    g.quadraticCurveTo(rearW + wheelR * 2.2, seatY + wheelR * 0.35, rearW + wheelR * 1.5, seatY + wheelR * 0.1);
-  } else if (m.style === "street") {
-    g.moveTo(rearW + wheelR * 1.4, seatY + wheelR * 0.05);
-    g.quadraticCurveTo(frontW - wheelR * 0.9, seatY - wheelR * 1.15, frontW + wheelR * 0.15, seatY - wheelR * 0.35);
-    g.lineTo(frontW - wheelR * 0.2, seatY + wheelR * 0.35);
-    g.quadraticCurveTo(rearW + wheelR * 2, seatY + wheelR * 0.35, rearW + wheelR * 1.4, seatY + wheelR * 0.05);
-  } else {
-    g.moveTo(rearW + wheelR * 1.3, seatY + wheelR * 0.15);
-    g.quadraticCurveTo(rearW + wheelR * 2.6, seatY - wheelR * 0.55, frontW - wheelR * 0.55, seatY - wheelR * 0.35);
-    g.lineTo(frontW - wheelR * 0.6, seatY + wheelR * 0.2);
-    g.quadraticCurveTo(rearW + wheelR * 2.4, seatY + wheelR * 0.5, rearW + wheelR * 1.3, seatY + wheelR * 0.15);
+  /* ================= SHOCK ================= */
+  {
+    const a = { x: pivot.x + R * 0.06, y: pivot.y + R * 0.04 };
+    const b = { x: pivot.x + R * 0.52, y: seatY + R * 0.2 };
+    line([[a.x, a.y], [b.x, b.y]], "#2f3531", R * 0.12);
+    /* spring coils */
+    g.strokeStyle = "#c9a24a"; g.lineWidth = Math.max(1.2, R * 0.045);
+    for (let i = 0; i < 5; i++) {
+      const t0 = 0.16 + i * 0.14, t1 = t0 + 0.07;
+      g.beginPath();
+      g.moveTo(a.x + (b.x - a.x) * t0 - R * 0.07, a.y + (b.y - a.y) * t0);
+      g.lineTo(a.x + (b.x - a.x) * t1 + R * 0.07, a.y + (b.y - a.y) * t1);
+      g.stroke();
+    }
   }
-  g.closePath(); g.fill();
-  g.strokeStyle = "#14181566"; g.lineWidth = 1.2 * s; g.stroke();
 
-  /* seat */
-  g.fillStyle = p.seat;
-  g.beginPath();
-  g.roundRect ? g.roundRect(rearW + wheelR * 1.35, seatY - wheelR * 0.2, wheelR * 1.25, wheelR * 0.22, wheelR * 0.1) : g.rect(rearW + wheelR * 1.35, seatY - wheelR * 0.2, wheelR * 1.25, wheelR * 0.22);
-  g.fill();
+  /* ================= FRAME ================= */
+  const frameColor = p.frame;
+  /* main spar pivot → steering head */
+  line([[pivot.x, pivot.y], [head.x, head.y]], frameColor, R * 0.12);
+  /* down tube */
+  line([[head.x, head.y], [head.x - R * 0.18, seatY + R * 0.72]], frameColor, R * 0.09);
+  if (style === "moped") {
+    /* pressed step-through spine dipping low between the wheels */
+    line([[head.x, head.y], [head.x - R * 0.35, -R * 1.32], [pivot.x + R * 0.15, -R * 1.28]], frameColor, R * 0.13);
+  } else {
+    /* subframe up to the tail */
+    line([[pivot.x, pivot.y], [pivot.x - R * 0.28, seatY + R * 0.16], [rearX + R * 0.24, seatY + R * 0.1]], frameColor, R * 0.075);
+    /* seat rails */
+    line([[pivot.x - R * 0.2, seatY + R * 0.2], [head.x - R * 0.12, seatY + R * 0.16]], frameColor, R * 0.06);
+  }
 
-  /* exhaust */
-  g.strokeStyle = "#9fa8a2"; g.lineWidth = 3 * s;
-  g.beginPath();
-  g.moveTo(rearW + wheelR * 1.9, seatY + wheelR * 0.8);
-  g.quadraticCurveTo(rearW + wheelR * 1.1, seatY + wheelR * 1.0, rearW + wheelR * 0.25, seatY + wheelR * 0.95);
-  g.stroke();
-  g.fillStyle = "#b4bcb6";
-  g.beginPath(); g.ellipse(rearW + wheelR * 0.2, seatY + wheelR * 0.95, wheelR * 0.22, wheelR * 0.11, 0, 0, 7); g.fill();
+  /* ================= ENGINE ================= */
+  const ex = pivot.x - R * 0.42, ey = seatY + R * 0.52, ew = R * 1.02, eh = R * 0.74;
+  if (style !== "moped") {
+    /* crankcase */
+    rrect(ex, ey, ew, eh, R * 0.1, "#232925");
+    g.strokeStyle = "#39413b"; g.lineWidth = Math.max(1, R * 0.02);
+    g.beginPath();
+    if (g.roundRect) g.roundRect(ex, ey, ew, eh, R * 0.1); else g.rect(ex, ey, ew, eh);
+    g.stroke();
+    if (isTwo) {
+      /* reed-valve two-stroke: squat barrel with fins */
+      rrect(ex + R * 0.1, ey - R * 0.42, R * 0.56, R * 0.44, R * 0.05, "#2f3731");
+      g.strokeStyle = "#0e1210"; g.lineWidth = Math.max(1, R * 0.018);
+      for (let i = 0; i < 5; i++) {
+        g.beginPath();
+        g.moveTo(ex + R * 0.12, ey - R * (0.36 - i * 0.08));
+        g.lineTo(ex + R * 0.64, ey - R * (0.36 - i * 0.08));
+        g.stroke();
+      }
+      /* crankcase cover + kickstart */
+      g.fillStyle = "#2a312c"; g.beginPath(); g.arc(ex + R * 0.24, ey + R * 0.4, R * 0.17, 0, 7); g.fill();
+      line([[ex + R * 0.92, ey + R * 0.1], [ex + R * 1.16, ey - R * 0.04]], "#4d574f", R * 0.045);
+    } else {
+      /* four-stroke: tall finned barrel + cam cover */
+      rrect(ex + R * 0.16, ey - R * 0.66, R * 0.52, R * 0.68, R * 0.05, "#2f3731");
+      g.strokeStyle = "#0e1210"; g.lineWidth = Math.max(1, R * 0.018);
+      for (let i = 0; i < 5; i++) {
+        const yy = ey - R * (0.58 - i * 0.115);
+        g.beginPath(); g.moveTo(ex + R * 0.16, yy); g.lineTo(ex + R * 0.68, yy); g.stroke();
+      }
+      /* cam cover */
+      rrect(ex + R * 0.12, ey - R * 0.84, R * 0.6, R * 0.19, R * 0.04, "#454e47");
+      /* EFI throttle body or carb bellmouth */
+      if (eng.fuel === "efi") {
+        rrect(ex - R * 0.14, ey - R * 0.66, R * 0.2, R * 0.3, R * 0.04, "#55645d");
+        g.fillStyle = "#a9bab2"; g.beginPath(); g.arc(ex - R * 0.06, ey - R * 0.72, R * 0.045, 0, 7); g.fill();
+      } else {
+        rrect(ex - R * 0.1, ey - R * 0.6, R * 0.2, R * 0.26, R * 0.05, "#465049");
+        line([[ex - R * 0.08, ey - R * 0.66], [ex - R * 0.08, ey - R * 0.9]], "#232b26", Math.max(1, R * 0.03));
+      }
+      /* clutch cover */
+      g.fillStyle = "#3d463f"; g.beginPath(); g.arc(ex + R * 0.3, ey + R * 0.46, R * 0.2, 0, 7); g.fill();
+      g.fillStyle = "#232b26"; g.beginPath(); g.arc(ex + R * 0.3, ey + R * 0.46, R * 0.06, 0, 7); g.fill();
+    }
+    /* sump / belly */
+    rrect(ex + R * 0.02, ey + eh - R * 0.02, ew * 0.9, R * 0.12, R * 0.03, "#1b211e");
+  } else {
+    /* moped: tiny horizontal engine under the deck */
+    rrect(ex + R * 0.5, ey + R * 0.28, R * 0.62, R * 0.42, R * 0.08, "#252b27");
+    g.strokeStyle = "#0e1210"; g.lineWidth = Math.max(1, R * 0.02);
+    for (let i = 0; i < 3; i++) {
+      g.beginPath(); g.moveTo(ex + R * 0.52, ey + R * (0.36 + i * 0.09)); g.lineTo(ex + R * 1.1, ey + R * (0.36 + i * 0.09)); g.stroke();
+    }
+    /* pedal crank */
+    line([[ex + R * 0.72, ey + R * 0.7], [ex + R * 0.9, ey + R * 0.98]], "#5c665f", Math.max(1, R * 0.04));
+  }
 
-  /* front fork + bars */
-  g.strokeStyle = "#b9c2bb"; g.lineWidth = 3.2 * s;
-  g.beginPath();
-  g.moveTo(frontW - wheelR * 0.15, seatY - wheelR * 0.28);
-  g.lineTo(frontW, groundY - wheelR);
-  g.stroke();
-  g.strokeStyle = p.frame; g.lineWidth = 3.4 * s;
-  g.beginPath();
-  g.moveTo(frontW - wheelR * 0.2, seatY - wheelR * 0.3);
-  g.lineTo(frontW - wheelR * 0.55, seatY - wheelR * 0.95);
-  g.stroke();
-  g.strokeStyle = "#1e2320"; g.lineWidth = 3 * s;
-  g.beginPath();
-  g.moveTo(frontW - wheelR * 0.62, seatY - wheelR * 0.97);
-  g.lineTo(frontW - wheelR * 0.22, seatY - wheelR * 0.9);
-  g.stroke();
+  /* ================= EXHAUST ================= */
+  if (isTwo && style !== "moped") {
+    /* expansion chamber sweeping forward then back */
+    g.beginPath();
+    g.moveTo(ex + R * 0.5, ey + R * 0.06);
+    g.bezierCurveTo(ex + R * 1.5, ey - R * 0.1, ex + R * 2.3, ey + R * 0.5, ex + R * 2.6, ey + R * 0.1);
+    g.strokeStyle = "#6b5230"; g.lineWidth = R * 0.3; g.lineCap = "round"; g.stroke();
+    g.strokeStyle = "#c8a367"; g.lineWidth = R * 0.2; g.stroke();
+    g.strokeStyle = "rgba(255,240,200,.28)"; g.lineWidth = R * 0.05; g.stroke();
+    /* stinger into the silencer */
+    line([[ex + R * 2.35, ey + R * 0.16], [rearX + R * 0.92, ey + R * 0.34]], "#a7b0aa", R * 0.1);
+    rrect(rearX + R * 0.72, ey + R * 0.22, R * 0.5, R * 0.2, R * 0.08, "#b3bcb6");
+  } else if (style !== "moped") {
+    line([[ex + R * 0.78, ey + R * 0.34], [ex + R * 1.5, ey + R * 0.62], [rearX + R * 0.95, ey + R * 0.56]], "#a7b0aa", R * 0.11);
+    rrect(rearX + R * 0.78, ey + R * 0.44, R * 0.62, R * 0.2, R * 0.09, "#b3bcb6");
+    g.fillStyle = "#6f7973";
+    g.beginPath(); g.ellipse(rearX + R * 0.78, ey + R * 0.54, R * 0.045, R * 0.09, 0, 0, 7); g.fill();
+  } else {
+    /* moped pipe running low along the right side */
+    line([[ex + R * 1.06, ey + R * 0.62], [rearX + R * 1.3, ey + R * 0.72], [rearX + R * 0.2, ey + R * 0.78]], "#a7b0aa", R * 0.09);
+    rrect(rearX + R * 0.14, ey + R * 0.66, R * 0.46, R * 0.16, R * 0.07, "#9aa49f");
+  }
 
-  /* front fender */
-  g.strokeStyle = p.body; g.lineWidth = 3.4 * s; g.globalAlpha = 0.92;
-  g.beginPath();
-  g.arc(frontW, groundY - wheelR, wheelR + 4 * s, Math.PI * 1.15, Math.PI * 1.72);
-  g.stroke();
-  g.globalAlpha = 1;
+  /* ================= BODYWORK ================= */
+  if (style === "moped") {
+    /* tank between seat and head tube */
+    poly([
+      [head.x - R * 0.5, seatY + R * 0.06],
+      [head.x - R * 0.42, seatY - R * 0.2],
+      [head.x + R * 0.06, seatY - R * 0.22],
+      [head.x + R * 0.2, seatY + R * 0.02]
+    ], p.body, "#1a1f1a", Math.max(1, R * 0.022));
+    /* long flat saddle */
+    poly([
+      [rearX + R * 0.3, seatY + R * 0.02],
+      [rearX + R * 0.34, seatY - R * 0.24],
+      [head.x - R * 0.46, seatY - R * 0.26],
+      [head.x - R * 0.5, seatY + R * 0.04]
+    ], p.seat, "#12150f", Math.max(1, R * 0.02));
+    /* chrome rear rack */
+    poly([
+      [rearX - R * 0.18, seatY - R * 0.26],
+      [rearX + R * 0.36, seatY - R * 0.3],
+      [rearX + R * 0.36, seatY - R * 0.2],
+      [rearX - R * 0.16, seatY - R * 0.16]
+    ], shade(p.accent, -0.45), null);
+    /* mudguards */
+    g.strokeStyle = p.body; g.lineWidth = R * 0.085; g.lineCap = "round";
+    g.beginPath(); g.arc(frontX, axleY, R * 0.92, Math.PI * 1.2, Math.PI * 1.78); g.stroke();
+    g.beginPath(); g.arc(rearX, axleY, R * 0.9, Math.PI * 1.24, Math.PI * 1.76); g.stroke();
+    /* chain guard */
+    poly([[pivot.x, pivot.y - R * 0.16], [rearX + R * 0.1, axleY - R * 0.22], [rearX + R * 0.1, axleY - R * 0.1], [pivot.x, pivot.y - R * 0.02]], shade(p.body, -0.25), null);
+    /* headlamp */
+    g.fillStyle = "#20261f"; g.beginPath(); g.arc(head.x + R * 0.12, seatY - R * 0.16, R * 0.17, 0, 7); g.fill();
+    g.fillStyle = "#ffe9b4"; g.beginPath(); g.arc(head.x + R * 0.14, seatY - R * 0.16, R * 0.115, 0, 7); g.fill();
+    /* speedo */
+    rrect(head.x - R * 0.1, seatY - R * 0.5, R * 0.22, R * 0.13, R * 0.03, "#2c332e");
+    /* mirror */
+    line([[head.x - R * 0.24, barY], [head.x - R * 0.36, barY - R * 0.26]], "#4a544c", Math.max(1, R * 0.028));
+    g.fillStyle = "#aeb8b2";
+    g.beginPath(); g.ellipse(head.x - R * 0.38, barY - R * 0.3, R * 0.08, R * 0.055, 0, 0, 7); g.fill();
+  }
 
-  /* rider */
-  const hipX = rearW + wheelR * 1.75, hipY = seatY - wheelR * 0.4;
+  if (isDirt) {
+    /* --- radiator shroud / tank, one flowing panel --- */
+    poly([
+      [head.x - R * 0.24, seatY - R * 0.02],
+      [head.x - R * 0.12, seatY - R * 0.46],
+      [head.x - R * 0.62, seatY - R * 0.5],
+      [head.x - R * 0.98, seatY - R * 0.1],
+      [head.x - R * 0.9, seatY + R * 0.24],
+      [head.x - R * 0.42, seatY + R * 0.2]
+    ], p.body, "#151a17", Math.max(1, R * 0.026));
+    /* shroud vent / stripe */
+    line([[head.x - R * 0.2, seatY - R * 0.34], [head.x - R * 0.86, seatY - R * 0.02]], p.accent, R * 0.06);
+    /* radiator slats showing through the shroud */
+    g.strokeStyle = "rgba(0,0,0,.35)"; g.lineWidth = Math.max(1, R * 0.018);
+    for (let i = 0; i < 4; i++) {
+      g.beginPath();
+      g.moveTo(head.x - R * (0.34 + i * 0.1), seatY - R * 0.3);
+      g.lineTo(head.x - R * (0.5 + i * 0.1), seatY + R * 0.04);
+      g.stroke();
+    }
+    /* side number plate: dark with an accent border, like a real MX plate */
+    poly([
+      [head.x - R * 1.0, seatY + R * 0.08],
+      [head.x - R * 0.5, seatY + R * 0.16],
+      [head.x - R * 0.54, seatY + R * 0.6],
+      [head.x - R * 0.98, seatY + R * 0.44]
+    ], "#20261f", p.accent, Math.max(1.2, R * 0.032));
+    g.save();
+    g.fillStyle = p.accent;
+    g.font = `700 ${Math.round(R * 0.26)}px ui-monospace,monospace`;
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(String(m.cc), head.x - R * 0.76, seatY + R * 0.33);
+    g.restore();
+
+    /* --- tank top / seat --- */
+    poly([
+      [head.x - R * 0.24, seatY - R * 0.06],
+      [head.x - R * 0.16, seatY - R * 0.5],
+      [head.x - R * 0.72, seatY - R * 0.5],
+      [head.x - R * 0.94, seatY - R * 0.14],
+      [head.x - R * 0.9, seatY + R * 0.04],
+      [head.x - R * 0.6, seatY + R * 0.04]
+    ], p.body, null);
+    poly([
+      [rearX + R * 0.36, seatY + R * 0.04],
+      [rearX + R * 0.4, seatY - R * 0.24],
+      [head.x - R * 0.92, seatY - R * 0.34],
+      [head.x - R * 0.9, seatY + R * 0.02],
+      [rearX + R * 0.7, seatY + R * 0.06]
+    ], shade(p.seat, 0.16), "#0f1210", Math.max(1, R * 0.02));
+    /* seat top highlight */
+    line([[rearX + R * 0.44, seatY - R * 0.22], [head.x - R * 0.94, seatY - R * 0.32]], "rgba(255,255,255,.10)", Math.max(1, R * 0.03));
+    /* airbox / side panel behind the seat */
+    poly([
+      [rearX + R * 0.44, seatY + R * 0.06],
+      [rearX + R * 0.4, seatY - R * 0.22],
+      [pivot.x + R * 0.06, seatY - R * 0.1],
+      [pivot.x + R * 0.02, seatY + R * 0.3],
+      [rearX + R * 0.5, seatY + R * 0.42]
+    ], shade(p.body, -0.42), null);
+    line([[rearX + R * 0.46, seatY - R * 0.1], [pivot.x + R * 0.04, seatY + R * 0.02]], p.accent, R * 0.035);
+    /* rear mudguard + tail light */
+    poly([
+      [rearX + R * 0.4, seatY + R * 0.02],
+      [rearX + R * 0.06, seatY + R * 0.18],
+      [rearX - R * 0.02, seatY + R * 0.4],
+      [rearX + R * 0.36, seatY + R * 0.34]
+    ], p.body, null);
+    rrect(rearX + R * 0.04, seatY + R * 0.3, R * 0.14, R * 0.09, R * 0.03, "#e3564a");
+
+    /* --- high front fender --- */
+    g.strokeStyle = p.body; g.lineWidth = R * 0.11; g.lineCap = "round";
+    g.beginPath(); g.arc(frontX, axleY, R * 1.13, Math.PI * 1.36, Math.PI * 1.66); g.stroke();
+    g.strokeStyle = p.accent; g.lineWidth = R * 0.03;
+    g.beginPath(); g.arc(frontX, axleY, R * 1.13, Math.PI * 1.38, Math.PI * 1.64); g.stroke();
+
+    /* --- fork: gold stanchion, slider, guard --- */
+    line([[head.x - R * 0.1, head.y + R * 0.06], [frontX, axleY + R * 0.34]], "#c8a94f", R * 0.075);
+    line([[frontX - R * 0.02, axleY - R * 0.6], [frontX, axleY + R * 0.05]], "#7f8983", R * 0.11);
+    line([[head.x - R * 0.14, head.y + R * 0.3], [head.x - R * 0.02, head.y + R * 0.9]], p.accent, R * 0.07);
+    /* triple clamp */
+    rrect(head.x - R * 0.2, head.y - R * 0.02, R * 0.3, R * 0.12, R * 0.03, "#39423c");
+    /* bars + grips */
+    line([[head.x - R * 0.06, head.y], [head.x - R * 0.02, barY]], "#39423c", R * 0.08);
+    line([[head.x + R * 0.06, barY], [head.x - R * 0.4, barY + R * 0.03]], "#20261f", R * 0.09);
+    line([[head.x - R * 0.4, barY + R * 0.03], [head.x - R * 0.5, barY + R * 0.04]], "#4d574f", R * 0.1);
+    /* front number plate */
+    poly([
+      [head.x + R * 0.04, head.y - R * 0.5],
+      [head.x + R * 0.42, head.y - R * 0.4],
+      [head.x + R * 0.36, head.y + R * 0.06],
+      [head.x + R * 0.02, head.y - R * 0.02]
+    ], "#20261f", p.accent, Math.max(1.2, R * 0.03));
+
+    if (style === "dual" || style === "rally") {
+      /* headlight cowl */
+      poly([
+        [head.x + R * 0.02, head.y - R * 0.56],
+        [head.x + R * 0.46, head.y - R * 0.52],
+        [head.x + R * 0.44, head.y - R * 0.02],
+        [head.x + R * 0.06, head.y + R * 0.02]
+      ], p.body, null);
+      g.fillStyle = "#20261f"; g.beginPath(); g.arc(head.x + R * 0.26, head.y - R * 0.28, R * 0.13, 0, 7); g.fill();
+      g.fillStyle = "#ffe9b4"; g.beginPath(); g.arc(head.x + R * 0.27, head.y - R * 0.28, R * 0.085, 0, 7); g.fill();
+      /* mirror */
+      line([[head.x - R * 0.36, barY - R * 0.02], [head.x - R * 0.5, barY - R * 0.3]], "#4a544c", Math.max(1, R * 0.025));
+      g.fillStyle = "#aeb8b2";
+      g.beginPath(); g.ellipse(head.x - R * 0.52, barY - R * 0.33, R * 0.07, R * 0.05, 0, 0, 7); g.fill();
+      /* plate holder */
+      poly([[rearX + R * 0.02, seatY + R * 0.36], [rearX + R * 0.3, seatY + R * 0.4], [rearX + R * 0.26, seatY + R * 0.62], [rearX + R * 0.04, seatY + R * 0.58]], "#d8ddd6", null);
+    }
+    if (style === "rally") {
+      /* nav tower + screen */
+      g.beginPath();
+      g.moveTo(head.x - R * 0.12, seatY - R * 0.6);
+      g.quadraticCurveTo(head.x + R * 0.02, seatY - R * 1.18, head.x + R * 0.3, seatY - R * 1.24);
+      g.lineTo(head.x + R * 0.52, seatY - R * 1.1);
+      g.quadraticCurveTo(head.x + R * 0.52, seatY - R * 0.72, head.x + R * 0.42, seatY - R * 0.48);
+      g.closePath();
+      g.fillStyle = p.body; g.fill();
+      g.strokeStyle = "#121614"; g.lineWidth = Math.max(1, R * 0.022); g.stroke();
+      line([[head.x + R * 0.06, seatY - R * 1.3], [head.x + R * 0.5, seatY - R * 1.2]], p.accent, R * 0.04);
+      poly([
+        [head.x - R * 0.02, seatY - R * 1.5],
+        [head.x + R * 0.2, seatY - R * 1.86],
+        [head.x + R * 0.76, seatY - R * 1.62],
+        [head.x + R * 0.66, seatY - R * 1.36]
+      ], "rgba(210,235,240,.32)", null);
+      /* roadbook */
+      rrect(head.x + R * 0.16, seatY - R * 1.34, R * 0.3, R * 0.22, R * 0.03, "#1b2226");
+      g.fillStyle = "#6fd6c2"; g.beginPath(); g.arc(head.x + R * 0.31, seatY - R * 1.23, R * 0.045, 0, 7); g.fill();
+      /* pannier */
+      poly([[rearX + R * 0.06, seatY + R * 0.12], [rearX + R * 0.5, seatY + R * 0.1], [rearX + R * 0.46, seatY + R * 0.5], [rearX + R * 0.06, seatY + R * 0.52]], shade(p.frame, -0.5), "#0f1311", Math.max(1, R * 0.02));
+      line([[rearX + R * 0.1, seatY + R * 0.2], [rearX + R * 0.44, seatY + R * 0.18]], p.accent, R * 0.04);
+      line([[rearX + R * 0.1, seatY + R * 0.34], [rearX + R * 0.44, seatY + R * 0.32]], "rgba(255,255,255,.18)", R * 0.03);
+    }
+  }
+
+  /* ================= STREET ================= */
+  if (style === "street") {
+    /* trailing tail */
+    poly([
+      [rearX + R * 0.34, seatY + R * 0.3],
+      [rearX + R * 0.14, seatY - R * 0.44],
+      [pivot.x + R * 0.3, seatY - R * 0.6],
+      [pivot.x + R * 0.4, seatY - R * 0.16]
+    ], p.body, "#141816", Math.max(1, R * 0.022));
+    rrect(rearX + R * 0.16, seatY - R * 0.4, R * 0.13, R * 0.1, R * 0.03, "#e3564a");
+    /* seat */
+    poly([
+      [rearX + R * 0.6, seatY - R * 0.42],
+      [pivot.x + R * 0.5, seatY - R * 0.72],
+      [head.x - R * 0.94, seatY - R * 0.56],
+      [head.x - R * 1.0, seatY - R * 0.3],
+      [pivot.x + R * 0.26, seatY - R * 0.2]
+    ], shade(p.seat, 0.16), "#0f1210", Math.max(1, R * 0.02));
+    /* tank */
+    poly([
+      [head.x - R * 1.02, seatY - R * 0.52],
+      [head.x - R * 0.82, seatY - R * 1.12],
+      [head.x - R * 0.24, seatY - R * 1.06],
+      [head.x - R * 0.06, seatY - R * 0.76],
+      [head.x - R * 0.14, seatY - R * 0.34],
+      [head.x - R * 0.5, seatY - R * 0.24]
+    ], p.body, "#141816", Math.max(1, R * 0.024));
+    line([[head.x - R * 0.92, seatY - R * 0.78], [head.x - R * 0.3, seatY - R * 0.9]], p.accent, R * 0.05);
+
+    if (faired) {
+      /* full fairing: tapered nose that follows the front wheel */
+      g.beginPath();
+      g.moveTo(head.x - R * 0.34, seatY - R * 0.9);
+      g.quadraticCurveTo(head.x + R * 0.3, seatY - R * 1.22, head.x + R * 0.72, seatY - R * 1.02);
+      g.quadraticCurveTo(head.x + R * 1.06, seatY - R * 0.62, head.x + R * 0.98, seatY - R * 0.02);
+      g.quadraticCurveTo(head.x + R * 0.92, seatY + R * 0.5, head.x + R * 0.52, seatY + R * 0.68);
+      g.lineTo(head.x - R * 0.08, seatY + R * 0.62);
+      g.quadraticCurveTo(head.x - R * 0.24, seatY + R * 0.1, head.x - R * 0.34, seatY - R * 0.9);
+      g.closePath();
+      g.fillStyle = p.body; g.fill();
+      g.strokeStyle = "#141816"; g.lineWidth = Math.max(1, R * 0.022); g.stroke();
+      /* intake slot + wing detail */
+      g.fillStyle = "rgba(0,0,0,.28)";
+      g.beginPath();
+      g.moveTo(head.x + R * 0.3, seatY + R * 0.02);
+      g.quadraticCurveTo(head.x + R * 0.62, seatY - R * 0.06, head.x + R * 0.82, seatY - R * 0.32);
+      g.quadraticCurveTo(head.x + R * 0.7, seatY + R * 0.22, head.x + R * 0.42, seatY + R * 0.28);
+      g.closePath(); g.fill();
+      /* screen */
+      poly([
+        [head.x - R * 0.3, seatY - R * 0.94],
+        [head.x + R * 0.02, seatY - R * 1.42],
+        [head.x + R * 0.56, seatY - R * 1.12],
+        [head.x + R * 0.42, seatY - R * 0.94]
+      ], "rgba(205,230,238,.32)", null);
+      /* twin headlight set into the nose, angled with the fairing */
+      g.save();
+      g.translate(head.x + R * 0.56, seatY - R * 0.2);
+      g.rotate(0.16);
+      rrect(-R * 0.2, -R * 0.16, R * 0.42, R * 0.3, R * 0.07, "#141a1c");
+      rrect(-R * 0.15, -R * 0.11, R * 0.32, R * 0.2, R * 0.05, "#ffe9b4");
+      g.restore();
+      /* belly pan tucked under the engine, not a red slab */
+      g.beginPath();
+      g.moveTo(head.x - R * 0.14, seatY + R * 0.74);
+      g.quadraticCurveTo(head.x + R * 0.3, seatY + R * 0.52, head.x + R * 0.62, seatY + R * 0.74);
+      g.quadraticCurveTo(head.x + R * 0.4, seatY + R * 1.02, head.x - R * 0.06, seatY + R * 0.98);
+      g.closePath();
+      g.fillStyle = shade(p.body, -0.2); g.fill();
+      /* clip-ons */
+      line([[head.x - R * 0.12, seatY - R * 0.96], [head.x - R * 0.44, seatY - R * 1.02]], "#39423c", R * 0.07);
+      line([[head.x - R * 0.46, seatY - R * 1.03], [head.x - R * 0.58, seatY - R * 1.04]], "#1d211e", R * 0.09);
+      /* fender */
+      g.strokeStyle = p.body; g.lineWidth = R * 0.085; g.lineCap = "round";
+      g.beginPath(); g.arc(frontX, axleY, R * 0.98, Math.PI * 1.2, Math.PI * 1.7); g.stroke();
+    } else {
+      /* naked: round lamp + fly screen */
+      g.fillStyle = "#22282b"; g.beginPath(); g.arc(head.x + R * 0.14, seatY - R * 0.72, R * 0.25, 0, 7); g.fill();
+      g.fillStyle = "#ffe9b4"; g.beginPath(); g.arc(head.x + R * 0.16, seatY - R * 0.72, R * 0.18, 0, 7); g.fill();
+      g.fillStyle = "rgba(255,255,240,.85)";
+      g.beginPath(); g.arc(head.x + R * 0.12, seatY - R * 0.78, R * 0.055, 0, 7); g.fill();
+      /* fly screen */
+      poly([[head.x - R * 0.04, seatY - R * 1.0], [head.x + R * 0.18, seatY - R * 1.26], [head.x + R * 0.34, seatY - R * 1.0]], "rgba(205,230,238,.3)", null);
+      /* upright bars + mirror */
+      line([[head.x - R * 0.02, seatY - R * 0.98], [head.x - R * 0.3, seatY - R * 1.16]], "#39423c", R * 0.075);
+      line([[head.x - R * 0.32, seatY - R * 1.17], [head.x - R * 0.46, seatY - R * 1.16]], "#1d211e", R * 0.09);
+      line([[head.x - R * 0.3, seatY - R * 1.2], [head.x - R * 0.42, seatY - R * 1.46]], "#4a544c", Math.max(1, R * 0.025));
+      g.fillStyle = "#aeb8b2";
+      g.beginPath(); g.ellipse(head.x - R * 0.44, seatY - R * 1.5, R * 0.075, R * 0.052, 0, 0, 7); g.fill();
+      g.strokeStyle = p.body; g.lineWidth = R * 0.08;
+      g.beginPath(); g.arc(frontX, axleY, R * 0.96, Math.PI * 1.22, Math.PI * 1.68); g.stroke();
+    }
+    /* fork legs */
+    line([[head.x + R * 0.06, seatY - R * 0.4], [frontX, axleY + R * 0.3]], "#7f8983", R * 0.1);
+    line([[head.x + R * 0.1, seatY - R * 0.5], [frontX + R * 0.03, axleY + R * 0.14]], "#d0b055", R * 0.045);
+    rrect(head.x - R * 0.06, seatY - R * 0.86, R * 0.26, R * 0.12, R * 0.03, "#39423c");
+  }
+
+  /* ================= RIDER ================= */
+  if (opts && opts.noRider) { g.restore(); return; }
   const crouch = r.tuck ? 1 : 0;
-  const shX = hipX + wheelR * (0.42 - crouch * 0.1), shY = hipY - wheelR * (0.62 - crouch * 0.16);
-  const headX = shX + wheelR * (0.2 + crouch * 0.16), headY = shY - wheelR * (0.34 - crouch * 0.1);
-  g.strokeStyle = "#20262a"; g.lineCap = "round";
-  // legs
-  g.lineWidth = 4.6 * s;
-  g.beginPath(); g.moveTo(hipX, hipY); g.lineTo(hipX + wheelR * 0.55, hipY + wheelR * 0.45); g.lineTo(hipX + wheelR * 0.42, hipY + wheelR * 0.9); g.stroke();
-  // torso
-  g.strokeStyle = "#3f6b5a"; g.lineWidth = 7.4 * s;
-  g.beginPath(); g.moveTo(hipX, hipY); g.lineTo(shX, shY); g.stroke();
-  // arms
-  g.strokeStyle = "#35594b"; g.lineWidth = 3.4 * s;
-  g.beginPath(); g.moveTo(shX, shY); g.lineTo(shX + wheelR * 0.24, shY + wheelR * 0.16); g.lineTo(frontW - wheelR * 0.42, seatY - wheelR * 0.9); g.stroke();
-  // head + helmet
-  g.fillStyle = "#d9c9a8";
-  g.beginPath(); g.arc(headX, headY, wheelR * 0.21, 0, 7); g.fill();
-  g.fillStyle = "#e8ece4";
-  g.beginPath(); g.arc(headX, headY, wheelR * 0.27, 0, 7); g.fill();
-  g.fillStyle = "#20292b";
-  g.beginPath(); g.arc(headX + wheelR * 0.11, headY + wheelR * 0.02, wheelR * 0.15, -0.9, 0.9); g.fill();
-  g.fillStyle = p.accent;
-  g.fillRect(headX - wheelR * 0.24, headY - wheelR * 0.3, wheelR * 0.46, wheelR * 0.08);
+  const seatHipX = rearX + R * (style === "moped" ? 1.42 : 1.28);
+  const hipY = seatY - R * 0.14;
+  const shX = seatHipX + R * (0.44 - crouch * 0.12);
+  const shY = hipY - R * (0.72 - crouch * 0.24);
+  const headX = shX + R * (0.26 + crouch * 0.24);
+  const headY = shY - R * (0.44 - crouch * 0.1);
+  const gripX = style === "street" ? head.x - R * 0.54 : head.x - R * 0.46;
+  const gripY = style === "street" ? (faired ? seatY - R * 1.04 : seatY - R * 1.16) : barY + R * 0.03;
 
-  /* rear light / dust kick */
-  g.fillStyle = "#e3564a";
-  g.beginPath(); g.arc(rearW + wheelR * 0.02, seatY - wheelR * 0.05, 1.8 * s, 0, 7); g.fill();
+  /* leg to the peg */
+  const pegX = seatHipX + R * 0.58, pegY = seatY + R * 0.96;
+  line([[seatHipX, hipY], [seatHipX + R * 0.56, hipY + R * 0.34], [pegX, pegY - R * 0.1]], "#232a30", R * 0.2);
+  rrect(pegX - R * 0.19, pegY - R * 0.14, R * 0.4, R * 0.19, R * 0.05, "#161b1e");
+  line([[pegX - R * 0.17, pegY + R * 0.04], [pegX + R * 0.19, pegY + R * 0.04]], "#3a444a", Math.max(1, R * 0.025));
+  /* torso */
+  line([[seatHipX, hipY], [shX, shY]], "#3f6b5a", R * 0.33);
+  line([[seatHipX + R * 0.07, hipY - R * 0.05], [shX + R * 0.03, shY + R * 0.09]], "#2f5346", R * 0.09);
+  /* arm */
+  line([[shX, shY], [shX + R * 0.3, shY + R * 0.28], [gripX, gripY]], "#35594b", R * 0.15);
+  g.fillStyle = "#1a211f"; g.beginPath(); g.arc(gripX, gripY, R * 0.1, 0, 7); g.fill();
+
+  /* helmet */
+  const openFace = style === "moped";
+  const hR = R * 0.265;
+  line([[shX + R * 0.05, shY - R * 0.06], [headX - R * 0.02, headY + hR * 0.7]], "#2b3330", R * 0.15);
+  g.fillStyle = openFace ? "#e9e3d4" : "#eceff0";
+  g.beginPath(); g.ellipse(headX, headY, hR * 1.0, hR * 1.1, 0, 0, 7); g.fill();
+  if (!openFace) {
+    g.fillStyle = "#eceff0";
+    g.beginPath();
+    g.moveTo(headX + hR * 0.6, headY + hR * 0.1);
+    g.quadraticCurveTo(headX + hR * 0.46, headY + hR * 0.95, headX - hR * 0.12, headY + hR * 0.92);
+    g.lineTo(headX - hR * 0.33, headY + hR * 0.46);
+    g.lineTo(headX + hR * 0.38, headY);
+    g.closePath(); g.fill();
+  }
+  g.fillStyle = "rgba(0,0,0,.22)";
+  g.beginPath(); g.ellipse(headX - hR * 0.42, headY, hR * 0.46, hR * 0.88, 0.18, 0, 7); g.fill();
+  /* painted stripe over the crown */
+  g.save();
+  g.beginPath(); g.ellipse(headX, headY, hR * 1.0, hR * 1.1, 0, 0, 7); g.clip();
+  g.fillStyle = p.accent;
+  g.beginPath();
+  g.ellipse(headX, headY - hR * 0.72, hR * 1.1, hR * 0.34, 0, 0, 7); g.fill();
+  g.restore();
+  if (openFace) {
+    g.fillStyle = "#233033";
+    g.beginPath(); g.ellipse(headX + hR * 0.52, headY, hR * 0.28, hR * 0.24, 0, 0, 7); g.fill();
+    g.strokeStyle = "#3a444a"; g.lineWidth = Math.max(1, hR * 0.15);
+    g.beginPath(); g.moveTo(headX + hR * 0.1, headY - hR * 0.36); g.lineTo(headX + hR * 0.1, headY + hR * 0.28); g.stroke();
+  } else {
+    g.fillStyle = "#16211f";
+    g.beginPath();
+    g.moveTo(headX + hR * 0.28, headY - hR * 0.48);
+    g.quadraticCurveTo(headX + hR * 0.98, headY - hR * 0.4, headX + hR * 0.92, headY + hR * 0.1);
+    g.quadraticCurveTo(headX + hR * 0.58, headY + hR * 0.28, headX + hR * 0.28, headY + hR * 0.18);
+    g.closePath(); g.fill();
+    g.fillStyle = "rgba(150,210,220,.45)";
+    g.beginPath();
+    g.moveTo(headX + hR * 0.44, headY - hR * 0.32);
+    g.quadraticCurveTo(headX + hR * 0.84, headY - hR * 0.26, headX + hR * 0.78, headY - hR * 0.02);
+    g.quadraticCurveTo(headX + hR * 0.58, headY - hR * 0.06, headX + hR * 0.44, headY - hR * 0.32);
+    g.closePath(); g.fill();
+  }
+  if (isDirt) {
+    g.fillStyle = p.accent;
+    g.beginPath();
+    g.moveTo(headX + hR * 0.08, headY - hR * 0.92);
+    g.lineTo(headX + hR * 1.86, headY - hR * 1.18);
+    g.lineTo(headX + hR * 1.66, headY - hR * 0.84);
+    g.lineTo(headX + hR * 0.18, headY - hR * 0.64);
+    g.closePath(); g.fill();
+    g.strokeStyle = "rgba(0,0,0,.32)"; g.lineWidth = Math.max(1, hR * 0.05); g.stroke();
+  }
 
   g.restore();
 }
@@ -4039,14 +5832,9 @@ function wireEvents() {
     if (fitBuy) {
       const [key, id] = fitBuy.dataset.fitBuy.split(":");
       const optId = isNaN(Number(id)) ? id : Number(id);
-      const b = selectedBike();
-      if (!b) return;
-      if (fitPart(b, key, optId)) {
-        toast(`${partDef(key).name} replaced.`, "gold");
-        closeModal();
-        renderGarage();
-        if (activeScreen === "store") renderStore();
-      }
+      if (!selectedBike()) return;
+      closeModal();
+      openBench(key, optId);
       return;
     }
     if (closest("#wearHelpBtn") || closest("#storeHelpBtn")) { openHelp(); return; }
@@ -4082,45 +5870,63 @@ function wireEvents() {
         </div>
         <div class="modal-foot"><span class="tiny dim">Cash after: ${money(state.cash - cost)}</span>
           <button class="btn btn-ghost" data-close>Cancel</button>
-          <button class="btn btn-primary" data-confirm-store-buy="${key}:${optId}">${ic("i-wrench", 15)}Buy &amp; fit</button>
+          <button class="btn btn-primary" data-confirm-store-buy="${key}:${optId}">${ic("i-wrench", 15)}Take it to the bench</button>
         </div>`, { size: "narrow" });
       return;
     }
     if (closest("[data-service-all]")) {
-      const b = selectedBike();
-      if (!b) return;
-      const q = serviceQuote(b);
-      if (state.cash < q.total) { toast("Not enough cash for a full service.", "bad"); return; }
-      q.items.forEach(({ p }) => {
-        state.cash -= replaceCost(b, p.key);
-        state.stats.spent += replaceCost(b, p.key);
-        b.parts[p.key].wear = 0;
-      });
-      save();
-      closeModal(); renderGarage(); updateTopbar();
-      toast(`Full service done — ${q.items.length} parts refreshed.`, "gold");
+      /* kept for old markup only — every repair is manual now */
+      openServiceAllModal();
       return;
     }
     const tuneBtn = closest("[data-tune-bike]");
     if (tuneBtn) {
       const b = bikeById(tuneBtn.dataset.tuneBike);
       if (!b || b.mods.tune) return;
-      const cost = Math.round(modelById(b.modelId).price * 0.16);
-      if (state.cash < cost) { toast(`Need ${money(cost - state.cash)} more for a tune.`, "bad"); return; }
-      state.cash -= cost; state.stats.spent += cost; b.mods.tune = true;
-      save(); renderStore(); updateTopbar();
-      toast("Dyno tune loaded — +5% power, +heat.", "gold");
+      if (b.id !== selectedBikeId) { selectedBikeId = b.id; state.primary = b.id; save(); }
+      startModJob("tune");
       return;
     }
     const confirmStore = closest("[data-confirm-store-buy]");
     if (confirmStore) {
       const [key, id] = confirmStore.dataset.confirmStoreBuy.split(":");
       const optId = isNaN(Number(id)) ? id : Number(id);
-      const b = selectedBike();
-      if (b && fitPart(b, key, optId)) {
-        toast("Part fitted — ready to ride.", "gold");
-        closeModal(); renderStore();
-      }
+      closeModal();
+      openBench(key, optId);
+      return;
+    }
+    const benchStart = closest("[data-bench-start]");
+    if (benchStart) {
+      const [key, id] = benchStart.dataset.benchStart.split(":");
+      const optId = isNaN(Number(id)) ? id : Number(id);
+      closeModal();
+      openBench(key, optId);
+      return;
+    }
+    /* ---------- bench interactions ---------- */
+    if (closest("[data-bench-leave]")) { bench = null; navigate("garage"); return; }
+    if (closest("[data-bench-abort]")) {
+      if (bench && !bench.finished && bench.cur > 0) {
+        openModal(`<div class="modal-head"><div><div class="eyebrow">Leave the job?</div><h2>Half-finished work</h2>
+          <p>You're ${bench.cur} of ${bench.steps.length} steps in. Walking away wastes the part you already paid for.</p></div>
+          <button class="modal-close" data-close>${ic("i-close", 14)}</button></div>
+          <div class="modal-foot"><button class="btn btn-ghost" data-close>Keep working</button>
+          <button class="btn btn-primary" data-bench-walk>${ic("i-close", 14)}Walk away anyway</button></div>`, { size: "narrow" });
+      } else { bench = null; navigate("garage"); }
+      return;
+    }
+    if (closest("[data-bench-walk]")) {
+      bench = null; closeModal();
+      toast("You downed tools. The part is still on the bench.", "bad");
+      navigate("garage");
+      return;
+    }
+    const holdBtn = closest("[data-bench-hold]");
+    if (holdBtn) { if (bench) bench.holding = true; return; }
+    const hot = closest("[data-bench-spot]");
+    if (hot && bench) {
+      const s2 = bench.steps[bench.cur];
+      if (s2 && s2.kind === "spot") benchStepDone();
       return;
     }
 
@@ -4205,6 +6011,7 @@ function wireEvents() {
   });
 
   document.addEventListener("pointerup", e => {
+    if (bench && bench.holding) bench.holding = false;
     const tbtn = e.target.closest("[data-tbtn]");
     if (tbtn) {
       const k = tbtn.dataset.tbtn;
@@ -4213,6 +6020,7 @@ function wireEvents() {
     }
   });
   document.addEventListener("pointercancel", () => {
+    if (bench) bench.holding = false;
     Object.keys(touchOn).forEach(k => touchOn[k] = false);
     $$("[data-tbtn]").forEach(b => b.classList.remove("pressed"));
   });
@@ -4242,7 +6050,7 @@ function wireEvents() {
     switch (e.key.toLowerCase()) {
       case "1": navigate("garage"); break;
       case "2": navigate("maps"); break;
-      case "3": navigate("store"); break;
+      case "3": navigate("bench"); break;
       case "4": navigate("market"); break;
       case "h": case "?": openHelp(); break;
       default: return;
@@ -4333,10 +6141,21 @@ function boot() {
 /* Optional tuning bench: append #bench to the URL to expose the simulation
    helpers (used to calibrate wear rates, wheelie physics and the economy). */
 window.GG = {
-  get state() { return state; }, get ride() { return ride; },
+  get state() { return state; }, get ride() { return ride; }, get bench() { return bench; },
+  openBench, benchStepDone, applyJob, buildJobSteps, buildModSteps, startModJob,
+  createBike, stockTireFor, modelById, purchaseBike,
+  benchTick(dt) { if (bench) { benchTickForTest(dt); drawBenchHotspot(); } },
+  benchRender() {
+    const cv = $("#benchCv");
+    if (!cv || !bench) return false;
+    drawBench(cv.getContext("2d"), cv.width, cv.height);
+    return true;
+  },
+  get selectedBikeId() { return selectedBikeId; },
   startRide, finishRide, MAPS, MODELS, PARTS, TIRES, liveStats, computeRideResult, serviceQuote,
   setCash(n) { state.cash = n; updateTopbar(); },
   refreshTopbar() { updateTopbar(); },
+  tickForTest(dt) { if (ride && !ride.ended) updateRide(dt); drawRide(); },
   simulate(mapId, seconds, throttleFn, clutchFn, bikeOpts = {}) {
     const m = modelById(bikeOpts.model || "hornet");
     const b = createBike(m.id, { year: YEAR, odo: 0, wear: bikeOpts.wear || 0, spread: 0, tires: bikeOpts.tire || stockTireFor(m) });
