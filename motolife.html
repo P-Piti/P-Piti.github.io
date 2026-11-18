@@ -1841,10 +1841,21 @@ function forkArt(x1, y1, x2, y2, gold = false) {
    contact patch; radius is the wheel radius — both in that file's own pixels.
    rearFrac is the rear axle's x as a fraction of width, used as the wheelie pivot. */
 const BIKE_ART = {
-  ktm125sx: { src: "assets/bikes/ktm125sx.webp", w: 900, h: 556, baseline: 547, radius: 133, rearFrac: 187 / 900 },
-  rmz250:   { src: "assets/bikes/rmz250.webp",   w: 856, h: 560, baseline: 515, radius: 117, rearFrac: 190 / 856 },
-  ktm85sx:  { src: "assets/bikes/ktm85sx.webp",  w: 887, h: 560, baseline: 557, radius: 138, rearFrac: 186 / 887 },
-  kx450f:   { src: "assets/bikes/kx450f.webp",   w: 900, h: 553, baseline: 543, radius: 133, rearFrac: 184 / 900 }
+  /* axleY, seat and grip are measured off each photo in its own pixels. The
+     hotspot table is laid out in the drawn bike's proportions, so these are
+     the landmarks that project it onto a real machine. */
+  ktm125sx: { src: "assets/bikes/ktm125sx.webp", w: 900, h: 556, baseline: 547, radius: 133,
+              rearFrac: 187 / 900, frontFrac: 716 / 900, axleY: 412,
+              seatX: 306, seatY: 148, gripX: 532, gripY: 32 },
+  rmz250:   { src: "assets/bikes/rmz250.webp",   w: 856, h: 560, baseline: 515, radius: 117,
+              rearFrac: 190 / 856, frontFrac: 666 / 856, axleY: 398,
+              seatX: 291, seatY: 167, gripX: 487, gripY: 78 },
+  ktm85sx:  { src: "assets/bikes/ktm85sx.webp",  w: 887, h: 560, baseline: 557, radius: 138,
+              rearFrac: 186 / 887, frontFrac: 702 / 887, axleY: 419,
+              seatX: 301, seatY: 135, gripX: 508, gripY: 33 },
+  kx450f:   { src: "assets/bikes/kx450f.webp",   w: 900, h: 553, baseline: 543, radius: 133,
+              rearFrac: 184 / 900, frontFrac: 712 / 900, axleY: 410,
+              seatX: 306, seatY: 134, gripX: 521, gripY: 29 }
 };
 const _artCache = new Map();
 function bikeArt(key) {
@@ -1874,6 +1885,27 @@ function bikeArt(key) {
 function hasArt(m) { return !!(m && m.art && BIKE_ART[m.art]); }
 
 /* draw the photo bike on a canvas: its tyres land exactly on `groundY` */
+/* the rectangle a photo bike occupies, and where its axles land inside it */
+function bikeArtRect(m, cx, groundY, heightPx) {
+  const rec = BIKE_ART[m.art];
+  if (!rec) return null;
+  const sc = heightPx / rec.h;
+  const w = rec.w * sc, h = rec.h * sc;
+  const x = cx - w / 2, y = groundY - rec.baseline * sc;
+  return {
+    sc, x, y, w, h,
+    rearX: x + rec.rearFrac * w,
+    frontX: x + rec.frontFrac * w,
+    axleY: y + rec.axleY * sc,
+    seatX: x + rec.seatX * sc,
+    seatY: y + rec.seatY * sc,
+    gripX: x + rec.gripX * sc,
+    gripY: y + rec.gripY * sc,
+    radius: rec.radius * sc,
+    groundY
+  };
+}
+
 function drawBikeArt(g, m, cx, groundY, heightPx, opts = {}) {
   const rec = BIKE_ART[m.art];
   const img = bikeArt(m.art);
@@ -3265,7 +3297,7 @@ function drawBench(g, W, H) {
   g.fillStyle = lamp; g.fillRect(0, 0, W, H);
 
   /* ---------------- the machine, drawn by the ride renderer ---------------- */
-  const G0 = benchGeom(W, H, m);
+  const G0 = benchGeom(W, H, m, hasArt(m));
   const wheelR = G0.wheelR;
   /* the stand it sits on */
   g.strokeStyle = "#4b5754"; g.lineWidth = Math.max(3, wheelR * 0.075); g.lineCap = "round";
@@ -3426,16 +3458,107 @@ function benchAnchor(at, G) {
     nipple:      { x: frontX - R * 0.16, y: wheelCY - R * 0.18 },
     coolantdrain: { x: engX + R * 0.18, y: engY + R * 0.68 },
     forkseal:    { x: frontX, y: wheelCY - R * 0.78 },
-    grip:        { x: headX - R * 0.46, y: seatY - R * 2.3 },
+    /* the grip is on the far end of the bar, measured from the head - NOT
+       from the seat. seatY is already 2.02R above the ground, so subtracting
+       another 2.3R put this anchor off the top of the canvas: the hotspot was
+       created, but at a negative y, so it never appeared on screen. */
+    grip:        { x: headX - R * 0.50, y: headY - R * 0.76 },
     carbtop:     { x: engX - R * 0.02, y: engY - R * 0.55 }
   };
-  return A[at] || null;
+  const pt = A[at] || null;
+  if (!pt) return null;
+  /* The anchors above are laid out in the VECTOR bike's proportions. A photo
+     bike has a different wheelbase-to-height ratio, so those raw coordinates
+     drift: on an RM-Z the "sump" landed on the seat and the axles sat above
+     the real wheels. When the bike on the stand is a photo, remap every
+     anchor by the two things that actually anchor a machine to the ground -
+     its axles and its contact patch. */
+  return G.art ? remapAnchor(pt, at, G, G.art) : pt;
+}
+
+/* The anchor table is written in the proportions of the DRAWN bike. A photo
+   bike has different ones, so every anchor is expressed against three
+   landmarks that mean the same thing on both machines:
+     - the two axle centres  -> horizontal scale
+     - the axle line         -> the zero of every height
+     - the saddle and the left bar grip -> the two heights that break the
+       vertical span, because the drawn machine is tall and airy while a photo
+       is low and long, so no single straight scale fits both.
+   Mapping through those landmarks puts the grip on the bar end, the saddle on
+   the seat and the engine bay under the tank instead of on top of it. */
+/* which anchors live on the engine block */
+const ENGINE_BAY = new Set([
+  "sump", "drainbolt", "oilfilter", "fill", "head", "plug", "plugcap",
+  "carbtop", "coolantdrain", "frontSprocket"
+]);
+/* The drawn engine cluster spans from a little above the saddle down to the
+   sump; on a photo the same cluster is the block between the underside of the
+   tank and the crankcase. Both are expressed as fractions of a local span so
+   they travel with each machine instead of being fixed pixel values. */
+const ENG_TOP_R = 0.38;    /* vector: above the saddle, in wheel radii */
+const ENG_BOT_R = 1.30;    /* vector: below the saddle, in wheel radii */
+const ENG_TOP_P = 0.40;    /* photo: down from the saddle, fraction of */
+const ENG_BOT_P = 0.95;    /*        the saddle-to-axle span            */
+
+function remapAnchor(pt, at, G, M) {
+  const vSpanX = (G.frontX - G.rearX) || 1;
+  const pSpanX = (M.frontX - M.rearX) || 1;
+  const nx = (pt.x - G.rearX) / vSpanX;
+  let x = M.rearX + nx * pSpanX;
+
+  /* 0 = axle line, 1 = bar grip; heights are measured up from the axle */
+  const vGripY = G.headY - G.wheelR * 0.76;
+  const vRise = (G.wheelCY - vGripY) || 1;
+  const ny = (G.wheelCY - pt.y) / vRise;
+
+  const vSeatN = (G.wheelCY - G.seatY) / vRise;   /* where the saddle sits */
+  let y;
+  if (ny <= vSeatN) {
+    /* axle line -> saddle */
+    const k = vSeatN > 1e-3 ? ny / vSeatN : 0;
+    y = M.axleY - k * (M.axleY - M.seatY);
+  } else {
+    /* saddle -> bar */
+    const t = (ny - vSeatN) / Math.max(1e-3, 1 - vSeatN);
+    y = M.seatY - Math.min(t, 1.15) * (M.seatY - M.gripY);
+  }
+
+  /* the bar end is the one point whose horizontal position on a photo cannot
+     be inferred from the axles - the photos are all shot from a slightly
+     different angle - so it is pinned to the grip we measured */
+  if (at === "grip") { x = M.gripX; y = M.gripY; }
+  if (at === "mc") { x = M.gripX + M.w * 0.028; y = M.gripY + M.h * 0.014; }
+  /* the saddle top is the other point we measured directly - the generic scale
+     leaves it hovering above the seat because the drawn bike's seat is thicker */
+  if (at === "seat") { x = M.seatX; y = M.seatY; }
+
+  /* The drawn engine is a cartoon block that pokes UP through the tank, so its
+     parts sit above the saddle. A real engine is tucked under the tank. Map
+     the whole cluster - keeping its internal order - into the bay between the
+     underside of the tank and the sump, so the hotspots land on the engine
+     instead of on the fuel tank. */
+  if (ENGINE_BAY.has(at)) {
+    const R = G.wheelR || 1;
+    const vT = G.seatY - R * ENG_TOP_R;
+    const vB = G.seatY + R * ENG_BOT_R;
+    const f = Math.max(0, Math.min(1, (pt.y - vT) / ((vB - vT) || 1)));
+    const d = M.axleY - M.seatY;
+    const pT = M.seatY + d * ENG_TOP_P;
+    const pB = M.seatY + d * ENG_BOT_P;
+    y = pT + f * (pB - pT);
+  }
+
+  /* a hotspot must never leave the stage - keep it inside the frame */
+  return {
+    x: Math.max(G.W * 0.03, Math.min(G.W * 0.97, x)),
+    y: Math.max(G.H * 0.04, Math.min(G.H * 0.95, y))
+  };
 }
 
 /* hotspot dom buttons float over the canvas so they are keyboard + touch friendly */
 /* One source of truth for the bench drawing's geometry. It mirrors the
    ride-scene renderer exactly, so the bench shows the same machine. */
-function benchGeom(W, H, m) {
+function benchGeom(W, H, m, photo) {
   const R0 = (m.wheel || 0.3) * 44;
   /* scale the ride bike up until it fills the bench frame */
   const s = Math.min((H * 0.80) / (R0 * 3.5), (W * 0.86) / (R0 * 3.9));
@@ -3448,7 +3571,15 @@ function benchGeom(W, H, m) {
   const pivotAX = ax - wheelR * 0.34, pivotAY = ay - wheelR * 1.12;
   const headX = ax + wheelR * 0.86, headY = ay - wheelR * 1.58;
   const engX = pivotAX - wheelR * 0.42, engY = seatY + wheelR * 0.52;
-  return { W, H, scale: s, wheelR, cx, baseY, ax, ay, rearX, frontX, wheelCY, seatY, pivotAX, pivotAY, headX, headY, engX, engY };
+  const G = { W, H, scale: s, wheelR, cx, baseY, ax, ay, rearX, frontX, wheelCY, seatY, pivotAX, pivotAY, headX, headY, engX, engY, art: null };
+  /* when a photo bike is on the stand, record where its own axles, saddle and
+     bar sit so the hotspots can be remapped onto the real machine */
+  if (photo) {
+    const artTop = ay + wheelR * 0.06;
+    const rect = bikeArtRect(m, ax, artTop, H * 0.80);
+    if (rect) G.art = { ...rect, ay: artTop };
+  }
+  return G;
 }
 
 function drawBenchHotspot() {
@@ -3468,9 +3599,12 @@ function drawBenchHotspot() {
     bench.hotKey = null;
     return;
   }
+  /* the bike can be sold out from under an open job, so never assume it is
+     still there - a missing bike just means no hotspot, not a crash */
   const bike = bikeById(bench.bikeId);
-  const m = modelById(bike.modelId);
-  const G0 = benchGeom(cv.width, cv.height, m);
+  const m = bike ? modelById(bike.modelId) : null;
+  if (!m) { if (existing) existing.remove(); bench.hotKey = null; return; }
+  const G0 = benchGeom(cv.width, cv.height, m, hasArt(m));
   const pt = benchAnchor(s.at, G0);
   if (!pt) { if (existing) existing.remove(); bench.hotKey = null; return; }
 
@@ -6548,6 +6682,8 @@ window.GG = {
   openBench, benchStepDone, applyJob, buildJobSteps, buildModSteps, startModJob,
   createBike, stockTireFor, modelById, purchaseBike,
   benchTick(dt) { if (bench) { benchTickForTest(dt); drawBenchHotspot(); } },
+  /* geometry + anchor mapping, exposed so the layout can be regression tested */
+  benchGeom, benchAnchor, remapAnchor, bikeArtRect,
   benchRender() {
     const cv = $("#benchCv");
     if (!cv || !bench) return false;
